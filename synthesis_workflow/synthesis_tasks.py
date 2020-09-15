@@ -12,38 +12,36 @@ import morphio
 import numpy as np
 import pandas as pd
 import yaml
-from voxcell import VoxelData
-
-from atlas_analysis.planes.planes import (_create_planes,
-                                          create_centerline_planes,
-                                          save_planes_centerline)
+from atlas_analysis.planes.planes import _create_planes
+from atlas_analysis.planes.planes import create_centerline_planes
+from atlas_analysis.planes.planes import save_planes_centerline
 from diameter_synthesis.build_models import build as build_diameter_models
 from region_grower.utils import NumpyEncoder
 from tns import extract_input
+from voxcell import VoxelData
 
-from .utils_tasks import (
-    diametrizerconfigs,
-    circuitconfigs,
-    synthesisconfigs,
-    pathconfigs,
-)
-from .utils_tasks import get_morphs_df, ensure_dir
-from .circuit_slicing import generic_slicer, slice_circuit
-from .synthesis import (
-    get_neurite_types,
-    apply_substitutions,
-    build_distributions,
-    create_axon_morphologies_tsv,
-    run_placement_algorithm,
-    get_mean_neurite_lengths,
-    grow_vacuum_morphologies,
-    plot_vacuum_morphologies,
-    rescale_morphologies,
-    add_scaling_rules_to_parameters,
-)
+from .circuit_slicing import halve_atlas
+from .circuit_slicing import generic_slicer
+from .circuit_slicing import slice_circuit
+from .synthesis import add_scaling_rules_to_parameters
+from .synthesis import apply_substitutions
+from .synthesis import build_distributions
+from .synthesis import create_axon_morphologies_tsv
+from .synthesis import get_mean_neurite_lengths
+from .synthesis import get_neurite_types
+from .synthesis import grow_vacuum_morphologies
+from .synthesis import plot_vacuum_morphologies
+from .synthesis import rescale_morphologies
+from .synthesis import run_placement_algorithm
+from .utils_tasks import BaseTask
+from .utils_tasks import circuitconfigs
+from .utils_tasks import diametrizerconfigs
+from .utils_tasks import ensure_dir
+from .utils_tasks import get_morphs_df
+from .utils_tasks import logger as L
+from .utils_tasks import pathconfigs
+from .utils_tasks import synthesisconfigs
 
-L = logging.getLogger(__name__)
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 warnings.filterwarnings("ignore")
 morphio.set_maximum_warnings(0)
 
@@ -73,15 +71,18 @@ class ApplySubstitutionRules(luigi.Task):
         return luigi.LocalTarget(pathconfigs().substituted_morphs_df_path)
 
 
-class BuildSynthesisParameters(luigi.Task):
+class BuildSynthesisParameters(BaseTask):
     """Build the tmd_parameter.json for synthesis.
 
     Args:
         to_use_flag (str): column name in morphology dataframe to select subset of cells
+        custom_tmd_parameters_path (str): custom path to input tmd_parameters. If not given,
+            the one from
     """
 
-    tmd_parameters_path = luigi.Parameter(default="tmd_parameters.json")
-    to_use_flag = luigi.Parameter(default="all")
+    to_use_flag = luigi.Parameter(default=None)
+    input_tmd_parameters_path = luigi.Parameter(default=None)
+    tmd_parameters_path = luigi.Parameter(default=None)
 
     def requires(self):
         """"""
@@ -94,14 +95,14 @@ class BuildSynthesisParameters(luigi.Task):
         )
         neurite_types = get_neurite_types(synthesisconfigs().pc_in_types_path, mtypes)
 
-        if synthesisconfigs().custom_tmd_parameters_path is not None:
+        if self.input_tmd_parameters_path is not None:
             L.info("Using custom tmd parameters")
-            with open(synthesisconfigs().custom_tmd_parameters_path, "r") as f:
+            with open(self.input_tmd_parameters_path, "r") as f:
                 custom_tmd_parameters = json.load(f)
 
         tmd_parameters = {}
         for mtype in mtypes:
-            if synthesisconfigs().custom_tmd_parameters_path is None:
+            if self.input_tmd_parameters_path is None:
                 tmd_parameters[mtype] = extract_input.parameters(
                     neurite_types=neurite_types[mtype],
                     diameter_parameters=diametrizerconfigs().config_diametrizer,
@@ -125,7 +126,7 @@ class BuildSynthesisParameters(luigi.Task):
         return luigi.LocalTarget(self.tmd_parameters_path)
 
 
-class BuildSynthesisDistributions(luigi.Task):
+class BuildSynthesisDistributions(BaseTask):
     """Build the tmd_distribution.json for synthesis.
 
     Args:
@@ -134,8 +135,8 @@ class BuildSynthesisDistributions(luigi.Task):
         h5_path (str): base path to h5 morphologies for TNS distribution extraction
     """
 
-    to_use_flag = luigi.Parameter(default="all")
-    morphology_path = luigi.Parameter(default="morphology_path")
+    to_use_flag = luigi.Parameter(default=None)
+    morphology_path = luigi.Parameter(default=None)
     h5_path = luigi.Parameter(default=None)
 
     def requires(self):
@@ -144,7 +145,6 @@ class BuildSynthesisDistributions(luigi.Task):
 
     def run(self):
         """"""
-
         morphs_df = get_morphs_df(
             self.input().path,
             to_use_flag=self.to_use_flag,
@@ -183,7 +183,7 @@ class BuildSynthesisModels(luigi.WrapperTask):
         return [BuildSynthesisParameters(), BuildSynthesisDistributions()]
 
 
-class CreateAtlasPlanes(luigi.Task):
+class CreateAtlasPlanes(BaseTask):
     """Crerate plane cuts of an atlas."""
 
     plane_type = luigi.Parameter(default="centerline")
@@ -251,34 +251,37 @@ class CreateAtlasPlanes(luigi.Task):
         return luigi.LocalTarget(self.atlas_planes_path + ".npz")
 
 
-class SliceCircuit(luigi.Task):
+class SliceCircuit(BaseTask):
     """Create a smaller circuit .mvd3 file for subsampling.
 
     Args:
         sliced_circuit_path (str): path to save sliced circuit somata mvd3
         mtypes (list): list of mtypes to consider
         n_cells (int): number of cells per mtype to consider
+        hemisphere (str): 'left' or 'right'
     """
 
     sliced_circuit_path = luigi.Parameter(default="sliced_circuit_somata.mvd3")
-    mtypes = luigi.ListParameter(default=["all"])
+    mtypes = luigi.ListParameter(default=None)
     n_cells = luigi.IntParameter(default=10)
-    hemisphere = luigi.Parameter(default="left")
-
-    def requires(self):
-        """"""
-        return CreateAtlasPlanes()
+    hemisphere = luigi.Parameter(default=None)
 
     def run(self):
         """"""
         if "all" in self.mtypes:  # pylint: disable=unsupported-membership-test
             self.mtypes = None
 
+        if self.hemisphere is not None:
+            atlas_planes = yield CreateAtlasPlanes()
+            planes = np.load(atlas_planes.path)["planes"]
+        else:
+            planes = None
+
         slicer = partial(
             generic_slicer,
             n_cells=self.n_cells,
             mtypes=self.mtypes,
-            planes=np.load(self.input().path)["planes"],
+            planes=planes,
             hemisphere=self.hemisphere,
         )
 
@@ -295,7 +298,7 @@ class SliceCircuit(luigi.Task):
         return luigi.LocalTarget(self.sliced_circuit_path)
 
 
-class Synthesize(luigi.Task):
+class Synthesize(BaseTask):
     """Run placement-algorithm to synthesize morphologies.
 
     Args:
@@ -363,12 +366,12 @@ class Synthesize(luigi.Task):
         return luigi.LocalTarget(self.out_circuit_path)
 
 
-class GetMeanNeuriteLengths(luigi.Task):
+class GetMeanNeuriteLengths(BaseTask):
     """Get the mean neurite lenghts of a neuron population, per mtype and neurite type."""
 
-    neurite_types = luigi.ListParameter(default=["apical"])
-    mtypes = luigi.ListParameter(default=["all"])
-    morphology_path = luigi.Parameter(default="morphology_path")
+    neurite_types = luigi.ListParameter(default=None)
+    mtypes = luigi.ListParameter(default=None)
+    morphology_path = luigi.Parameter(default=None)
     mean_lengths_path = luigi.Parameter(default="mean_neurite_lengths.yaml")
 
     def requires(self):
@@ -397,7 +400,7 @@ class GetMeanNeuriteLengths(luigi.Task):
         return luigi.LocalTarget(self.mean_lengths_path)
 
 
-class GetSynthetisedNeuriteLengths(luigi.Task):
+class GetSynthetisedNeuriteLengths(BaseTask):
     """Get the mean neurite lenghts of a neuron population, per mtype and neurite type."""
 
     neurite_types = luigi.ListParameter(default=["apical"])
@@ -435,14 +438,12 @@ class GetSynthetisedNeuriteLengths(luigi.Task):
         return luigi.LocalTarget(self.mean_lengths_path)
 
 
-class AddScalingRulesToParameters(luigi.Task):
+class AddScalingRulesToParameters(BaseTask):
     """Add scaling rules to tmd_parameter.json."""
 
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")
     hard_limits_path = luigi.Parameter(default="hard_limits.yaml")
-    tmd_parameters_with_scaling_path = luigi.Parameter(
-        default="tmd_parameters_with_scaling.json"
-    )
+    tmd_parameters_path = luigi.Parameter(default=None)
 
     def requires(self):
         """"""
@@ -493,13 +494,13 @@ class AddScalingRulesToParameters(luigi.Task):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.tmd_parameters_with_scaling_path)
+        return luigi.LocalTarget(self.tmd_parameters_path)
 
 
-class VacuumSynthesize(luigi.Task):
+class VacuumSynthesize(BaseTask):
     """Grow cells in vacuum, for annotation tasks."""
 
-    mtypes = luigi.ListParameter(default=["all"])
+    mtypes = luigi.ListParameter(default=None)
     vacuum_synth_morphology_path = luigi.Parameter(default="vacuum_synth_morphologies")
     vacuum_synth_morphs_df_path = luigi.Parameter(default="vacuum_synth_morphs_df.csv")
     n_cells = luigi.IntParameter(default=10)
@@ -538,7 +539,7 @@ class VacuumSynthesize(luigi.Task):
         return luigi.LocalTarget(self.vacuum_synth_morphs_df_path)
 
 
-class PlotVacuumMorphologies(luigi.Task):
+class PlotVacuumMorphologies(BaseTask):
     """Plot morphologies to obtain annotations."""
 
     pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
@@ -565,10 +566,10 @@ class PlotVacuumMorphologies(luigi.Task):
         return luigi.LocalTarget(self.pdf_filename)
 
 
-class RescaleMorphologies(luigi.Task):
+class RescaleMorphologies(BaseTask):
     """Rescale morphologies for synthesis input."""
 
-    morphology_path = luigi.Parameter(default="morphology_path")
+    morphology_path = luigi.Parameter(default=None)
     rescaled_morphology_path = luigi.Parameter(default="rescaled_morphology_path")
     rescaled_morphology_base_path = luigi.Parameter(default="rescaled_morphologies")
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")

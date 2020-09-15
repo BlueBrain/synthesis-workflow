@@ -1,5 +1,4 @@
 """Luigi tasks to diametrize cells."""
-import logging
 import multiprocessing
 import os
 import sys
@@ -20,12 +19,11 @@ from tqdm import tqdm
 
 from .utils_tasks import diametrizerconfigs
 from .utils_tasks import get_morphs_df
+from .utils_tasks import logger as L
 from .utils_tasks import update_morphs_df
 
 warnings.filterwarnings("ignore")
 matplotlib.use("Agg")
-L = logging.getLogger(__name__)
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
 
 def _build_diameter_model(

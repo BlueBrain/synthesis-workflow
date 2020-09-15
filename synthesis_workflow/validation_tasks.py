@@ -1,5 +1,4 @@
 """Luigi tasks for validation of synthesis."""
-import logging
 from pathlib import Path
 import yaml
 
@@ -11,6 +10,7 @@ from .synthesis_tasks import Synthesize
 from .synthesis_tasks import VacuumSynthesize
 from .synthesis_tasks import RescaleMorphologies
 from .synthesis_tasks import GetSynthetisedNeuriteLengths
+from .utils_tasks import BaseWrapperTask
 from .utils_tasks import circuitconfigs
 from .utils_tasks import load_circuit
 from .utils_tasks import pathconfigs
@@ -19,9 +19,6 @@ from .validation import plot_collage
 from .validation import plot_collage_O1
 from .validation import plot_density_profiles
 from .validation import plot_morphometrics
-
-
-L = logging.getLogger(__name__)
 
 
 class ConvertMvd3(luigi.Task):
@@ -142,7 +139,7 @@ class PlotDensityProfiles(luigi.Task):
         return luigi.LocalTarget(self.density_profiles_path)
 
 
-class PlotCollage(luigi.WrapperTask):
+class PlotCollage(BaseWrapperTask):
     """Plot collage.
 
     Args:
@@ -153,13 +150,13 @@ class PlotCollage(luigi.WrapperTask):
     collage_base_path = luigi.Parameter(default="collages")
     sample = luigi.IntParameter(default=20)
     collage_type = luigi.Parameter(default="O1")
-    mtypes = luigi.ListParameter(["all"])
+    mtypes = luigi.ListParameter(default=None)
 
     def requires(self):
         """"""
         if self.mtypes[0] == "all":
             self.mtypes = pd.read_csv(
-                pathconfigs().morphs_combos_df_path
+                pathconfigs().synth_morphs_df_path
             ).mtype.unique()
 
         tasks = []
@@ -231,5 +228,6 @@ class ValidateSynthesis(luigi.WrapperTask):
     def requires(self):
         """"""
         # tasks = [PlotMorphometrics(), PlotDensityProfiles(), PlotCollage()]
-        tasks = [PlotCollage()]
+        tasks = [PlotMorphometrics(), PlotDensityProfiles()]
+        # tasks = [PlotCollage()]
         return tasks

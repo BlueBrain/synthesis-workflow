@@ -84,6 +84,15 @@ def slice_atlas_bbox(cells, bbox):
     return slice_z_slice(cells, bbox[2])
 
 
+def generic_slicer_old(cells, n_cells, mtypes=None, bbox=None):
+    """Select n_cells mtype in mtypes and within bbox."""
+    if mtypes is not None:
+        cells = slice_per_mtype(cells, mtypes)
+    if bbox is not None:
+        cells = slice_atlas_bbox(cells, bbox)
+    return slice_n_cells(cells, n_cells)
+
+
 def generic_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
     """Select n_cells mtype in mtypes and within bbox."""
     if mtypes is not None:

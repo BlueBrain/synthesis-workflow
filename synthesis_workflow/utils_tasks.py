@@ -1,8 +1,12 @@
 """utils functions for luigi tasks."""
+import logging
 from pathlib import Path
 
 import luigi
 import pandas as pd
+
+
+logger = logging.getLogger("luigi-interface")
 
 
 def load_circuit(
@@ -36,7 +40,7 @@ def get_morphs_df(
     """Get valid morphs_df for diametrizer (select using flag + remove duplicates)."""
     morphs_df = pd.read_csv(morphs_df_path)
     if to_use_flag != "all":
-        morphs_df = morphs_df[morphs_df[to_use_flag]]
+        morphs_df = morphs_df.loc[morphs_df[to_use_flag]]
     if h5_path is not None:
         morphs_df[morphology_path] = morphs_df[
             "_".join(morphology_path.split("_")[:-1])
@@ -52,38 +56,16 @@ def update_morphs_df(morphs_df_path, new_morphs_df):
 class diametrizerconfigs(luigi.Config):
     """Diametrizer configuration."""
 
-    model = luigi.Parameter(
-        config_path={"section": "DIAMETRIZER", "name": "model"}, default="generic",
-    )
-    terminal_threshold = luigi.FloatParameter(
-        config_path={"section": "DIAMETRIZER", "name": "terminal_threshold"},
-        default=2.0,
-    )
-    taper_min = luigi.FloatParameter(
-        config_path={"section": "DIAMETRIZER", "name": "taper_min"}, default=-0.01,
-    )
-    taper_max = luigi.FloatParameter(
-        config_path={"section": "DIAMETRIZER", "name": "taper_max"}, default=1e-6,
-    )
-    asymmetry_threshold_basal = luigi.FloatParameter(
-        config_path={"section": "DIAMETRIZER", "name": "asymmetry_threshold_basal"},
-        default=1.0,
-    )
-    asymmetry_threshold_apical = luigi.FloatParameter(
-        config_path={"section": "DIAMETRIZER", "name": "asymmetry_threshold_apical"},
-        default=0.2,
-    )
-    neurite_types = luigi.ListParameter(
-        config_path={"section": "DIAMETRIZER", "name": "neurite_types"},
-        default=["basal", "apical"],
-    )
+    model = luigi.Parameter(default="generic")
+    terminal_threshold = luigi.FloatParameter(default=2.0)
+    taper_min = luigi.FloatParameter(default=-0.01)
+    taper_max = luigi.FloatParameter(default=1e-6)
+    asymmetry_threshold_basal = luigi.FloatParameter(default=1.0)
+    asymmetry_threshold_apical = luigi.FloatParameter(default=0.2)
+    neurite_types = luigi.ListParameter(default=["basal", "apical"])
 
-    trunk_max_tries = luigi.IntParameter(
-        config_path={"section": "DIAMETRIZER", "name": "trunk_max_tries"}, default=100,
-    )
-    n_samples = luigi.IntParameter(
-        config_path={"section": "DIAMETRIZER", "name": "n_samples"}, default=2,
-    )
+    trunk_max_tries = luigi.IntParameter(default=100)
+    n_samples = luigi.IntParameter(default=2)
 
     def __init__(self, *args, **kwargs):
         """Init."""
@@ -114,64 +96,70 @@ class diametrizerconfigs(luigi.Config):
 class synthesisconfigs(luigi.Config):
     """Circuit configuration."""
 
-    tmd_parameters_path = luigi.Parameter(
-        config_path={"section": "SYNTHESIS", "name": "tmd_parameters_path"},
-        default="tmd_parameters.json",
-    )
-
-    custom_tmd_parameters_path = luigi.Parameter(
-        config_path={"section": "SYNTHESIS", "name": "custom_tmd_parameters_path"},
-        default=None,
-    )
-
-    tmd_distributions_path = luigi.Parameter(
-        config_path={"section": "SYNTHESIS", "name": "tmd_distributions_path"},
-        default="tmd_distributions.json",
-    )
-
-    pc_in_types_path = luigi.Parameter(
-        config_path={"section": "SYNTHESIS", "name": "pc_in_types_path"},
-        default="pc_in_types.yaml",
-    )
-
-    cortical_thickness = luigi.Parameter(
-        config_path={"section": "SYNTHESIS", "name": "cortical_thickness"},
-        default="[165, 149, 353, 190, 525, 700]",
-    )
+    tmd_parameters_path = luigi.Parameter(default="tmd_parameters.json")
+    tmd_distributions_path = luigi.Parameter(default="tmd_distributions.json")
+    pc_in_types_path = luigi.Parameter(default="pc_in_types.yaml")
+    cortical_thickness = luigi.Parameter(default="[165, 149, 353, 190, 525, 700]")
+    to_use_flag = luigi.Parameter(default="all")
+    mtypes = luigi.ListParameter(default=["all"])
 
 
 class circuitconfigs(luigi.Config):
     """Circuit configuration."""
 
-    circuit_somata_path = luigi.Parameter(
-        config_path={"section": "CIRCUIT", "name": "circuit_somata_path"},
-        default="circuit_somata.mvd3",
-    )
-
-    atlas_path = luigi.Parameter(
-        config_path={"section": "CIRCUIT", "name": "atlas_path"}, default=None
-    )
+    circuit_somata_path = luigi.Parameter(default="circuit_somata.mvd3")
+    atlas_path = luigi.Parameter(default=None)
 
 
 class pathconfigs(luigi.Config):
     """Morphology path configuration."""
 
-    morphs_df_path = luigi.Parameter(
-        config_path={"section": "PATHS", "name": "morphs_df_path"},
-        default="morphs_df.csv",
-    )
+    morphs_df_path = luigi.Parameter(default="morphs_df.csv")
+    morphology_path = luigi.Parameter(default="morphology_path")
+    synth_morphs_df_path = luigi.Parameter(default="synth_morphs_df.csv")
+    synth_output_path = luigi.Parameter(default="synthesized_morphologies")
+    substituted_morphs_df_path = luigi.Parameter(default="substituted_morphs_df.csv")
 
-    synth_morphs_df_path = luigi.Parameter(
-        config_path={"section": "PATHS", "name": "synth_morphs_df_path"},
-        default="synth_morphs_df.csv",
-    )
 
-    synth_output_path = luigi.Parameter(
-        config_path={"section": "PATHS", "name": "synth_output_path"},
-        default="synthesized_morphologies",
-    )
+class BaseTask(luigi.Task):
+    """Base class used to add customisable global parameters"""
+    _global_configs = [diametrizerconfigs, synthesisconfigs, circuitconfigs, pathconfigs]
 
-    substituted_morphs_df_path = luigi.Parameter(
-        config_path={"section": "PATHS", "name": "substituted_morphs_df_path"},
-        default="substituted_morphs_df.csv",
-    )
+    def __init__(self, *args, **kwargs):
+        super(BaseTask, self).__init__(*args, **kwargs)
+
+        # Replace run() method by a new one which adds logging before the actual run() method
+        if not hasattr(self, "_actual_run"):
+            # Rename actual run() method
+            self._actual_run = super(BaseTask, self).__getattribute__("run")
+
+            # Replace by _run_debug() method
+            self.run = super(BaseTask, self).__getattribute__("_run_debug")
+
+    def _run_debug(self):
+        class_name = self.__class__.__name__
+        logger.debug("Attributes of {} class after global processing:".format(class_name))
+        for name, attr in self.get_params():
+            try:
+                logger.debug("Atribute: {} == {}".format(name, getattr(self, name)))
+            except:
+                logger.debug("Can't print '{}' attribute for unknown reason".format(name))
+
+        logger.debug("Running {} task".format(class_name))
+        gen = self._actual_run()
+        logger.debug("{} task ended properly".format(class_name))
+        return gen
+
+    def __getattribute__(self, name):
+        tmp = super(BaseTask, self).__getattribute__(name)
+        if tmp is not None:
+            return tmp
+        for conf in self._global_configs:
+            tmp_conf = conf()
+            if hasattr(tmp_conf, name):
+                return getattr(tmp_conf, name)
+        return tmp
+
+
+class BaseWrapperTask(BaseTask, luigi.WrapperTask):
+    pass
