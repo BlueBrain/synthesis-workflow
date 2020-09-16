@@ -7,8 +7,11 @@ import luigi
 import pandas as pd
 
 
-warnings.filterwarnings("ignore", module="luigi")
 logger = logging.getLogger("luigi-interface")
+warnings.filterwarnings("ignore", module="luigi.parameter")
+warnings.filterwarnings("ignore", module="neurom.io")
+warnings.filterwarnings("ignore", module="neurom.features")
+warnings.filterwarnings("ignore", module="scipy")
 
 
 def load_circuit(
@@ -123,34 +126,20 @@ class pathconfigs(luigi.Config):
     substituted_morphs_df_path = luigi.Parameter(default="substituted_morphs_df.csv")
 
 
+@luigi.Task.event_handler(luigi.Event.START)
+def log_parameters(task):
+    class_name = task.__class__.__name__
+    logger.debug("Attributes of {} class after global processing:".format(class_name))
+    for name in task.get_param_names():
+        try:
+            logger.debug("Atribute: {} == {}".format(name, getattr(task, name)))
+        except:
+            logger.debug("Can't print '{}' attribute for unknown reason".format(name))
+
+
 class BaseTask(luigi.Task):
     """Base class used to add customisable global parameters"""
     _global_configs = [diametrizerconfigs, synthesisconfigs, circuitconfigs, pathconfigs]
-
-    def __init__(self, *args, **kwargs):
-        super(BaseTask, self).__init__(*args, **kwargs)
-
-        # Replace run() method by a new one which adds logging before the actual run() method
-        if not hasattr(self, "_actual_run"):
-            # Rename actual run() method
-            self._actual_run = super(BaseTask, self).__getattribute__("run")
-
-            # Replace by _run_debug() method
-            self.run = super(BaseTask, self).__getattribute__("_run_debug")
-
-    def _run_debug(self):
-        class_name = self.__class__.__name__
-        logger.debug("Attributes of {} class after global processing:".format(class_name))
-        for name in self.get_param_names():
-            try:
-                logger.debug("Atribute: {} == {}".format(name, getattr(self, name)))
-            except:
-                logger.debug("Can't print '{}' attribute for unknown reason".format(name))
-
-        logger.debug("Running {} task".format(class_name))
-        gen = self._actual_run()
-        logger.debug("{} task ended properly".format(class_name))
-        return gen
 
     def __getattribute__(self, name):
         tmp = super(BaseTask, self).__getattribute__(name)
@@ -164,8 +153,11 @@ class BaseTask(luigi.Task):
 
     def __setattr__(self, name, value):
         if value is None and name in self.get_param_names():
-            warnings.warn("The Parameter '{}' is set to None, thus the global value "
-                          "will be taken frow now on")
+            msg = (
+                "The Parameter '{}' of the task '{}' is set to None, thus the global "
+                "value will be taken frow now on"
+            ).format(name, self.__class__.__name__)
+            warnings.warn(msg)
         return super(BaseTask, self).__setattr__(name, value)
 
 

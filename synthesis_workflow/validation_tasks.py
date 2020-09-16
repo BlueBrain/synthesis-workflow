@@ -148,8 +148,8 @@ class PlotCollage(BaseWrapperTask):
     """
 
     collage_base_path = luigi.Parameter(default="collages")
-    sample = luigi.IntParameter(default=20)
     collage_type = luigi.Parameter(default="O1")
+    sample = luigi.IntParameter(default=20)
     mtypes = luigi.ListParameter(default=None)
 
     def requires(self):
@@ -227,7 +227,7 @@ class ValidateSynthesis(luigi.WrapperTask):
 
     def requires(self):
         """"""
-        # tasks = [PlotMorphometrics(), PlotDensityProfiles(), PlotCollage()]
-        tasks = [PlotMorphometrics(), PlotDensityProfiles()]
+        tasks = [PlotMorphometrics(), PlotDensityProfiles(), PlotCollage()]
+        # tasks = [PlotMorphometrics(), PlotDensityProfiles()]
         # tasks = [PlotCollage()]
         return tasks
