@@ -1,5 +1,4 @@
 """Luigi tasks to diametrize cells."""
-import multiprocessing
 import os
 import sys
 import traceback
@@ -13,6 +12,8 @@ import yaml
 from diameter_synthesis.build_diameters import build as build_diameters
 from diameter_synthesis.build_models import build as build_diameter_model
 from diameter_synthesis.plotting import plot_distribution_fit
+from joblib import delayed
+from joblib import Parallel
 from morphio.mut import Morphology
 from tqdm import tqdm
 
@@ -66,6 +67,7 @@ class BuildDiameterModels(luigi.Task):
     diameter_models_path = luigi.Parameter(default="diameter_models.yaml")
     by_mtypes = luigi.BoolParameter()
     plot_models = luigi.BoolParameter()
+    nb_jobs = luigi.IntParameter(default=-1)
 
     def run(self):
         """Run."""
@@ -88,12 +90,14 @@ class BuildDiameterModels(luigi.Task):
                 config_model=config_model,
                 morphology_path=self.morphology_path,
             )
-            with multiprocessing.Pool(maxtasksperchild=1) as pool:
-                for mtype, (params, data) in tqdm(
-                    pool.imap_unordered(build_model, mtypes), total=len(mtypes)
-                ):
-                    models_params[mtype] = params
-                    models_data[mtype] = data
+            for mtype, (params, data) in Parallel(self.nb_jobs)(
+                delayed(build_model)(
+                    mtype
+                )
+                for mtype in tqdm(mtypes)
+            ):
+                models_params[mtype] = params
+                models_data[mtype] = data
         else:
             morphologies = load_neurons(morphs_df[self.morphology_path].to_list())
             models_params["all"], models_data["all"] = build_model(
@@ -181,14 +185,16 @@ class Diametrize(luigi.Task):
         )
 
         exception_count = 0
-        with multiprocessing.Pool(maxtasksperchild=1) as pool:
-            for gid, new_path, exception in tqdm(
-                pool.imap_unordered(diametrizer, morphs_df.index), total=len(morphs_df)
-            ):
-                morphs_df.loc[gid, self.new_morphology_path] = new_path
-                morphs_df.loc[gid, "exception"] = exception
-                if exception is not None:
-                    exception_count += 1
+        for gid, new_path, exception in Parallel(self.nb_jobs)(
+            delayed(diametrizer)(
+                gid
+            )
+            for gid in tqdm(morphs_df.index)
+        ):
+            morphs_df.loc[gid, self.new_morphology_path] = new_path
+            morphs_df.loc[gid, "exception"] = exception
+            if exception is not None:
+                exception_count += 1
         L.info("Diametrization terminated, with %s exceptions.", exception_count)
 
         update_morphs_df(self.morphs_df_path, morphs_df).to_csv(

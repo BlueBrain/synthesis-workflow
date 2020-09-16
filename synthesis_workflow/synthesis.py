@@ -1,7 +1,6 @@
 """Functions for synthesis to be used by luigi tasks."""
 import json
 import logging
-import multiprocessing
 import os
 import re
 import sys
@@ -108,6 +107,7 @@ def build_distributions(
     diameter_model_function,
     morphology_path,
     cortical_thickness,
+    nb_jobs=-1
 ):
     """Build tmd_distribution dictionary for synthesis.
 
@@ -129,17 +129,17 @@ def build_distributions(
         morphology_path=morphology_path,
     )
 
-    with multiprocessing.Pool(maxtasksperchild=1) as pool:
-        tmd_distributions = {
-            "mtypes": {
-                mtype: distribution
-                for mtype, distribution in tqdm(  # pylint: disable=unnecessary-comprehension
-                    pool.imap_unordered(build_distributions_single_mtype, mtypes),
-                    total=len(mtypes),
-                )
-            },
-            "metadata": {"cortical_thickness": json.loads(cortical_thickness)},
-        }
+    tmd_distributions = {
+        "mtypes": {},
+        "metadata": {"cortical_thickness": json.loads(cortical_thickness)},
+    }
+    for mtype, distribution in Parallel(nb_jobs)(
+        delayed(build_distributions_single_mtype)(
+            mtype
+        )
+        for mtype in tqdm(mtypes)
+    ):
+        tmd_distributions["mtypes"][mtype] = distribution
     return tmd_distributions
 
 

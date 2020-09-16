@@ -1,5 +1,4 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
-import multiprocessing
 import os
 from collections import defaultdict
 from functools import partial
@@ -10,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from joblib import delayed
+from joblib import Parallel
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.linalg import expm
 from scipy.optimize import fmin
@@ -20,8 +21,8 @@ from atlas_analysis.constants import CANONICAL
 from atlas_analysis.planes.maths import Plane
 from morph_validator.feature_configs import get_feature_configs
 from morph_validator.plotting import get_features_df, plot_violin_features
-from morph_validator.spatial import (relative_depth_volume,
-                                     sample_morph_voxel_values)
+from morph_validator.spatial import relative_depth_volume
+from morph_validator.spatial import sample_morph_voxel_values
 from neurom import viewer
 
 from .circuit_slicing import get_cells_between_planes
@@ -166,30 +167,32 @@ def _plot_density_profile(
     return fig
 
 
-def plot_density_profiles(circuit, sample, region, sample_distance, output_path):
+def plot_density_profiles(circuit, sample, region, sample_distance, output_path, nb_jobs=-1):
     """Plot density profiles for all mtypes.
 
     WIP function, waiting on complete atlas to update.
     """
     voxeldata = relative_depth_volume(circuit.atlas, in_region=region, relative=False)
     x_pos = 0
-    with multiprocessing.Pool() as pool:
-        figures = pool.imap(
-            partial(
-                _plot_density_profile,
-                circuit=circuit,
-                x_pos=x_pos,
-                sample=sample,
-                voxeldata=voxeldata,
-                sample_distance=sample_distance,
-            ),
-            sorted(circuit.cells.mtypes),
+
+    ensure_dir(output_path)
+    with PdfPages(output_path) as pdf:
+        f = partial(
+            _plot_density_profile,
+            circuit=circuit,
+            x_pos=x_pos,
+            sample=sample,
+            voxeldata=voxeldata,
+            sample_distance=sample_distance,
         )
-        ensure_dir(output_path)
-        with PdfPages(output_path) as pdf:
-            for fig in list(figures):
-                pdf.savefig(fig, bbox_inches="tight")
-                plt.close(fig)
+        for fig in Parallel(nb_jobs)(
+            delayed(f)(
+                mtype
+            )
+            for mtype in sorted(circuit.cells.mtypes)
+        ):
+            pdf.savefig(fig, bbox_inches="tight")
+            plt.close(fig)
 
 
 def _plot_cells(circuit, mtype, sample, ax):
@@ -219,7 +222,7 @@ def _plot_collage_O1(
     return fig
 
 
-def plot_collage_O1(circuit, sample, output_path):
+def plot_collage_O1(circuit, sample, output_path, mtypes=None, nb_jobs=-1):
     """Plot collage for all mtypes.
 
     Args:
@@ -248,23 +251,24 @@ def plot_collage_O1(circuit, sample, output_path):
     if mtypes is None:
         mtypes = sorted(list(circuit.cells.mtypes))
 
-    with multiprocessing.Pool() as pool:
-        figures = pool.imap(
-            partial(
-                _plot_collage_O1,
-                circuit=circuit,
-                figsize=figsize,
-                x_pos=x_pos,
-                ax_limit=ax_limit,
-                sample=sample,
-            ),
-            mtypes,
+    ensure_dir(output_path)
+    with PdfPages(output_path) as pdf:
+        f = partial(
+            _plot_collage_O1,
+            circuit=circuit,
+            figsize=figsize,
+            x_pos=x_pos,
+            ax_limit=ax_limit,
+            sample=sample,
         )
-        ensure_dir(output_path)
-        with PdfPages(output_path) as pdf:
-            for fig in tqdm(figures, total=len(mtypes)):
-                pdf.savefig(fig, bbox_inches="tight", dpi=100)
-                plt.close(fig)
+        for fig in Parallel(nb_jobs)(
+            delayed(f)(
+                mtype
+            )
+            for mtype in sorted(circuit.cells.mtypes)
+        ):
+            pdf.savefig(fig, bbox_inches="tight", dpi=100)
+            plt.close(fig)
 
 
 def get_aligned_basis(plane, target=[0, 0, 1]):
@@ -384,24 +388,26 @@ def _plot_collage(
 
 
 def plot_collage(
-    circuit, planes, layer_annotation, mtype, output_path="collage.pdf", sample=10
+    circuit, planes, layer_annotation, mtype, output_path="collage.pdf", sample=10, nb_jobs=-1
 ):
     """Plot collage of an mtyp and a list of planes."""
     plane_ids = np.arange(int(len(planes) / 2) - 1)
-    with multiprocessing.Pool() as pool:
-        figures = pool.imap(
-            partial(
-                _plot_collage,
-                planes=planes,
-                layer_annotation=layer_annotation,
-                circuit=circuit,
-                mtype=mtype,
-                sample=sample,
-            ),
-            plane_ids,
+
+    ensure_dir(output_path)
+    with PdfPages(output_path) as pdf:
+        f = partial(
+            _plot_collage,
+            planes=planes,
+            layer_annotation=layer_annotation,
+            circuit=circuit,
+            mtype=mtype,
+            sample=sample,
         )
-        ensure_dir(output_path)
-        with PdfPages(output_path) as pdf:
-            for fig in tqdm(figures, total=len(plane_ids)):
-                pdf.savefig(fig, bbox_inches="tight", dpi=100)
-                plt.close(fig)
+        for fig in Parallel(nb_jobs)(
+            delayed(f)(
+                plane_id
+            )
+            for plane_id in plane_ids
+        ):
+            pdf.savefig(fig, bbox_inches="tight", dpi=100)
+            plt.close(fig)
