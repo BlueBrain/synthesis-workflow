@@ -7,9 +7,13 @@ from setuptools import setup, find_packages
 if sys.version_info < (3, 6):
     sys.exit("Sorry, Python < 3.6 is not supported")
 
-# read the contents of the README file
+# Read the contents of the README file
 with open("README.rst", encoding="utf-8") as f:
     README = f.read()
+
+# Read the requirements
+with open("requirements.pip") as f:
+    reqs = f.read().splitlines()
 
 setup(
     name="synthesis-workflow",
@@ -21,7 +25,7 @@ setup(
     long_description_content_type="text/x-rst",
     url="https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow",
     license="BBP-internal-confidential",
-    install_requires=[],
+    install_requires=reqs,
     packages=find_packages(),
     python_requires=">=3.6",
     setup_requires=["setuptools_scm"],
