@@ -1,11 +1,13 @@
 """utils functions for luigi tasks."""
 import logging
+import warnings
 from pathlib import Path
 
 import luigi
 import pandas as pd
 
 
+warnings.filterwarnings("ignore", module="luigi")
 logger = logging.getLogger("luigi-interface")
 
 
@@ -139,7 +141,7 @@ class BaseTask(luigi.Task):
     def _run_debug(self):
         class_name = self.__class__.__name__
         logger.debug("Attributes of {} class after global processing:".format(class_name))
-        for name, attr in self.get_params():
+        for name in self.get_param_names():
             try:
                 logger.debug("Atribute: {} == {}".format(name, getattr(self, name)))
             except:
@@ -159,6 +161,12 @@ class BaseTask(luigi.Task):
             if hasattr(tmp_conf, name):
                 return getattr(tmp_conf, name)
         return tmp
+
+    def __setattr__(self, name, value):
+        if value is None and name in self.get_param_names():
+            warnings.warn("The Parameter '{}' is set to None, thus the global value "
+                          "will be taken frow now on")
+        return super(BaseTask, self).__setattr__(name, value)
 
 
 class BaseWrapperTask(BaseTask, luigi.WrapperTask):

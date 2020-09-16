@@ -3,7 +3,6 @@ import multiprocessing
 import os
 import sys
 import traceback
-import warnings
 from functools import partial
 from neurom import load_neurons
 from pathlib import Path
@@ -22,7 +21,7 @@ from .utils_tasks import get_morphs_df
 from .utils_tasks import logger as L
 from .utils_tasks import update_morphs_df
 
-warnings.filterwarnings("ignore")
+
 matplotlib.use("Agg")
 
 

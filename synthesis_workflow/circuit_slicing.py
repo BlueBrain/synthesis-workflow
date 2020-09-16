@@ -1,5 +1,6 @@
 """Functions for slicing mvd3 circuit files to place specific cells only."""
 import pandas as pd
+from tqdm import tqdm
 from voxcell import CellCollection
 
 from atlas_analysis.planes.maths import Plane
@@ -94,10 +95,9 @@ def generic_slicer_old(cells, n_cells, mtypes=None, bbox=None):
 
 
 def generic_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
-    """Select n_cells mtype in mtypes and within bbox."""
+    """Select n_cells mtype in mtypes."""
     if mtypes is not None:
         cells = slice_per_mtype(cells, mtypes)
-    from tqdm import tqdm
 
     if hemisphere is not None and "hemisphere" in cells:
         cells = cells[cells.hemisphere == hemisphere]

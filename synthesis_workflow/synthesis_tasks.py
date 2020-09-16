@@ -1,9 +1,6 @@
 """Luigi tasks for morphology synthesis."""
 import json
-import logging
-import os
 import re
-import warnings
 from functools import partial
 from pathlib import Path
 
@@ -42,7 +39,7 @@ from .utils_tasks import logger as L
 from .utils_tasks import pathconfigs
 from .utils_tasks import synthesisconfigs
 
-warnings.filterwarnings("ignore")
+
 morphio.set_maximum_warnings(0)
 
 
@@ -268,8 +265,9 @@ class SliceCircuit(BaseTask):
 
     def run(self):
         """"""
-        if "all" in self.mtypes:  # pylint: disable=unsupported-membership-test
-            self.mtypes = None
+        mtypes = self.mtypes
+        if "all" in mtypes:  # pylint: disable=unsupported-membership-test
+            mtypes = None
 
         if self.hemisphere is not None:
             atlas_planes = yield CreateAtlasPlanes()
@@ -280,7 +278,7 @@ class SliceCircuit(BaseTask):
         slicer = partial(
             generic_slicer,
             n_cells=self.n_cells,
-            mtypes=self.mtypes,
+            mtypes=mtypes,
             planes=planes,
             hemisphere=self.hemisphere,
         )
