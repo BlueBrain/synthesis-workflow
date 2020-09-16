@@ -1,5 +1,6 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
 import os
+import warnings
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
@@ -157,12 +158,17 @@ def _plot_density_profile(
     mtype, circuit=None, x_pos=None, sample=None, voxeldata=None, sample_distance=None
 ):
     """Plot density profile of an mtype."""
-    plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
     fig = plt.figure()
     ax = plt.gca()
     _plot_layers(x_pos, circuit.atlas, ax)
-    sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
-    ax.legend(loc="best")
+    try:
+        plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
+        sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
+        ax.legend(loc="best")
+    except:
+        ax.text(
+            0.5, 0.5, 'ERROR WHEN GETTING POINT DEPTHS', horizontalalignment='center',
+            verticalalignment='center', transform=ax.transAxes)
     fig.suptitle(mtype)
     return fig
 
@@ -189,7 +195,7 @@ def plot_density_profiles(circuit, sample, region, sample_distance, output_path,
             delayed(f)(
                 mtype
             )
-            for mtype in sorted(circuit.cells.mtypes)
+            for mtype in tqdm(sorted(circuit.cells.mtypes))
         ):
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
@@ -197,6 +203,12 @@ def plot_density_profiles(circuit, sample, region, sample_distance, output_path,
 
 def _plot_cells(circuit, mtype, sample, ax):
     """Plot cells for collage."""
+    max_sample = (circuit.cells.get(properties="mtype") == mtype).sum()
+    if sample > max_sample:
+        warnings.warn(
+            ("The sample value is set to '{}' for the type {} because there are no more "
+            "cells available of that type").format(max_sample, mtypes))
+        sample = max_sample
     gids = circuit.cells.ids(group={"mtype": mtype}, sample=sample)
 
     for gid in gids:
@@ -212,8 +224,14 @@ def _plot_collage_O1(
     """Plot collage for a given mtype (for multiprocessing)."""
     fig = plt.figure(mtype, figsize=figsize)
     ax = plt.gca()
-    _plot_layers(x_pos, circuit.atlas, ax)
-    _plot_cells(circuit, mtype, sample, ax)
+    try:
+        _plot_layers(x_pos, circuit.atlas, ax)
+    except:
+        warnings.warn("Unable to plot the layers for the type '{}'".format(mtype))
+    try:
+        _plot_cells(circuit, mtype, sample, ax)
+    except:
+        warnings.warn("Unable to plot the cells for the type '{}'".format(mtype))
     plt.axis(ax_limit)
 
     ax.set_rasterized(True)
@@ -265,7 +283,7 @@ def plot_collage_O1(circuit, sample, output_path, mtypes=None, nb_jobs=-1):
             delayed(f)(
                 mtype
             )
-            for mtype in sorted(circuit.cells.mtypes)
+            for mtype in tqdm(sorted(circuit.cells.mtypes))
         ):
             pdf.savefig(fig, bbox_inches="tight", dpi=100)
             plt.close(fig)
@@ -407,7 +425,7 @@ def plot_collage(
             delayed(f)(
                 plane_id
             )
-            for plane_id in plane_ids
+            for plane_id in tqdm(plane_ids)
         ):
             pdf.savefig(fig, bbox_inches="tight", dpi=100)
             plt.close(fig)

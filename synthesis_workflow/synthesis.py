@@ -466,17 +466,17 @@ def add_scaling_rules_to_parameters(
             tmd_parameters[neurite_type]["hard_limits"] = defaultdict(dict)
         if "min" in limits:
             lim = limits["min"]
-            tmd_parameters[neurite_type]["hard_limits"]["min"]["layer"] = int(
-                lim.get("layer")[1:]
-            )
-            tmd_parameters[neurite_type]["hard_limits"]["min"]["fraction"] = lim.get(
-                "fraction", 0.0
-            )
+            min_layer = int(lim.get("layer")[1:])
+            min_fraction = lim.get("fraction", 0.0)
+            tmd_parameters[neurite_type]["hard_limits"]["min"]["layer"] = min_layer
+            tmd_parameters[neurite_type]["hard_limits"]["min"]["fraction"] = min_fraction
+            L.debug("Add min hard limit to {}: {} in {} layer".format(
+                neurite_type, min_layer, min_fraction))
         if "max" in limits:
             lim = limits["max"]
-            tmd_parameters[neurite_type]["hard_limits"]["max"]["layer"] = int(
-                lim.get("layer")[1:]
-            )
-            tmd_parameters[neurite_type]["hard_limits"]["max"]["fraction"] = lim.get(
-                "fraction", 1.0
-            )
+            max_layer = int(lim.get("layer")[1:])
+            max_fraction = lim.get("fraction", 1.0)
+            tmd_parameters[neurite_type]["hard_limits"]["max"]["layer"] = max_layer
+            tmd_parameters[neurite_type]["hard_limits"]["max"]["fraction"] = max_fraction
+            L.debug("Add max hard limit to {}: {} in {} layer".format(
+                neurite_type, max_layer, max_fraction))

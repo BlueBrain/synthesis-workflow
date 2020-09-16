@@ -3,16 +3,20 @@ from pathlib import Path
 import yaml
 
 import luigi
+import numpy as np
 import pandas as pd
+from voxcell import VoxelData
 
 from .synthesis_tasks import CreateAtlasPlanes
 from .synthesis_tasks import Synthesize
 from .synthesis_tasks import VacuumSynthesize
 from .synthesis_tasks import RescaleMorphologies
 from .synthesis_tasks import GetSynthetisedNeuriteLengths
+from .utils_tasks import BaseTask
 from .utils_tasks import BaseWrapperTask
 from .utils_tasks import circuitconfigs
 from .utils_tasks import load_circuit
+from .utils_tasks import logger as L
 from .utils_tasks import pathconfigs
 from .validation import convert_mvd3_to_morphs_df
 from .validation import plot_collage
@@ -116,6 +120,7 @@ class PlotDensityProfiles(luigi.Task):
     sample_distance = luigi.FloatParameter(default=10)
     sample = luigi.IntParameter(default=None)
     region = luigi.Parameter(default="O1")
+    nb_jobs = luigi.IntParameter(default=-1)
 
     def requires(self):
         """"""
@@ -131,7 +136,7 @@ class PlotDensityProfiles(luigi.Task):
         )
 
         plot_density_profiles(
-            circuit, self.sample, self.region, self.sample_distance, self.output().path
+            circuit, self.sample, self.region, self.sample_distance, self.output().path, self.nb_jobs
         )
 
     def output(self):
@@ -154,23 +159,32 @@ class PlotCollage(BaseWrapperTask):
 
     def requires(self):
         """"""
+        return ConvertMvd3()
+
+    def run(self):
+        """"""
         if self.mtypes[0] == "all":
-            self.mtypes = pd.read_csv(
+            mtypes = pd.read_csv(
                 pathconfigs().synth_morphs_df_path
             ).mtype.unique()
+        else:
+            mtypes = self.mtypes
 
-        tasks = []
-        for mtype in self.mtypes:
-            collage_path = (Path(self.collage_base_path) / mtype).with_suffix(".pdf")
-            tasks.append(
-                PlotSingleCollage(
-                    mtype=mtype,
-                    collage_path=collage_path,
-                    sample=self.sample,
-                    collage_type=self.collage_type,
-                )
+        if self.collage_type == "O1":
+            yield PlotSingleCollage(
+                collage_base_path=self.collage_base_path,
+                collage_type=self.collage_type,
+                sample=self.sample,
+                mtype=mtypes,
             )
-        return tasks
+        elif self.collage_type == "Isocortex":
+            for mtype in mtypes:
+                yield PlotSingleCollage(
+                    collage_base_path=self.collage_base_path,
+                    collage_type=self.collage_type,
+                    sample=self.sample,
+                    mtype=mtype,
+                )
 
 
 class PlotSingleCollage(luigi.Task):
@@ -181,31 +195,33 @@ class PlotSingleCollage(luigi.Task):
         sample (float): number of cells to use, if None, all available
     """
 
-    collage_path = luigi.Parameter(default="collage.pdf")
-    sample = luigi.IntParameter(default=20)
+    collage_base_path = luigi.Parameter(default="collages")
+    # collage_path = luigi.Parameter(default="collage.pdf")
     collage_type = luigi.Parameter(default="O1")
+    sample = luigi.IntParameter(default=20)
     mtype = luigi.Parameter()
 
     def requires(self):
         """"""
-        return {"synthesis": Synthesize(), "planes": CreateAtlasPlanes()}
+        return {"synthesis": Synthesize()}
 
     def run(self):
         """"""
+
+        L.debug("collage_path = {}".format(self.output().path))
 
         circuit = load_circuit(
             path_to_mvd3=self.input()["synthesis"].path,
             path_to_morphologies=pathconfigs().synth_output_path,
             path_to_atlas=circuitconfigs().atlas_path,
         )
-        import numpy as np
-        from voxcell import VoxelData
 
         if self.collage_type == "O1":
             plot_collage_O1(circuit, self.sample, self.output().path)
 
-        if self.collage_type == "Isocortex":
-            planes = np.load(self.input()["planes"].path)["planes"]
+        elif self.collage_type == "Isocortex":
+            planes_task = yield CreateAtlasPlanes()
+            planes = np.load(planes_task.path)["planes"]
             annotation_path = Path(circuitconfigs().atlas_path) / "layers.nrrd"
             layer_annotation = VoxelData.load_nrrd(annotation_path)
             plot_collage(
@@ -219,7 +235,11 @@ class PlotSingleCollage(luigi.Task):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.collage_path)
+        if self.collage_type == "O1":
+            collage_path = (Path(self.collage_base_path) / "collages").with_suffix(".pdf")
+        else:
+            collage_path = (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
+        return luigi.LocalTarget(collage_path)
 
 
 class ValidateSynthesis(luigi.WrapperTask):

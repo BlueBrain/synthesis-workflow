@@ -8,6 +8,8 @@ import pandas as pd
 
 
 logger = logging.getLogger("luigi-interface")
+warnings.filterwarnings("ignore", module="diameter_synthesis.build_diameters")
+warnings.filterwarnings("ignore", module="joblib")
 warnings.filterwarnings("ignore", module="luigi.parameter")
 warnings.filterwarnings("ignore", module="neurom.io")
 warnings.filterwarnings("ignore", module="neurom.features")
