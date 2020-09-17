@@ -27,7 +27,7 @@ from morph_validator.spatial import sample_morph_voxel_values
 from neurom import viewer
 
 from .circuit_slicing import get_cells_between_planes
-from .utils_tasks import ensure_dir
+from .tools import ensure_dir
 
 
 matplotlib.use("Agg")
@@ -207,7 +207,7 @@ def _plot_cells(circuit, mtype, sample, ax):
     if sample > max_sample:
         warnings.warn((
             "The sample value is set to '{}' for the type {} because there are no more "
-            "cells available of that type").format(max_sample, mtypes))
+            "cells available of that type").format(max_sample, mtype))
         sample = max_sample
     gids = circuit.cells.ids(group={"mtype": mtype}, sample=sample)
 

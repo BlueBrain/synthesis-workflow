@@ -17,10 +17,10 @@ from joblib import Parallel
 from morphio.mut import Morphology
 from tqdm import tqdm
 
-from .utils_tasks import diametrizerconfigs
-from .utils_tasks import get_morphs_df
-from .utils_tasks import logger as L
-from .utils_tasks import update_morphs_df
+from ..tools import get_morphs_df
+from ..tools import update_morphs_df
+from .config import diametrizerconfigs
+from .config import logger as L
 
 
 matplotlib.use("Agg")

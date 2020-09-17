@@ -1,28 +1,27 @@
 """Luigi tasks for validation of synthesis."""
 from pathlib import Path
-import yaml
 
 import luigi
 import numpy as np
 import pandas as pd
+import yaml
 from voxcell import VoxelData
 
-from .synthesis_tasks import CreateAtlasPlanes
-from .synthesis_tasks import Synthesize
-from .synthesis_tasks import VacuumSynthesize
-from .synthesis_tasks import RescaleMorphologies
-from .synthesis_tasks import GetSynthetisedNeuriteLengths
-from .utils_tasks import BaseTask
-from .utils_tasks import BaseWrapperTask
-from .utils_tasks import circuitconfigs
-from .utils_tasks import load_circuit
-from .utils_tasks import logger as L
-from .utils_tasks import pathconfigs
-from .validation import convert_mvd3_to_morphs_df
-from .validation import plot_collage
-from .validation import plot_collage_O1
-from .validation import plot_density_profiles
-from .validation import plot_morphometrics
+from ..tools import load_circuit
+from ..validation import convert_mvd3_to_morphs_df
+from ..validation import plot_collage
+from ..validation import plot_collage_O1
+from ..validation import plot_density_profiles
+from ..validation import plot_morphometrics
+from .circuit import CreateAtlasPlanes
+from .config import circuitconfigs
+from .config import logger as L
+from .config import pathconfigs
+from .synthesis import RescaleMorphologies
+from .synthesis import Synthesize
+from .utils import BaseWrapperTask
+from .vacuum_synthesis import GetSynthetisedNeuriteLengths
+from .vacuum_synthesis import VacuumSynthesize
 
 
 class ConvertMvd3(luigi.Task):
@@ -55,49 +54,44 @@ class PlotMorphometrics(luigi.Task):
     """Plot morphometric."""
 
     morphometrics_path = luigi.Parameter(default="morphometrics")
-
-    def requires(self):
-        """"""
-        return ConvertMvd3()
-
-    def run(self):
-        """"""
-        synth_morphs_df = pd.read_csv(self.input().path)
-        morphs_df = pd.read_csv(pathconfigs().morphs_df_path)
-        plot_morphometrics(morphs_df, synth_morphs_df, self.output().path)
-
-    def output(self):
-        """"""
-        return luigi.LocalTarget(self.morphometrics_path)
-
-
-class PlotVacuumMorphometrics(luigi.Task):
-    """Plot morphometric."""
-
-    morphometrics_path = luigi.Parameter(default="morphometrics")
-
-    def requires(self):
-        """"""
-        return {
-            "VacuumSynthesize": VacuumSynthesize(),
-            "RescaleMorphologies": RescaleMorphologies(),
-            "GetSynthetisedNeuriteLengths": GetSynthetisedNeuriteLengths(),
-        }
+    # percentile_length_path = luigi.Parameter(default=None)
+    bio_key = luigi.Parameter(default="morphology_path")
+    synth_key = luigi.Parameter(default="synth_morphology_path")
+    morph_type = luigi.Parameter(default="in_circuit")
 
     def run(self):
         """"""
-        synth_morphs_df = pd.read_csv(self.input()["VacuumSynthesize"].path)
-        morphs_df = pd.read_csv(self.input()["RescaleMorphologies"].path)
+        if self.morph_type == "in_vacuum":
+            synthesize_task = yield VacuumSynthesize()
+            synth_morphs_df = pd.read_csv(synthesize_task.path)
 
-        with open(self.input()["GetSynthetisedNeuriteLengths"].path) as f:
-            percentile_length = yaml.load(f, Loader=yaml.FullLoader)
+            rescalemorphologies_task = yield RescaleMorphologies()
+            morphs_df = pd.read_csv(rescalemorphologies_task.path)
+
+            lengths_task = yield GetSynthetisedNeuriteLengths()
+            percentile_length_path = lengths_task.path
+            if percentile_length_path is not None:
+                with open(percentile_length_path) as f:
+                    percentile_length = yaml.load(f, Loader=yaml.FullLoader)
+
+        elif self.morph_type == "in_circuit":
+            convertmvd3_task = yield ConvertMvd3()
+            synth_morphs_df = pd.read_csv(convertmvd3_task.path)
+
+            morphs_df = pd.read_csv(pathconfigs().morphs_df_path)
+
+            percentile_length = None
+
+        else:
+            raise ValueError(
+                "The 'morph_type' argument must be in ['in_circuit', 'in_vacuum']")
 
         plot_morphometrics(
             morphs_df,
             synth_morphs_df,
             self.output().path,
-            bio_key="rescaled_morphology_path",
-            synth_key="vacuum_morphology_path",
+            bio_key=self.bio_key,
+            synth_key=self.synth_key,
             vbars=percentile_length,
         )
 
@@ -245,14 +239,3 @@ class PlotSingleCollage(luigi.Task):
         else:
             collage_path = (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
         return luigi.LocalTarget(collage_path)
-
-
-class ValidateSynthesis(luigi.WrapperTask):
-    """Main class to validate synthesis."""
-
-    def requires(self):
-        """"""
-        tasks = [PlotMorphometrics(), PlotDensityProfiles(), PlotCollage()]
-        # tasks = [PlotMorphometrics(), PlotDensityProfiles()]
-        # tasks = [PlotCollage()]
-        return tasks
