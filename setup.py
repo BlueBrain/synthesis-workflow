@@ -15,6 +15,14 @@ with open("README.rst", encoding="utf-8") as f:
 with open("requirements.pip") as f:
     reqs = f.read().splitlines()
 
+# Read the doc requirements
+with open("requirements-doc.pip") as f:
+    doc_reqs = f.read().splitlines()
+
+# Read the test requirements
+with open("requirements-test.pip") as f:
+    test_reqs = f.read().splitlines()
+
 setup(
     name="synthesis-workflow",
     author="bbp-ou-cell",
@@ -30,8 +38,8 @@ setup(
     python_requires=">=3.6",
     setup_requires=["setuptools_scm"],
     extras_require={
-        "docs": ["sphinx", "sphinx-bluebrain-theme"],
-        "test": ["pytest"]
+        "docs": doc_reqs,
+        "test": test_reqs
     },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
