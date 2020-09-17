@@ -338,7 +338,7 @@ def plot_vacuum_morphologies(
 def get_target_length(soma_layer, target_layer, cortical_thicknesses):
     """Compute the target length of a neurite from soma and target layer."""
     cortical_depths = np.insert(np.cumsum(cortical_thicknesses), 0, 0.0)
-    soma_depth = np.mean(cortical_depths[soma_layer - 1 : soma_layer + 1])
+    soma_depth = np.mean(cortical_depths[soma_layer - 1: soma_layer + 1])
     target_depth = cortical_depths[target_layer - 1]
     return soma_depth - target_depth
 

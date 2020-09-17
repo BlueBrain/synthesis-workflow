@@ -135,7 +135,7 @@ def log_parameters(task):
     for name in task.get_param_names():
         try:
             logger.debug("Atribute: {} == {}".format(name, getattr(task, name)))
-        except:
+        except Exception:
             logger.debug("Can't print '{}' attribute for unknown reason".format(name))
 
 

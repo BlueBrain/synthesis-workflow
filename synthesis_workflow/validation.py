@@ -165,7 +165,7 @@ def _plot_density_profile(
         plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
         sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
         ax.legend(loc="best")
-    except:
+    except Exception:
         ax.text(
             0.5, 0.5, 'ERROR WHEN GETTING POINT DEPTHS', horizontalalignment='center',
             verticalalignment='center', transform=ax.transAxes)
@@ -205,8 +205,8 @@ def _plot_cells(circuit, mtype, sample, ax):
     """Plot cells for collage."""
     max_sample = (circuit.cells.get(properties="mtype") == mtype).sum()
     if sample > max_sample:
-        warnings.warn(
-            ("The sample value is set to '{}' for the type {} because there are no more "
+        warnings.warn((
+            "The sample value is set to '{}' for the type {} because there are no more "
             "cells available of that type").format(max_sample, mtypes))
         sample = max_sample
     gids = circuit.cells.ids(group={"mtype": mtype}, sample=sample)
@@ -226,11 +226,11 @@ def _plot_collage_O1(
     ax = plt.gca()
     try:
         _plot_layers(x_pos, circuit.atlas, ax)
-    except:
+    except Exception:
         warnings.warn("Unable to plot the layers for the type '{}'".format(mtype))
     try:
         _plot_cells(circuit, mtype, sample, ax)
-    except:
+    except Exception:
         warnings.warn("Unable to plot the cells for the type '{}'".format(mtype))
     plt.axis(ax_limit)
 

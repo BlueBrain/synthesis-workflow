@@ -136,7 +136,12 @@ class PlotDensityProfiles(luigi.Task):
         )
 
         plot_density_profiles(
-            circuit, self.sample, self.region, self.sample_distance, self.output().path, self.nb_jobs
+            circuit,
+            self.sample,
+            self.region,
+            self.sample_distance,
+            self.output().path,
+            self.nb_jobs
         )
 
     def output(self):

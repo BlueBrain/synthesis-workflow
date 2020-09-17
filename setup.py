@@ -27,7 +27,7 @@ setup(
     name="synthesis-workflow",
     author="bbp-ou-cell",
     author_email="bbp-ou-cell@groupes.epfl.ch",
-    use_scm_version=True,
+    use_scm_version={"write_to": "synthesis_workflow/version.py"},
     description="Workflow used for synthesis and its validation.",
     long_description=README,
     long_description_content_type="text/x-rst",
