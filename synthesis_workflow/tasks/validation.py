@@ -84,7 +84,8 @@ class PlotMorphometrics(luigi.Task):
 
         else:
             raise ValueError(
-                "The 'morph_type' argument must be in ['in_circuit', 'in_vacuum']")
+                "The 'morph_type' argument must be in ['in_circuit', 'in_vacuum']"
+            )
 
         plot_morphometrics(
             morphs_df,
@@ -135,7 +136,7 @@ class PlotDensityProfiles(luigi.Task):
             self.region,
             self.sample_distance,
             self.output().path,
-            self.nb_jobs
+            self.nb_jobs,
         )
 
     def output(self):
@@ -162,10 +163,8 @@ class PlotCollage(BaseWrapperTask):
 
     def run(self):
         """"""
-        if self.mtypes[0] == "all":
-            mtypes = pd.read_csv(
-                pathconfigs().synth_morphs_df_path
-            ).mtype.unique()
+        if self.mtypes[0] == "all":  # pylint: disable=unsubscriptable-object
+            mtypes = pd.read_csv(pathconfigs().synth_morphs_df_path).mtype.unique()
         else:
             mtypes = self.mtypes
 
@@ -207,7 +206,7 @@ class PlotSingleCollage(luigi.Task):
     def run(self):
         """"""
 
-        L.debug("collage_path = {}".format(self.output().path))
+        L.debug("collage_path = %s", self.output().path)
 
         circuit = load_circuit(
             path_to_mvd3=self.input()["synthesis"].path,
@@ -235,7 +234,11 @@ class PlotSingleCollage(luigi.Task):
     def output(self):
         """"""
         if self.collage_type == "O1":
-            collage_path = (Path(self.collage_base_path) / "collages").with_suffix(".pdf")
+            collage_path = (Path(self.collage_base_path) / "collages").with_suffix(
+                ".pdf"
+            )
         else:
-            collage_path = (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
+            collage_path = (Path(self.collage_base_path) / self.mtype).with_suffix(
+                ".pdf"
+            )
         return luigi.LocalTarget(collage_path)

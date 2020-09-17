@@ -1,5 +1,8 @@
+[MASTER]
+ignore=version.py
+
 [MESSAGES CONTROL]
-disable=bad-continuation,fixme,invalid-name,len-as-condition,no-else-return
+disable=bad-continuation,fixme,invalid-name,len-as-condition,no-else-return,empty-docstring
 
 [FORMAT]
 # Maximum number of characters on a single line.
@@ -48,3 +51,9 @@ ignore-docstrings=yes
 ignored-classes=numpy,list
 
 extension-pkg-whitelist=numpy,lxml
+
+# List of module names for which member attributes should not be checked
+# (useful for modules/projects where namespaces are manipulated during runtime
+# and thus existing member attributes cannot be deduced by static analysis. It
+# supports qualified module names, as well as Unix pattern matching.
+ignored-modules=atlas_analysis,atlas_analysis.constants

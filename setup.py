@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import imp
 import sys
 
 from setuptools import setup, find_packages
@@ -23,11 +24,13 @@ with open("requirements-doc.pip") as f:
 with open("requirements-test.pip") as f:
     test_reqs = f.read().splitlines()
 
+VERSION = imp.load_source("", "synthesis_workflow/version.py").__version__
+
 setup(
     name="synthesis-workflow",
     author="bbp-ou-cell",
     author_email="bbp-ou-cell@groupes.epfl.ch",
-    use_scm_version={"write_to": "synthesis_workflow/version.py"},
+    version=VERSION,
     description="Workflow used for synthesis and its validation.",
     long_description=README,
     long_description_content_type="text/x-rst",
@@ -37,10 +40,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.6",
     setup_requires=["setuptools_scm"],
-    extras_require={
-        "docs": doc_reqs,
-        "test": test_reqs
-    },
+    extras_require={"docs": doc_reqs, "test": test_reqs},
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Education",

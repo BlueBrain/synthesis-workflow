@@ -12,11 +12,7 @@ class ValidateSynthesis(luigi.WrapperTask):
 
     def requires(self):
         """"""
-        tasks = [
-            PlotMorphometrics(),
-            PlotDensityProfiles(),
-            PlotCollage()
-        ]
+        tasks = [PlotMorphometrics(), PlotDensityProfiles(), PlotCollage()]
         return tasks
 
 
@@ -29,7 +25,7 @@ class ValidateVacuumSynthesis(luigi.WrapperTask):
             PlotMorphometrics(
                 bio_key="rescaled_morphology_path",
                 synth_key="vacuum_morphology_path",
-                morph_type="in_vacuum"
+                morph_type="in_vacuum",
             ),
             PlotVacuumMorphologies(),
             # PlotDensityProfiles(),

@@ -96,7 +96,7 @@ def build_distributions(
     diameter_model_function,
     morphology_path,
     cortical_thickness,
-    nb_jobs=-1
+    nb_jobs=-1,
 ):
     """Build tmd_distribution dictionary for synthesis.
 
@@ -123,10 +123,7 @@ def build_distributions(
         "metadata": {"cortical_thickness": json.loads(cortical_thickness)},
     }
     for mtype, distribution in Parallel(nb_jobs)(
-        delayed(build_distributions_single_mtype)(
-            mtype
-        )
-        for mtype in tqdm(mtypes)
+        delayed(build_distributions_single_mtype)(mtype) for mtype in tqdm(mtypes)
     ):
         tmd_distributions["mtypes"][mtype] = distribution
     return tmd_distributions
@@ -197,17 +194,21 @@ def run_placement_algorithm(args, nb_jobs=-1):
     """
     sys.argv[1:] = _convert_arglist(args)
     master = Master()
-    run_master(master, master.parse_args(), None, nb_jobs)
+    # TODO: set nb_jobs when https://bbpcode.epfl.ch/code/#/c/50439/ is merged
+    _ = nb_jobs  # and remove this
+    run_master(master, master.parse_args(), None)
 
 
 def get_mean_neurite_lengths(
     morphs_df,
     neurite_type="apical",
-    mtypes=["all"],
+    mtypes=None,
     morphology_path="morphology_path",
     percentile=None,
 ):
     """Extract the mean radial neurite lengths of a population, by mtypes."""
+    if mtypes is None:
+        mtypes = ["all"]
     if mtypes[0] != "all":
         morphs_df = morphs_df[morphs_df.mtype.isin(mtypes)]
 
@@ -225,9 +226,7 @@ def get_mean_neurite_lengths(
         neuron = Morphology(morphs_df.loc[gid, morphology_path])
         for neurite in neuron.root_sections:
             if neurite.type == STR_TO_TYPES[neurite_type]:
-                apical_lengths[morphs_df.loc[gid, "mtype"]].append(
-                    get_max_len(neurite)
-                )
+                apical_lengths[morphs_df.loc[gid, "mtype"]].append(get_max_len(neurite))
 
     return {mtype: float(f(lengths)) for mtype, lengths in apical_lengths.items()}
 
@@ -235,7 +234,7 @@ def get_mean_neurite_lengths(
 def get_target_length(soma_layer, target_layer, cortical_thicknesses):
     """Compute the target length of a neurite from soma and target layer."""
     cortical_depths = np.insert(np.cumsum(cortical_thicknesses), 0, 0.0)
-    soma_depth = np.mean(cortical_depths[soma_layer - 1: soma_layer + 1])
+    soma_depth = np.mean(cortical_depths[soma_layer - 1 : soma_layer + 1])
     target_depth = cortical_depths[target_layer - 1]
     return soma_depth - target_depth
 
@@ -337,6 +336,8 @@ def rescale_morphologies(
 def add_scaling_rules_to_parameters(
     tmd_parameters, mean_lengths, scaling_rules, hard_limits
 ):
+    """Add the scaling rules to TMD parameters"""
+
     def _get_target_layer(target_layer_str):
         if re.match("^L", target_layer_str):
             position = 0.5
@@ -366,14 +367,26 @@ def add_scaling_rules_to_parameters(
             min_layer = int(lim.get("layer")[1:])
             min_fraction = lim.get("fraction", 0.0)
             tmd_parameters[neurite_type]["hard_limits"]["min"]["layer"] = min_layer
-            tmd_parameters[neurite_type]["hard_limits"]["min"]["fraction"] = min_fraction
-            L.debug("Add min hard limit to {}: {} in {} layer".format(
-                neurite_type, min_layer, min_fraction))
+            tmd_parameters[neurite_type]["hard_limits"]["min"][
+                "fraction"
+            ] = min_fraction
+            L.debug(
+                "Add min hard limit to %s: %i in %f layer",
+                neurite_type,
+                min_layer,
+                min_fraction,
+            )
         if "max" in limits:
             lim = limits["max"]
             max_layer = int(lim.get("layer")[1:])
             max_fraction = lim.get("fraction", 1.0)
             tmd_parameters[neurite_type]["hard_limits"]["max"]["layer"] = max_layer
-            tmd_parameters[neurite_type]["hard_limits"]["max"]["fraction"] = max_fraction
-            L.debug("Add max hard limit to {}: {} in {} layer".format(
-                neurite_type, max_layer, max_fraction))
+            tmd_parameters[neurite_type]["hard_limits"]["max"][
+                "fraction"
+            ] = max_fraction
+            L.debug(
+                "Add max hard limit to %s: %i in %f layer",
+                neurite_type,
+                max_layer,
+                max_fraction,
+            )

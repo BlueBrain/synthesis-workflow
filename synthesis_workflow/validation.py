@@ -21,7 +21,8 @@ from voxcell import CellCollection
 from atlas_analysis.constants import CANONICAL
 from atlas_analysis.planes.maths import Plane
 from morph_validator.feature_configs import get_feature_configs
-from morph_validator.plotting import get_features_df, plot_violin_features
+from morph_validator.plotting import get_features_df
+from morph_validator.plotting import plot_violin_features
 from morph_validator.spatial import relative_depth_volume
 from morph_validator.spatial import sample_morph_voxel_values
 from neurom import viewer
@@ -99,7 +100,8 @@ def plot_morphometrics(
 
     all_features_df = pd.concat([bio_features_df, synth_features_df])
     ensure_dir(output_path)
-    plot_violin_features(
+    # TODO: remove pylint disabling when https://bbpcode.epfl.ch/code/#/c/50439/ is merged
+    plot_violin_features(  # pylint: disable=unexpected-keyword-arg
         all_features_df,
         ["basal_dendrite", "apical_dendrite"],
         output_dir=Path(output_path),
@@ -165,15 +167,22 @@ def _plot_density_profile(
         plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
         sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
         ax.legend(loc="best")
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         ax.text(
-            0.5, 0.5, 'ERROR WHEN GETTING POINT DEPTHS', horizontalalignment='center',
-            verticalalignment='center', transform=ax.transAxes)
+            0.5,
+            0.5,
+            "ERROR WHEN GETTING POINT DEPTHS",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=ax.transAxes,
+        )
     fig.suptitle(mtype)
     return fig
 
 
-def plot_density_profiles(circuit, sample, region, sample_distance, output_path, nb_jobs=-1):
+def plot_density_profiles(
+    circuit, sample, region, sample_distance, output_path, nb_jobs=-1
+):
     """Plot density profiles for all mtypes.
 
     WIP function, waiting on complete atlas to update.
@@ -192,10 +201,7 @@ def plot_density_profiles(circuit, sample, region, sample_distance, output_path,
             sample_distance=sample_distance,
         )
         for fig in Parallel(nb_jobs)(
-            delayed(f)(
-                mtype
-            )
-            for mtype in tqdm(sorted(circuit.cells.mtypes))
+            delayed(f)(mtype) for mtype in tqdm(sorted(circuit.cells.mtypes))
         ):
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
@@ -205,16 +211,22 @@ def _plot_cells(circuit, mtype, sample, ax):
     """Plot cells for collage."""
     max_sample = (circuit.cells.get(properties="mtype") == mtype).sum()
     if sample > max_sample:
-        warnings.warn((
-            "The sample value is set to '{}' for the type {} because there are no more "
-            "cells available of that type").format(max_sample, mtype))
+        warnings.warn(
+            (
+                "The sample value is set to '{}' for the type {} because there are no more "
+                "cells available of that type"
+            ).format(max_sample, mtype)
+        )
         sample = max_sample
     gids = circuit.cells.ids(group={"mtype": mtype}, sample=sample)
 
     for gid in gids:
         morphology = circuit.morph.get(gid, transform=True, source="ascii")
         viewer.plot_neuron(
-            ax, morphology, plane="zy", realistic_diameters=True,
+            ax,
+            morphology,
+            plane="zy",
+            realistic_diameters=True,
         )
 
 
@@ -226,11 +238,11 @@ def _plot_collage_O1(
     ax = plt.gca()
     try:
         _plot_layers(x_pos, circuit.atlas, ax)
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         warnings.warn("Unable to plot the layers for the type '{}'".format(mtype))
     try:
         _plot_cells(circuit, mtype, sample, ax)
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         warnings.warn("Unable to plot the cells for the type '{}'".format(mtype))
     plt.axis(ax_limit)
 
@@ -280,17 +292,16 @@ def plot_collage_O1(circuit, sample, output_path, mtypes=None, nb_jobs=-1):
             sample=sample,
         )
         for fig in Parallel(nb_jobs)(
-            delayed(f)(
-                mtype
-            )
-            for mtype in tqdm(sorted(circuit.cells.mtypes))
+            delayed(f)(mtype) for mtype in tqdm(sorted(circuit.cells.mtypes))
         ):
             pdf.savefig(fig, bbox_inches="tight", dpi=100)
             plt.close(fig)
 
 
-def get_aligned_basis(plane, target=[0, 0, 1]):
+def get_aligned_basis(plane, target=None):
     """Get basis vectors best aligned to target direction."""
+    if target is None:
+        target = [0, 0, 1]
     plane_cls = Plane.from_quaternion(plane[:3], plane[3:])
     plane_basis = plane_cls.get_basis()
 
@@ -325,9 +336,11 @@ def get_layer_info(
     plane,
     plane_basis,
     n_pixels=512,
-    limits=[-5000, 8000, -9000, 2000],
+    limits=None,
 ):
     """Get information to plot layers on a plane."""
+    if limits is None:
+        limits = [-5000, 8000, -9000, 2000]
     xs_plane = np.linspace(limits[0], limits[1], n_pixels)
     ys_plane = np.linspace(limits[2], limits[3], n_pixels)
 
@@ -368,7 +381,10 @@ def plot_cells(
     for gid in gids[:sample]:
         morphology = circuit.morph.get(gid, transform=True, source="ascii")
         viewer.plot_neuron(
-            ax, morphology, plane="zx", realistic_diameters=True,
+            ax,
+            morphology,
+            plane="zx",
+            realistic_diameters=True,
         )
 
 
@@ -379,7 +395,7 @@ def _plot_collage(
     left_plane = planes[2 * plane_id]
     right_plane = planes[2 * plane_id + 1]
 
-    plane_basis, rotation = get_aligned_basis(left_plane)
+    plane_basis, _ = get_aligned_basis(left_plane)
     X, Y, layers = get_layer_info(layer_annotation, left_plane, plane_basis)
 
     fig = plt.figure()
@@ -406,7 +422,13 @@ def _plot_collage(
 
 
 def plot_collage(
-    circuit, planes, layer_annotation, mtype, output_path="collage.pdf", sample=10, nb_jobs=-1
+    circuit,
+    planes,
+    layer_annotation,
+    mtype,
+    output_path="collage.pdf",
+    sample=10,
+    nb_jobs=-1,
 ):
     """Plot collage of an mtyp and a list of planes."""
     plane_ids = np.arange(int(len(planes) / 2) - 1)
@@ -422,10 +444,7 @@ def plot_collage(
             sample=sample,
         )
         for fig in Parallel(nb_jobs)(
-            delayed(f)(
-                plane_id
-            )
-            for plane_id in tqdm(plane_ids)
+            delayed(f)(plane_id) for plane_id in tqdm(plane_ids)
         ):
             pdf.savefig(fig, bbox_inches="tight", dpi=100)
             plt.close(fig)

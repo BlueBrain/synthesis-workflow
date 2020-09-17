@@ -8,6 +8,3 @@ doc/build
 build
 dist
 .eggs
-
-# The version.py file is automatically generated
-synthesis_workflow/version.py

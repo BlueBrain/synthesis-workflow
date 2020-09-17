@@ -30,7 +30,10 @@ def ensure_dir(file_path):
 
 
 def get_morphs_df(
-    morphs_df_path, to_use_flag="all", morphology_path="morphology_path", h5_path=None,
+    morphs_df_path,
+    to_use_flag="all",
+    morphology_path="morphology_path",
+    h5_path=None,
 ):
     """Get valid morphs_df for diametrizer (select using flag + remove duplicates)."""
     morphs_df = pd.read_csv(morphs_df_path)

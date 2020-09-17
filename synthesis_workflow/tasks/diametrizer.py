@@ -3,7 +3,6 @@ import os
 import sys
 import traceback
 from functools import partial
-from neurom import load_neurons
 from pathlib import Path
 
 import luigi
@@ -15,6 +14,7 @@ from diameter_synthesis.plotting import plot_distribution_fit
 from joblib import delayed
 from joblib import Parallel
 from morphio.mut import Morphology
+from neurom import load_neurons
 from tqdm import tqdm
 
 from ..tools import get_morphs_df
@@ -91,10 +91,7 @@ class BuildDiameterModels(luigi.Task):
                 morphology_path=self.morphology_path,
             )
             for mtype, (params, data) in Parallel(self.nb_jobs)(
-                delayed(build_model)(
-                    mtype
-                )
-                for mtype in tqdm(mtypes)
+                delayed(build_model)(mtype) for mtype in tqdm(mtypes)
             ):
                 models_params[mtype] = params
                 models_data[mtype] = data
@@ -185,11 +182,8 @@ class Diametrize(luigi.Task):
         )
 
         exception_count = 0
-        for gid, new_path, exception in Parallel(self.nb_jobs)(
-            delayed(diametrizer)(
-                gid
-            )
-            for gid in tqdm(morphs_df.index)
+        for gid, new_path, exception in Parallel(-1)(
+            delayed(diametrizer)(gid) for gid in tqdm(morphs_df.index)
         ):
             morphs_df.loc[gid, self.new_morphology_path] = new_path
             morphs_df.loc[gid, "exception"] = exception

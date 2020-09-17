@@ -88,10 +88,10 @@ class GetSynthetisedNeuriteLengths(BaseTask):
                 morphology_path=self.morphology_path,
                 percentile=self.percentile,
             )
-            for neurite_type in self.neurite_types
+            for neurite_type in self.neurite_types  # pylint: disable=not-an-iterable
         }
 
-        L.info("Lengths: {}".format(mean_lengths))
+        L.info("Lengths: %s", mean_lengths)
 
         with self.output().open("w") as f:
             yaml.dump(mean_lengths, f)

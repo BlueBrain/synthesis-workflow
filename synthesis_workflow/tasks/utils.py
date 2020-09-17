@@ -12,21 +12,28 @@ from .config import synthesisconfigs
 
 @luigi.Task.event_handler(luigi.Event.START)
 def log_parameters(task):
+    """Hook to log actual parameter values considering their global processing"""
     class_name = task.__class__.__name__
-    L.debug("Attributes of {} class after global processing:".format(class_name))
+    L.debug("Attributes of %s class after global processing:", class_name)
     for name in task.get_param_names():
         try:
-            L.debug("Atribute: {} == {}".format(name, getattr(task, name)))
-        except Exception:
-            L.debug("Can't print '{}' attribute for unknown reason".format(name))
+            L.debug("Atribute: %s == %s", name, getattr(task, name))
+        except Exception:  # pylint: disable=broad-except
+            L.debug("Can't print '%s' attribute for unknown reason", name)
 
 
 class BaseTask(luigi.Task):
     """Base class used to add customisable global parameters"""
-    _global_configs = [diametrizerconfigs, synthesisconfigs, circuitconfigs, pathconfigs]
+
+    _global_configs = [
+        diametrizerconfigs,
+        synthesisconfigs,
+        circuitconfigs,
+        pathconfigs,
+    ]
 
     def __getattribute__(self, name):
-        tmp = super(BaseTask, self).__getattribute__(name)
+        tmp = super().__getattribute__(name)
         if tmp is not None:
             return tmp
         for conf in self._global_configs:
@@ -42,8 +49,8 @@ class BaseTask(luigi.Task):
                 "value will be taken frow now on"
             ).format(name, self.__class__.__name__)
             warnings.warn(msg)
-        return super(BaseTask, self).__setattr__(name, value)
+        return super().__setattr__(name, value)
 
 
 class BaseWrapperTask(BaseTask, luigi.WrapperTask):
-    pass
+    """Base wrapper class with global parameters"""

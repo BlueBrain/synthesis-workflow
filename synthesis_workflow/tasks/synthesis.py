@@ -253,7 +253,6 @@ class GetMeanNeuriteLengths(BaseTask):
 
     def run(self):
         """"""
-
         morphs_df = pd.read_csv(self.input().path)
         mean_lengths = {
             neurite_type: get_mean_neurite_lengths(
@@ -262,7 +261,7 @@ class GetMeanNeuriteLengths(BaseTask):
                 mtypes=self.mtypes,
                 morphology_path=self.morphology_path,
             )
-            for neurite_type in self.neurite_types
+            for neurite_type in self.neurite_types  # pylint: disable=not-an-iterable
         }
 
         with self.output().open("w") as f:
