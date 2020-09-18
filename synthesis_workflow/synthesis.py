@@ -22,6 +22,7 @@ from neuroc.scale import ScaleParameters
 from neurom.core.dataformat import COLS
 from placement_algorithm.app.mpi_app import run_master
 from placement_algorithm.app.synthesize_morphologies import Master
+from placement_algorithm.logger import LOGGER
 from tns import extract_input
 from voxcell import CellCollection
 
@@ -158,7 +159,8 @@ def create_axon_morphologies_tsv(
         str: path to base directory of morphologies for axon grafting
     """
     morphs_df = pd.read_csv(morphs_df_path)
-    cells_df = CellCollection.load_mvd3(circuit_path).as_dataframe()
+    cells = CellCollection.load_mvd3(circuit_path)
+    cells_df = cells.as_dataframe()
     axon_morphs_base_dir = None
     axon_morphs = pd.DataFrame()
     for gid in cells_df.index:
@@ -194,8 +196,17 @@ def run_placement_algorithm(args, nb_jobs=-1):
     """
     sys.argv[1:] = _convert_arglist(args)
     master = Master()
+
     # TODO: set nb_jobs when https://bbpcode.epfl.ch/code/#/c/50439/ is merged
     _ = nb_jobs  # and remove this
+
+    # Setup logger for placementAlgorithm
+    logger = logging.getLogger("luigi-interface")
+    if not LOGGER.handlers:
+        LOGGER.handlers = logger.handlers
+        LOGGER.setLevel(logger.level)
+
+    # Run
     run_master(master, master.parse_args(), None)
 
 
@@ -349,7 +360,8 @@ def add_scaling_rules_to_parameters(
     for neurite_type in mean_lengths:
         for mtype, mean_length in mean_lengths[neurite_type].items():
             if (
-                scaling_rules[mtype] is not None
+                mtype in scaling_rules
+                and scaling_rules[mtype] is not None
                 and neurite_type in scaling_rules[mtype]
             ):
                 tmd_parameters[mtype][neurite_type]["expected_max_length"] = mean_length

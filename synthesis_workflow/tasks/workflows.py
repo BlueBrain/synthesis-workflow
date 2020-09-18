@@ -28,7 +28,6 @@ class ValidateVacuumSynthesis(luigi.WrapperTask):
                 morph_type="in_vacuum",
             ),
             PlotVacuumMorphologies(),
-            # PlotDensityProfiles(),
-            # PlotCollage()
+            PlotDensityProfiles(),
         ]
         return tasks

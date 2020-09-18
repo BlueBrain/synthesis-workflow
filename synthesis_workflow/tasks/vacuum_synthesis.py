@@ -15,6 +15,7 @@ from .config import logger as L
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import BuildSynthesisParameters
 from .synthesis import GetMeanNeuriteLengths
+from .synthesis import RescaleMorphologies
 from .utils import BaseTask
 
 
@@ -28,6 +29,8 @@ class VacuumSynthesize(BaseTask):
     vacuum_synth_morphology_path = luigi.Parameter(default="vacuum_synth_morphologies")
     vacuum_synth_morphs_df_path = luigi.Parameter(default="vacuum_synth_morphs_df.csv")
     n_cells = luigi.IntParameter(default=10)
+    nb_jobs = luigi.IntParameter(default=-1)
+    joblib_verbose = luigi.IntParameter(default=10)
 
     def requires(self):
         """"""
@@ -55,6 +58,8 @@ class VacuumSynthesize(BaseTask):
             tmd_parameters,
             tmd_distributions,
             morphology_base_path,
+            joblib_verbose=self.joblib_verbose,
+            nb_jobs=self.nb_jobs,
         )
         vacuum_synth_morphs_df.to_csv(self.output().path, index=False)
 
@@ -78,7 +83,6 @@ class GetSynthetisedNeuriteLengths(BaseTask):
 
     def run(self):
         """"""
-
         synth_morphs_df = pd.read_csv(self.input().path)
         mean_lengths = {
             neurite_type: get_mean_neurite_lengths(
@@ -109,7 +113,11 @@ class PlotVacuumMorphologies(BaseTask):
 
     def requires(self):
         """"""
-        return {"vacuum": VacuumSynthesize(), "mean_lengths": GetMeanNeuriteLengths()}
+        return {
+            "vacuum": VacuumSynthesize(),
+            "mean_lengths": GetMeanNeuriteLengths(),
+            "rescaled": RescaleMorphologies(),
+        }
 
     def run(self):
         """"""
@@ -120,6 +128,14 @@ class PlotVacuumMorphologies(BaseTask):
             vacuum_synth_morphs_df,
             self.output().path,
             self.morphology_path,
+            mean_lengths,
+        )
+
+        rescaled_morphs_df = pd.read_csv(self.input()["rescaled"].path)
+        plot_vacuum_morphologies(
+            rescaled_morphs_df,
+            "figures/rescaled.pdf",
+            "rescaled_morphology_path",
             mean_lengths,
         )
 

@@ -1,6 +1,4 @@
 """utils functions for luigi tasks."""
-import warnings
-
 import luigi
 
 from .config import circuitconfigs
@@ -44,11 +42,12 @@ class BaseTask(luigi.Task):
 
     def __setattr__(self, name, value):
         if value is None and name in self.get_param_names():
-            msg = (
-                "The Parameter '{}' of the task '{}' is set to None, thus the global "
-                "value will be taken frow now on"
-            ).format(name, self.__class__.__name__)
-            warnings.warn(msg)
+            L.warning(
+                "The Parameter '%s' of the task '%s' is set to None, thus the global "
+                "value will be taken frow now on",
+                name,
+                self.__class__.__name__,
+            )
         return super().__setattr__(name, value)
 
 

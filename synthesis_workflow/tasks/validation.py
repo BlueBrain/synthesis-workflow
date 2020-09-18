@@ -4,7 +4,6 @@ from pathlib import Path
 import luigi
 import numpy as np
 import pandas as pd
-import yaml
 from voxcell import VoxelData
 
 from ..tools import load_circuit
@@ -20,7 +19,6 @@ from .config import pathconfigs
 from .synthesis import RescaleMorphologies
 from .synthesis import Synthesize
 from .utils import BaseWrapperTask
-from .vacuum_synthesis import GetSynthetisedNeuriteLengths
 from .vacuum_synthesis import VacuumSynthesize
 
 
@@ -68,19 +66,11 @@ class PlotMorphometrics(luigi.Task):
             rescalemorphologies_task = yield RescaleMorphologies()
             morphs_df = pd.read_csv(rescalemorphologies_task.path)
 
-            lengths_task = yield GetSynthetisedNeuriteLengths()
-            percentile_length_path = lengths_task.path
-            if percentile_length_path is not None:
-                with open(percentile_length_path) as f:
-                    percentile_length = yaml.load(f, Loader=yaml.FullLoader)
-
         elif self.morph_type == "in_circuit":
             convertmvd3_task = yield ConvertMvd3()
             synth_morphs_df = pd.read_csv(convertmvd3_task.path)
 
             morphs_df = pd.read_csv(pathconfigs().morphs_df_path)
-
-            percentile_length = None
 
         else:
             raise ValueError(
@@ -93,7 +83,6 @@ class PlotMorphometrics(luigi.Task):
             self.output().path,
             bio_key=self.bio_key,
             synth_key=self.synth_key,
-            vbars=percentile_length,
         )
 
     def output(self):

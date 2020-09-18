@@ -1,6 +1,6 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
+import logging
 import os
-import warnings
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
@@ -31,6 +31,7 @@ from .circuit_slicing import get_cells_between_planes
 from .tools import ensure_dir
 
 
+L = logging.getLogger(__name__)
 matplotlib.use("Agg")
 
 
@@ -68,7 +69,6 @@ def plot_morphometrics(
     bio_key="morphology_path",
     synth_key="synth_morphology_path",
     normalize=False,
-    vbars=None,
 ):
     """Plot morphometrics.
 
@@ -79,7 +79,6 @@ def plot_morphometrics(
         bio_key (str): column name in the DF
         synth_key (str): column name in the DF
         normalize (bool): normalize data if set to True
-        vbars (float or List[float]): plot vertical bars at given values
     """
     config_features = get_feature_configs(config_types="synthesis")
     config_features["neurite"] = {"y_distances": ["min", "max"]}
@@ -100,14 +99,12 @@ def plot_morphometrics(
 
     all_features_df = pd.concat([bio_features_df, synth_features_df])
     ensure_dir(output_path)
-    # TODO: remove pylint disabling when https://bbpcode.epfl.ch/code/#/c/50439/ is merged
-    plot_violin_features(  # pylint: disable=unexpected-keyword-arg
+    plot_violin_features(
         all_features_df,
         ["basal_dendrite", "apical_dendrite"],
         output_dir=Path(output_path),
         bw=0.1,
         normalize=normalize,
-        vbars=vbars,
     )
 
 
@@ -211,11 +208,11 @@ def _plot_cells(circuit, mtype, sample, ax):
     """Plot cells for collage."""
     max_sample = (circuit.cells.get(properties="mtype") == mtype).sum()
     if sample > max_sample:
-        warnings.warn(
-            (
-                "The sample value is set to '{}' for the type {} because there are no more "
-                "cells available of that type"
-            ).format(max_sample, mtype)
+        L.warning(
+            "The sample value is set to '%s' for the type %s because there are no more "
+            "cells available of that type",
+            max_sample,
+            mtype,
         )
         sample = max_sample
     gids = circuit.cells.ids(group={"mtype": mtype}, sample=sample)
@@ -239,11 +236,11 @@ def _plot_collage_O1(
     try:
         _plot_layers(x_pos, circuit.atlas, ax)
     except Exception:  # pylint: disable=broad-except
-        warnings.warn("Unable to plot the layers for the type '{}'".format(mtype))
+        L.error("Unable to plot the layers for the type '%s'", mtype)
     try:
         _plot_cells(circuit, mtype, sample, ax)
     except Exception:  # pylint: disable=broad-except
-        warnings.warn("Unable to plot the cells for the type '{}'".format(mtype))
+        L.error("Unable to plot the cells for the type '%s'", mtype)
     plt.axis(ax_limit)
 
     ax.set_rasterized(True)

@@ -49,6 +49,7 @@ def grow_vacuum_morphologies(
     tmd_distributions,
     morphology_base_path,
     joblib_verbose=0,
+    nb_jobs=1,
 ):
     """Grow morphologies in vacuum."""
 
@@ -61,7 +62,7 @@ def grow_vacuum_morphologies(
 
         gids = range(global_gid, global_gid + n_cells)
         global_gid += n_cells
-        for row in Parallel(1, verbose=joblib_verbose)(
+        for row in Parallel(nb_jobs, verbose=joblib_verbose)(
             delayed(_grow_morphology)(
                 gid,
                 mtype,
@@ -106,3 +107,4 @@ def plot_vacuum_morphologies(
             ax.set_rasterized(True)
             plt.axis([-800, 800, -800, 2000])
             pdf.savefig()
+            plt.close()

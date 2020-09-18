@@ -303,7 +303,8 @@ class AddScalingRulesToParameters(BaseTask):
         for neurite_type in mean_lengths:
             for mtype, mean_length in mean_lengths[neurite_type].items():
                 if (
-                    scaling_rules[mtype] is not None
+                    mtype in scaling_rules
+                    and scaling_rules[mtype] is not None
                     and neurite_type in scaling_rules[mtype]
                 ):
                     tmd_parameters[mtype][neurite_type][
@@ -318,7 +319,6 @@ class AddScalingRulesToParameters(BaseTask):
                     ] = position
 
         hard_limits = yaml.full_load(open(self.hard_limits_path, "r"))
-
         add_scaling_rules_to_parameters(
             tmd_parameters, mean_lengths, scaling_rules, hard_limits
         )
