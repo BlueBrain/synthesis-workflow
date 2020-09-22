@@ -1,9 +1,20 @@
 """utils functions."""
+import logging
+import sys
+import traceback
+from collections import namedtuple
 from pathlib import Path
 
 import pandas as pd
+from joblib import delayed
+from joblib import Parallel
+from tqdm import tqdm
 
 from bluepy.v2 import Circuit
+from placement_algorithm.exceptions import SkipSynthesisError
+
+
+L = logging.getLogger("luigi-interface")
 
 
 def load_circuit(
@@ -49,3 +60,62 @@ def get_morphs_df(
 def update_morphs_df(morphs_df_path, new_morphs_df):
     """Update a morphs_df with new entries to preserve duplicates."""
     return pd.read_csv(morphs_df_path).merge(new_morphs_df, how="left")
+
+
+def _wrap_worker(_id, worker):
+    """Wrap the worker job and catch exceptions that must be caught"""
+    try:
+        return _id, worker(_id)
+    except SkipSynthesisError:
+        return _id, None
+    except Exception:  # pylint: disable=broad-except
+
+        exception = "".join(traceback.format_exception(*sys.exc_info()))
+        L.error("Task #%d failed with exception: %s", _id, exception)
+        raise
+
+
+def run_master(master_cls, kwargs, parser_args=None, defaults=None, nb_jobs=-1):
+    """To-be-executed on master node (MPI_RANK == 0).
+
+    Args:
+        master_cls: The Master application
+        kwargs: A class with same attributes as CLI args
+        parser_args: The arguments of the parser
+        defaults: The default values
+        nb_jobs: Number of threads used
+    """
+    # Format keys to be compliant with argparse
+    underscored = {k.replace("-", "_"): v for k, v in kwargs.items()}
+
+    # Setup argument class
+    if parser_args is None:
+        parser_args = underscored.keys()
+    SynthArgs = namedtuple("SynthArgs", parser_args)
+
+    # Set default values
+    if defaults is not None:
+        for k, v in defaults.items():
+            key = k.replace("-", "_")
+            underscored[key] = underscored.get(key, v)
+
+    # Build argument class instance
+    args = SynthArgs(**underscored)
+
+    L.info("Run %s with the following arguments: %s", master_cls.__name__, args)
+
+    # Setup the worker
+    master = master_cls()
+    worker = master.setup(args)
+    worker.setup(args)
+
+    # Run the worker
+    out = Parallel(
+        n_jobs=nb_jobs,
+        batch_size=20,
+        verbose=20,
+    )(delayed(_wrap_worker)(i, worker) for i in tqdm(master.task_ids))
+
+    # Gather the results
+    result = dict(out)
+    master.finalize(result)

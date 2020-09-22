@@ -2,6 +2,7 @@
 import json
 import re
 from functools import partial
+from pathlib import Path
 
 import luigi
 import pandas as pd
@@ -19,7 +20,7 @@ from ..synthesis import create_axon_morphologies_tsv
 from ..synthesis import get_mean_neurite_lengths
 from ..synthesis import get_neurite_types
 from ..synthesis import rescale_morphologies
-from ..synthesis import run_placement_algorithm
+from ..synthesis import run_synthesize_morphologies
 from ..tools import ensure_dir
 from ..tools import get_morphs_df
 from .circuit import SliceCircuit
@@ -29,6 +30,7 @@ from .config import logger as L
 from .config import pathconfigs
 from .config import synthesisconfigs
 from .utils import BaseTask
+from .utils import ExtParameter
 
 
 morphio.set_maximum_warnings(0)
@@ -171,6 +173,68 @@ class BuildSynthesisModels(luigi.WrapperTask):
         return [BuildSynthesisParameters(), BuildSynthesisDistributions()]
 
 
+class BuildAxonMorphologies(BaseTask):
+    """Run choose-morphologies to synthesize axon morphologies.
+
+    Args:
+        out_circuit_path (str): path to circuit mvd3 with morphology data
+        ext (str): extension for morphology files
+        axon_morphs_path (str): path to .tsv file for axon grafting
+        axon_morphs_base_dir (str): base dir for morphology used for axon (.h5 files)
+        apical_points_path (str): path to .yaml file for recording apical points
+    """
+
+    axon_morphs_path = luigi.Parameter(default="axon_morphs.tsv")
+    axon_morphs_base_dir = luigi.Parameter(default="None")
+    annotations_path = luigi.Parameter(default=None)
+    rules_path = luigi.Parameter(default=None)
+    morphdb_path = luigi.Parameter(default=None)
+    placement_alpha = luigi.FloatParameter(default=1.0)
+    placement_scales = luigi.ListParameter(default=None)
+    placement_seed = luigi.IntParameter(default=0)
+    nb_jobs = luigi.IntParameter(default=-1)
+
+    def requires(self):
+        """"""
+
+        return {
+            "substituted_cells": ApplySubstitutionRules(),
+            "circuit": SliceCircuit(),
+        }
+
+    def run(self):
+        """"""
+
+        ensure_dir(self.output().path)
+
+        atlas_path = circuitconfigs().atlas_path
+        if any(
+            [
+                self.annotations_path is None,
+                self.rules_path is None,
+                self.morphdb_path is None,
+            ]
+        ):
+            atlas_path = None
+
+        create_axon_morphologies_tsv(
+            self.input()["circuit"].path,
+            self.input()["substituted_cells"].path,
+            atlas_path=atlas_path,
+            annotations_path=self.annotations_path,
+            rules_path=self.rules_path,
+            morphdb_path=self.morphdb_path,
+            alpha=self.placement_alpha,
+            scales=self.placement_scales,
+            seed=self.placement_seed,
+            axon_morphs_path=self.output().path,
+        )
+
+    def output(self):
+        """"""
+        return luigi.LocalTarget(self.axon_morphs_path)
+
+
 class Synthesize(BaseTask):
     """Run placement-algorithm to synthesize morphologies.
 
@@ -183,9 +247,8 @@ class Synthesize(BaseTask):
     """
 
     out_circuit_path = luigi.Parameter(default="sliced_circuit_morphologies.mvd3")
-    ext = luigi.Parameter(default=".asc")
-    axon_morphs_path = luigi.Parameter(default="axon_morphs_path.tsv")
-    axon_morphs_base_dir = luigi.Parameter(default="None")
+    ext = ExtParameter(default="asc")
+    axon_morphs_base_dir = luigi.OptionalParameter(default=None)
     apical_points_path = luigi.Parameter(default="apical_points.yaml")
     nb_jobs = luigi.IntParameter(default=-1)
 
@@ -197,42 +260,51 @@ class Synthesize(BaseTask):
             "circuit": SliceCircuit(),
             "tmd_parameters": AddScalingRulesToParameters(),
             "tmd_distributions": BuildSynthesisDistributions(),
+            "axons": BuildAxonMorphologies(),
         }
 
     def run(self):
         """"""
 
-        ensure_dir(self.axon_morphs_path)
+        axon_morphs_path = self.input()["axons"].path
+
+        ensure_dir(axon_morphs_path)
         ensure_dir(self.output().path)
         ensure_dir(self.apical_points_path)
         ensure_dir(pathconfigs().synth_output_path)
 
-        axon_morphs_base_dir = create_axon_morphologies_tsv(
-            self.input()["circuit"].path,
-            self.input()["substituted_cells"].path,
-            axon_morphs_path=self.axon_morphs_path,
-        )
-        if self.axon_morphs_base_dir != "None":
+        # Get base-morph-dir argument value
+        if self.axon_morphs_base_dir is None:
+            morphs_df = pd.read_csv(self.input()["substituted_cells"].path)
+            axon_morphs_base_dir = str(
+                Path(morphs_df.iloc[0]["morphology_path"]).parent
+            )
+            if not morphs_df["morphology_path"].str.match(axon_morphs_base_dir).all():
+                raise Exception("Base dirs are different for axon grafting.")
+        else:
             axon_morphs_base_dir = self.axon_morphs_base_dir
 
-        args = {
+        L.debug("axon_morphs_base_dir = %s", axon_morphs_base_dir)
+
+        # Build arguments for placement_algorithm.synthesize_morphologies.Master
+        kwargs = {
             "cells_path": self.input()["circuit"].path,
             "tmd_parameters": self.input()["tmd_parameters"].path,
             "tmd_distributions": self.input()["tmd_distributions"].path,
             "atlas": circuitconfigs().atlas_path,
             "out_mvd3": self.output().path,
             "out_apical": self.apical_points_path,
-            "out_morph_ext": str(self.ext)[1:],
+            "out_morph_ext": [str(self.ext)],
             "out_morph_dir": pathconfigs().synth_output_path,
             "overwrite": True,
             "no_mpi": True,
-            "morph-axon": self.axon_morphs_path,
+            "morph-axon": axon_morphs_path,
             "base-morph-dir": axon_morphs_base_dir,
             "max_drop_ratio": str(0.1),
             "seed": str(0),
         }
 
-        run_placement_algorithm(args, nb_jobs=self.nb_jobs)
+        run_synthesize_morphologies(kwargs, nb_jobs=self.nb_jobs)
 
     def output(self):
         """"""
@@ -246,6 +318,7 @@ class GetMeanNeuriteLengths(BaseTask):
     mtypes = luigi.ListParameter(default=None)
     morphology_path = luigi.Parameter(default=None)
     mean_lengths_path = luigi.Parameter(default="mean_neurite_lengths.yaml")
+    percentile = luigi.Parameter(default=None)
 
     def requires(self):
         """"""
@@ -260,9 +333,12 @@ class GetMeanNeuriteLengths(BaseTask):
                 neurite_type=neurite_type,
                 mtypes=self.mtypes,
                 morphology_path=self.morphology_path,
+                percentile=self.percentile,
             )
             for neurite_type in self.neurite_types  # pylint: disable=not-an-iterable
         }
+
+        L.info("Lengths for percentile=%s: %s", self.percentile, mean_lengths)
 
         with self.output().open("w") as f:
             yaml.dump(mean_lengths, f)
@@ -339,7 +415,8 @@ class RescaleMorphologies(BaseTask):
     rescaled_morphology_base_path = luigi.Parameter(default="rescaled_morphologies")
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")
     rescaled_morphs_df_path = luigi.Parameter(default="rescaled_morphs_df.csv")
-    scaling_mode = luigi.Parameter(default="y")
+    scaling_mode = luigi.ChoiceParameter(default="y", choices=["y", "radial"])
+    skip_rescale = luigi.BoolParameter(default=False)
 
     def requires(self):
         """"""
@@ -357,6 +434,7 @@ class RescaleMorphologies(BaseTask):
             self.rescaled_morphology_base_path,
             self.rescaled_morphology_path,
             scaling_mode=self.scaling_mode,
+            skip_rescale=self.skip_rescale,
         )
 
         rescaled_morphs_df.to_csv(self.output().path, index=False)

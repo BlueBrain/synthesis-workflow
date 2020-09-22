@@ -18,7 +18,8 @@ from .config import logger as L
 from .config import pathconfigs
 from .synthesis import RescaleMorphologies
 from .synthesis import Synthesize
-from .utils import BaseWrapperTask
+from .utils import BaseTask
+from .utils import ExtParameter
 from .vacuum_synthesis import VacuumSynthesize
 
 
@@ -29,7 +30,7 @@ class ConvertMvd3(luigi.Task):
         ext (str): extension for morphology files
     """
 
-    ext = luigi.Parameter(default=".asc")
+    ext = ExtParameter(default="asc")
 
     def requires(self):
         """"""
@@ -51,11 +52,16 @@ class ConvertMvd3(luigi.Task):
 class PlotMorphometrics(luigi.Task):
     """Plot morphometric."""
 
-    morphometrics_path = luigi.Parameter(default="morphometrics")
-    # percentile_length_path = luigi.Parameter(default=None)
-    bio_key = luigi.Parameter(default="morphology_path")
-    synth_key = luigi.Parameter(default="synth_morphology_path")
     morph_type = luigi.Parameter(default="in_circuit")
+    config_features = luigi.DictParameter(default=None)
+    morphometrics_path = luigi.Parameter(default="morphometrics")
+    base_key = luigi.Parameter(default="morphology_path")
+    comp_key = luigi.Parameter(default="synth_morphology_path")
+    base_label = luigi.Parameter(default="bio")
+    comp_label = luigi.Parameter(default="synth")
+    normalize = luigi.BoolParameter(
+        default=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
+    )
 
     def run(self):
         """"""
@@ -81,8 +87,12 @@ class PlotMorphometrics(luigi.Task):
             morphs_df,
             synth_morphs_df,
             self.output().path,
-            bio_key=self.bio_key,
-            synth_key=self.synth_key,
+            base_key=self.base_key,
+            comp_key=self.comp_key,
+            base_label=self.base_label,
+            comp_label=self.comp_label,
+            normalize=self.normalize,
+            config_features=self.config_features,
         )
 
     def output(self):
@@ -133,16 +143,18 @@ class PlotDensityProfiles(luigi.Task):
         return luigi.LocalTarget(self.density_profiles_path)
 
 
-class PlotCollage(BaseWrapperTask):
+class PlotCollage(BaseTask):
     """Plot collage.
 
     Args:
-        collage_path (str): path to pdf file
+        collage_base_path (str): path to the output folder
+        collage_type (str): collage mode (01 or Isocortex)
         sample (float): number of cells to use, if None, all available
+        mtypes (list(str)): mtypes to plot
     """
 
     collage_base_path = luigi.Parameter(default="collages")
-    collage_type = luigi.Parameter(default="O1")
+    collage_type = luigi.ChoiceParameter(default="O1", choices=["O1", "Isocortex"])
     sample = luigi.IntParameter(default=20)
     mtypes = luigi.ListParameter(default=None)
 
@@ -173,18 +185,24 @@ class PlotCollage(BaseWrapperTask):
                     mtype=mtype,
                 )
 
+    def output(self):
+        """"""
+        return luigi.LocalTarget(self.collage_base_path)
+
 
 class PlotSingleCollage(luigi.Task):
     """Plot collage for single mtype.
 
     Args:
-        collage_path (str): path to pdf file
+        collage_base_path (str): path to the output folder
+        collage_type (str): collage mode (01 or Isocortex)
         sample (float): number of cells to use, if None, all available
+        mtype (str of list(str)): mtype(s) to plot (should be one str if collage_type is
+            Isocortex and a list of str if collage_type is 01)
     """
 
     collage_base_path = luigi.Parameter(default="collages")
-    # collage_path = luigi.Parameter(default="collage.pdf")
-    collage_type = luigi.Parameter(default="O1")
+    collage_type = luigi.ChoiceParameter(default="O1", choices=["O1", "Isocortex"])
     sample = luigi.IntParameter(default=20)
     mtype = luigi.Parameter()
 

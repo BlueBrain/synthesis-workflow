@@ -1,4 +1,6 @@
 """utils functions for luigi tasks."""
+import re
+
 import luigi
 
 from .config import circuitconfigs
@@ -53,3 +55,12 @@ class BaseTask(luigi.Task):
 
 class BaseWrapperTask(BaseTask, luigi.WrapperTask):
     """Base wrapper class with global parameters"""
+
+
+class ExtParameter(luigi.Parameter):
+    """Class to parse file extension parameters"""
+
+    def parse(self, x):
+        pattern = re.compile(r"\.?(.*)")
+        match = re.match(pattern, x)
+        return match.group(0)

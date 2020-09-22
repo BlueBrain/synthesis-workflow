@@ -35,7 +35,7 @@ L = logging.getLogger(__name__)
 matplotlib.use("Agg")
 
 
-def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext=".asc"):
+def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext="asc"):
     """Convert the list of morphologies from mvd3 to morphology dataframe.
 
     Args:
@@ -48,7 +48,7 @@ def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext=".asc"):
     """
     cells_df = CellCollection.load_mvd3(mvd3_path).as_dataframe()
     cells_df["synth_morphology_path"] = cells_df["morphology"].apply(
-        lambda morph: (Path(synth_output_path) / morph).with_suffix(ext)
+        lambda morph: (Path(synth_output_path) / morph).with_suffix("." + ext)
     )
     cells_df["name"] = cells_df["morphology"]
     return cells_df.drop("morphology", axis=1)
@@ -63,41 +63,50 @@ def _get_features_df_all_mtypes(morphs_df, features_config, morphology_path):
 
 
 def plot_morphometrics(
-    morphs_df,
-    synth_morphs_df,
+    base_morphs_df,
+    comp_morphs_df,
     output_path,
-    bio_key="morphology_path",
-    synth_key="synth_morphology_path",
+    base_key="morphology_path",
+    comp_key="synth_morphology_path",
+    base_label="base",
+    comp_label="comp",
     normalize=False,
+    config_features=None,
 ):
     """Plot morphometrics.
 
     Args:
-        morphs_df (DataFrame): reconstructed morphologies
-        synth_morphs_df (DataFrame): synthesized morphologies
+        base_morphs_df (DataFrame): base morphologies
+        comp_morphs_df (DataFrame): compared morphologies
         output_path (str): path to save figures
-        bio_key (str): column name in the DF
-        synth_key (str): column name in the DF
+        base_key (str): column name in the DF
+        comp_key (str): column name in the DF
+        base_label (str): label for the base morphologies
+        comp_label (str): label for the compared morphologies
         normalize (bool): normalize data if set to True
+        config_features (dict): mapping of features to plot
     """
-    config_features = get_feature_configs(config_types="synthesis")
-    config_features["neurite"] = {"y_distances": ["min", "max"]}
+    if config_features is None:
+        config_features = get_feature_configs(config_types="synthesis")
+        config_features["neurite"].update({"y_distances": ["min", "max"]})
 
-    bio_features_df = _get_features_df_all_mtypes(morphs_df, config_features, bio_key)
-    bio_features_df["label"] = "bio"
-    synth_features_df = _get_features_df_all_mtypes(
-        synth_morphs_df, config_features, synth_key
+    base_features_df = _get_features_df_all_mtypes(
+        base_morphs_df, config_features, base_key
     )
-    synth_features_df["label"] = "synth"
+    base_features_df["label"] = base_label
+    comp_features_df = _get_features_df_all_mtypes(
+        comp_morphs_df, config_features, comp_key
+    )
+    comp_features_df["label"] = comp_label
 
-    bio_features_df = bio_features_df[
-        bio_features_df.mtype.isin(synth_features_df.mtype.unique())
+    base_features_df = base_features_df[
+        base_features_df.mtype.isin(comp_features_df.mtype.unique())
     ]
-    synth_features_df = synth_features_df[
-        synth_features_df.mtype.isin(bio_features_df.mtype.unique())
+    comp_features_df = comp_features_df[
+        comp_features_df.mtype.isin(base_features_df.mtype.unique())
     ]
 
-    all_features_df = pd.concat([bio_features_df, synth_features_df])
+    all_features_df = pd.concat([base_features_df, comp_features_df])
     ensure_dir(output_path)
     plot_violin_features(
         all_features_df,

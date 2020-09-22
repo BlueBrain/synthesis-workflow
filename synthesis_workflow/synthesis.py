@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import re
-import sys
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
@@ -20,16 +19,22 @@ from morphio.mut import Morphology
 from neuroc.scale import scale_section
 from neuroc.scale import ScaleParameters
 from neurom.core.dataformat import COLS
-from placement_algorithm.app.mpi_app import run_master
-from placement_algorithm.app.synthesize_morphologies import Master
-from placement_algorithm.logger import LOGGER
+from placement_algorithm import files
+from placement_algorithm.app import utils
+from placement_algorithm.app import choose_morphologies
+from placement_algorithm.app.choose_morphologies import Worker as ChooseMorphologyWorker
+from placement_algorithm.app.synthesize_morphologies import (
+    Master as SynthesizeMorphologiesMaster,
+)
 from tns import extract_input
 from voxcell import CellCollection
+from voxcell.nexus.voxelbrain import Atlas
 
 from . import STR_TO_TYPES
+from .tools import run_master
 
 
-L = logging.getLogger(__name__)
+L = logging.getLogger("luigi-interface")
 matplotlib.use("Agg")
 
 
@@ -130,23 +135,17 @@ def build_distributions(
     return tmd_distributions
 
 
-def _convert_arglist(args):
-    """Convert dict to argpase input."""
-
-    def _convert_arg(param):
-        """Convert my_arg to --my-arg."""
-        return "--" + param.replace("_", "-")
-
-    arglist = []
-    for arg, val in args.items():
-        arglist.append(_convert_arg(arg))
-        if isinstance(val, str):
-            arglist.append(val)
-    return arglist
-
-
 def create_axon_morphologies_tsv(
-    circuit_path, morphs_df_path, axon_morphs_path="axon_morphs.tsv"
+    circuit_path,
+    morphs_df_path,
+    atlas_path=None,
+    annotations_path=None,
+    rules_path=None,
+    morphdb_path=None,
+    alpha=1.0,
+    scales=None,
+    seed=0,
+    axon_morphs_path="axon_morphs.tsv",
 ):
     """Create required axon_morphology tsv file for placement-algorithm to graft axons.
 
@@ -159,8 +158,59 @@ def create_axon_morphologies_tsv(
         str: path to base directory of morphologies for axon grafting
     """
     morphs_df = pd.read_csv(morphs_df_path)
-    cells = CellCollection.load_mvd3(circuit_path)
-    cells_df = cells.as_dataframe()
+
+    check_placement_params = [
+        atlas_path is not None,
+        annotations_path is not None,
+        rules_path is not None,
+        morphdb_path is not None,
+    ]
+    if any(check_placement_params) and not all(check_placement_params):
+        raise ValueError(
+            "Either 0 or all the following parameter should be None: %s"
+            % [
+                "atlas_path",
+                "annotations_path",
+                "rules_path",
+                "morphdb_path",
+            ]
+        )
+
+    if all(check_placement_params):
+        use_placement = True
+        L.info("Use placement algorithm for axons")
+    else:
+        use_placement = False
+        L.info("Do not use placement algorithm for axons (use random choice instead)")
+
+    if use_placement:
+        atlas = Atlas.open(atlas_path)
+        segment_type = "axon"
+
+        rules = files.PlacementRules(rules_path)
+        annotations = (
+            choose_morphologies._bind_annotations(  # pylint: disable=protected-access
+                utils.load_json(annotations_path),
+                files.parse_morphdb(morphdb_path),
+                rules,
+            )
+        )
+
+        # TODO: use the Master class with tools.run_master() instead of the Worker?
+        worker = ChooseMorphologyWorker(annotations, rules.layer_names, False)
+        worker.cells = CellCollection.load_mvd3(circuit_path)
+        worker.atlas = atlas
+        worker.alpha = alpha
+        worker.scales = scales
+        worker.seed = seed
+        worker.segment_type = segment_type
+        choose_morphologies._fetch_atlas_data(  # pylint: disable=protected-access
+            worker.atlas, worker.layer_names, memcache=True
+        )
+        cells_df = worker.cells.as_dataframe()
+    else:
+        cells_df = CellCollection.load_mvd3(circuit_path).as_dataframe()
+
     axon_morphs_base_dir = None
     axon_morphs = pd.DataFrame()
     for gid in cells_df.index:
@@ -168,13 +218,17 @@ def create_axon_morphologies_tsv(
             (morphs_df.mtype == cells_df.loc[gid, "mtype"]) & morphs_df.use_axon
         ]
         if len(all_cells) > 0:
-            cell = all_cells.sample()
-            axon_morphs.loc[gid, "morphology"] = cell.name.to_list()[0]
+            if use_placement:
+                cell = all_cells.loc[all_cells["name"] == worker(gid)].iloc[0]
+            else:
+                cell = all_cells.sample().iloc[0]
 
-            base_dir = str(Path(cell.morphology_path.to_list()[0]).parent)
-            if axon_morphs_base_dir is not None and base_dir != axon_morphs_base_dir:
+            axon_morphs.loc[gid, "morphology"] = cell["name"]
+
+            if axon_morphs_base_dir is None:
+                axon_morphs_base_dir = str(Path(cell["morphology_path"]).parent)
+            elif axon_morphs_base_dir != str(Path(cell["morphology_path"]).parent):
                 raise Exception("Base dirs are different for axon grafting.")
-            axon_morphs_base_dir = base_dir
         else:
             L.info("Axon grafting: no cells for %s", cells_df.loc[gid, "mtype"])
 
@@ -188,26 +242,50 @@ def create_axon_morphologies_tsv(
     return axon_morphs_base_dir
 
 
-def run_placement_algorithm(args, nb_jobs=-1):
+def run_synthesize_morphologies(kwargs, nb_jobs=-1):
     """Run placement algorithm from python.
 
     Args:
-        args (dict): dictionary with argument from placement-algorithm CLI
+        kwargs (dict): dictionary with argument from placement-algorithm CLI
     """
-    sys.argv[1:] = _convert_arglist(args)
-    master = Master()
+    parser_args = [
+        i.replace("-", "_")
+        for i in [
+            "mvd3",
+            "cells-path",
+            "tmd-parameters",
+            "tmd-distributions",
+            "morph-axon",
+            "base-morph-dir",
+            "atlas",
+            "atlas-cache",
+            "seed",
+            "out-mvd3",
+            "out-apical",
+            "out-morph-dir",
+            "out-morph-ext",
+            "max-files-per-dir",
+            "overwrite",
+            "max-drop-ratio",
+            "no-mpi",
+        ]
+    ]
 
-    # TODO: set nb_jobs when https://bbpcode.epfl.ch/code/#/c/50439/ is merged
-    _ = nb_jobs  # and remove this
-
-    # Setup logger for placementAlgorithm
-    logger = logging.getLogger("luigi-interface")
-    if not LOGGER.handlers:
-        LOGGER.handlers = logger.handlers
-        LOGGER.setLevel(logger.level)
+    # Setup defaults
+    defaults = {
+        "atlas_cache": None,
+        "base_morph_dir": None,
+        "max_drop_ratio": 0.0,
+        "max_files_per_dir": None,
+        "morph_axon": None,
+        "mvd3": None,
+        "out_morph_dir": "out",
+        "out_morph_ext": ["swc"],
+        "seed": 0,
+    }
 
     # Run
-    run_master(master, master.parse_args(), None)
+    run_master(SynthesizeMorphologiesMaster, kwargs, parser_args, defaults, nb_jobs)
 
 
 def get_mean_neurite_lengths(
@@ -322,8 +400,8 @@ def rescale_morphologies(
                     else:
                         scale = None
                     if scale is None:
-                        L.info(
-                            "we did not rescale morphology = %s, with mtype: %s",
+                        L.debug(
+                            "The morphology '%s', with mtype '%s' was not rescaled",
                             morphs_df.loc[gid, "name"],
                             mtype,
                         )
