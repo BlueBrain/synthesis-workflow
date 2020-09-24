@@ -55,7 +55,7 @@ class PlotMorphometrics(luigi.Task):
     morph_type = luigi.Parameter(default="in_circuit")
     config_features = luigi.DictParameter(default=None)
     morphometrics_path = luigi.Parameter(default="morphometrics")
-    base_key = luigi.Parameter(default="morphology_path")
+    base_key = luigi.Parameter(default="repaired_morphology_path")
     comp_key = luigi.Parameter(default="synth_morphology_path")
     base_label = luigi.Parameter(default="bio")
     comp_label = luigi.Parameter(default="synth")

@@ -78,7 +78,7 @@ class pathconfigs(luigi.Config):
     """Morphology path configuration."""
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
-    morphology_path = luigi.Parameter(default="morphology_path")
+    morphology_path = luigi.Parameter(default="repaired_morphology_path")
     synth_morphs_df_path = luigi.Parameter(default="synth_morphs_df.csv")
     synth_output_path = luigi.Parameter(default="synthesized_morphologies")
     substituted_morphs_df_path = luigi.Parameter(default="substituted_morphs_df.csv")

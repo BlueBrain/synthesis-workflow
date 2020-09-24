@@ -2,7 +2,6 @@
 import json
 import re
 from functools import partial
-from pathlib import Path
 
 import luigi
 import pandas as pd
@@ -17,6 +16,7 @@ from ..synthesis import add_scaling_rules_to_parameters
 from ..synthesis import apply_substitutions
 from ..synthesis import build_distributions
 from ..synthesis import create_axon_morphologies_tsv
+from ..synthesis import get_axon_base_dir
 from ..synthesis import get_mean_neurite_lengths
 from ..synthesis import get_neurite_types
 from ..synthesis import rescale_morphologies
@@ -241,15 +241,18 @@ class Synthesize(BaseTask):
     Args:
         out_circuit_path (str): path to circuit mvd3 with morphology data
         ext (str): extension for morphology files
-        axon_morphs_path (str): path to .tsv file for axon grafting
         axon_morphs_base_dir (str): base dir for morphology used for axon (.h5 files)
         apical_points_path (str): path to .yaml file for recording apical points
+        morphology_path (str): column name to use in the DF to compute
+            axon_morphs_base_dir if it is not provided
+        nb_jobs (int): number of threads used for synthesis
     """
 
     out_circuit_path = luigi.Parameter(default="sliced_circuit_morphologies.mvd3")
     ext = ExtParameter(default="asc")
     axon_morphs_base_dir = luigi.OptionalParameter(default=None)
     apical_points_path = luigi.Parameter(default="apical_points.yaml")
+    morphology_path = luigi.Parameter(default=None)
     nb_jobs = luigi.IntParameter(default=-1)
 
     def requires(self):
@@ -275,12 +278,10 @@ class Synthesize(BaseTask):
 
         # Get base-morph-dir argument value
         if self.axon_morphs_base_dir is None:
-            morphs_df = pd.read_csv(self.input()["substituted_cells"].path)
-            axon_morphs_base_dir = str(
-                Path(morphs_df.iloc[0]["morphology_path"]).parent
+            axon_morphs_base_dir = get_axon_base_dir(
+                pd.read_csv(self.input()["substituted_cells"].path),
+                self.morphology_path,
             )
-            if not morphs_df["morphology_path"].str.match(axon_morphs_base_dir).all():
-                raise Exception("Base dirs are different for axon grafting.")
         else:
             axon_morphs_base_dir = self.axon_morphs_base_dir
 

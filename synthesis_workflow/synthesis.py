@@ -135,6 +135,30 @@ def build_distributions(
     return tmd_distributions
 
 
+def get_axon_base_dir(morphs_df, col_name="morphology_path"):
+    """Get the common base directory of morphologies"""
+    if morphs_df.empty:
+        raise RuntimeError("Can not get axon base dir from an empty DataFrame")
+
+    col = morphs_df[col_name]
+
+    # Get all parent directories
+    parents = col.apply(lambda x: str(Path(x).parent)).unique()
+
+    # Check they are all equal
+    if len(parents) != 1:
+        raise Exception("Base dirs are different for axon grafting.")
+
+    # Pick the first one
+    axon_morphs_base_dir = parents[0]
+
+    # Remove '-asc' suffix if present
+    if axon_morphs_base_dir.split("-")[-1] == "asc":
+        axon_morphs_base_dir = "-".join(axon_morphs_base_dir.split("-")[:-1])
+
+    return axon_morphs_base_dir
+
+
 def create_axon_morphologies_tsv(
     circuit_path,
     morphs_df_path,
@@ -211,7 +235,6 @@ def create_axon_morphologies_tsv(
     else:
         cells_df = CellCollection.load_mvd3(circuit_path).as_dataframe()
 
-    axon_morphs_base_dir = None
     axon_morphs = pd.DataFrame()
     for gid in cells_df.index:
         all_cells = morphs_df[
@@ -224,22 +247,11 @@ def create_axon_morphologies_tsv(
                 cell = all_cells.sample().iloc[0]
 
             axon_morphs.loc[gid, "morphology"] = cell["name"]
-
-            if axon_morphs_base_dir is None:
-                axon_morphs_base_dir = str(Path(cell["morphology_path"]).parent)
-            elif axon_morphs_base_dir != str(Path(cell["morphology_path"]).parent):
-                raise Exception("Base dirs are different for axon grafting.")
         else:
             L.info("Axon grafting: no cells for %s", cells_df.loc[gid, "mtype"])
 
     axon_morphs.index -= 1
     axon_morphs.to_csv(axon_morphs_path, sep="\t", index=True)
-    if (
-        axon_morphs_base_dir is not None
-        and axon_morphs_base_dir.split("-")[-1] == "asc"
-    ):
-        axon_morphs_base_dir = "-".join(axon_morphs_base_dir.split("-")[:-1])
-    return axon_morphs_base_dir
 
 
 def run_synthesize_morphologies(kwargs, nb_jobs=-1):
