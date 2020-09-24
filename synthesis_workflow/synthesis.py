@@ -231,9 +231,9 @@ def create_axon_morphologies_tsv(
         choose_morphologies._fetch_atlas_data(  # pylint: disable=protected-access
             worker.atlas, worker.layer_names, memcache=True
         )
-        cells_df = worker.cells.as_dataframe()
+        cells_df = worker.cells.properties
     else:
-        cells_df = CellCollection.load_mvd3(circuit_path).as_dataframe()
+        cells_df = CellCollection.load_mvd3(circuit_path).properties
 
     axon_morphs = pd.DataFrame()
     for gid in cells_df.index:
@@ -250,7 +250,6 @@ def create_axon_morphologies_tsv(
         else:
             L.info("Axon grafting: no cells for %s", cells_df.loc[gid, "mtype"])
 
-    axon_morphs.index -= 1
     axon_morphs.to_csv(axon_morphs_path, sep="\t", index=True)
 
 

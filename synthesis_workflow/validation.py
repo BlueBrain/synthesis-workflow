@@ -1,6 +1,7 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
 import logging
 import os
+import warnings
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
@@ -59,7 +60,12 @@ def _get_features_df_all_mtypes(morphs_df, features_config, morphology_path):
     morphs_df_dict = {
         mtype: df[morphology_path] for mtype, df in morphs_df.groupby("mtype")
     }
-    return get_features_df(morphs_df_dict, features_config, n_workers=os.cpu_count())
+    with warnings.catch_warnings():
+        # Ignore some Numpy warnings
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        return get_features_df(
+            morphs_df_dict, features_config, n_workers=os.cpu_count()
+        )
 
 
 def plot_morphometrics(

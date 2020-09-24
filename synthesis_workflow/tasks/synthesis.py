@@ -180,12 +180,10 @@ class BuildAxonMorphologies(BaseTask):
         out_circuit_path (str): path to circuit mvd3 with morphology data
         ext (str): extension for morphology files
         axon_morphs_path (str): path to .tsv file for axon grafting
-        axon_morphs_base_dir (str): base dir for morphology used for axon (.h5 files)
         apical_points_path (str): path to .yaml file for recording apical points
     """
 
     axon_morphs_path = luigi.Parameter(default="axon_morphs.tsv")
-    axon_morphs_base_dir = luigi.Parameter(default="None")
     annotations_path = luigi.Parameter(default=None)
     rules_path = luigi.Parameter(default=None)
     morphdb_path = luigi.Parameter(default=None)

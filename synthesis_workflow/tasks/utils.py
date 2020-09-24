@@ -63,4 +63,4 @@ class ExtParameter(luigi.Parameter):
     def parse(self, x):
         pattern = re.compile(r"\.?(.*)")
         match = re.match(pattern, x)
-        return match.group(0)
+        return match.group(1)
