@@ -248,14 +248,17 @@ def _plot_collage_O1(
     """Plot collage for a given mtype (for multiprocessing)."""
     fig = plt.figure(mtype, figsize=figsize)
     ax = plt.gca()
-    try:
-        _plot_layers(x_pos, circuit.atlas, ax)
-    except Exception:  # pylint: disable=broad-except
-        L.error("Unable to plot the layers for the type '%s'", mtype)
-    try:
-        _plot_cells(circuit, mtype, sample, ax)
-    except Exception:  # pylint: disable=broad-except
-        L.error("Unable to plot the cells for the type '%s'", mtype)
+    with warnings.catch_warnings():
+        # Ignore some warnings
+        warnings.simplefilter("ignore", category=UserWarning)
+        try:
+            _plot_layers(x_pos, circuit.atlas, ax)
+        except Exception:  # pylint: disable=broad-except
+            L.error("Unable to plot the layers for the type '%s'", mtype)
+        try:
+            _plot_cells(circuit, mtype, sample, ax)
+        except Exception:  # pylint: disable=broad-except
+            L.error("Unable to plot the cells for the type '%s'", mtype)
     plt.axis(ax_limit)
 
     ax.set_rasterized(True)

@@ -2,6 +2,7 @@
 import logging
 import sys
 import traceback
+import warnings
 from collections import namedtuple
 from pathlib import Path
 
@@ -65,7 +66,11 @@ def update_morphs_df(morphs_df_path, new_morphs_df):
 def _wrap_worker(_id, worker):
     """Wrap the worker job and catch exceptions that must be caught"""
     try:
-        return _id, worker(_id)
+        with warnings.catch_warnings():
+            # Ignore all warnings in workers
+            warnings.simplefilter("ignore")
+            res = _id, worker(_id)
+        return res
     except SkipSynthesisError:
         return _id, None
     except Exception:  # pylint: disable=broad-except
@@ -114,6 +119,7 @@ def run_master(master_cls, kwargs, parser_args=None, defaults=None, nb_jobs=-1):
         n_jobs=nb_jobs,
         batch_size=20,
         verbose=20,
+        max_nbytes=None,
     )(delayed(_wrap_worker)(i, worker) for i in tqdm(master.task_ids))
 
     # Gather the results
