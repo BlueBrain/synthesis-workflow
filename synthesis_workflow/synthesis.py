@@ -103,6 +103,7 @@ def build_distributions(
     morphology_path,
     cortical_thickness,
     nb_jobs=-1,
+    joblib_verbose=10,
 ):
     """Build tmd_distribution dictionary for synthesis.
 
@@ -128,8 +129,8 @@ def build_distributions(
         "mtypes": {},
         "metadata": {"cortical_thickness": json.loads(cortical_thickness)},
     }
-    for mtype, distribution in Parallel(nb_jobs)(
-        delayed(build_distributions_single_mtype)(mtype) for mtype in tqdm(mtypes)
+    for mtype, distribution in Parallel(nb_jobs, verbose=joblib_verbose)(
+        delayed(build_distributions_single_mtype)(mtype) for mtype in mtypes
     ):
         tmd_distributions["mtypes"][mtype] = distribution
     return tmd_distributions

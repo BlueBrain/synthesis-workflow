@@ -9,7 +9,6 @@ from pathlib import Path
 import pandas as pd
 from joblib import delayed
 from joblib import Parallel
-from tqdm import tqdm
 
 from bluepy.v2 import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
@@ -119,8 +118,8 @@ def run_master(master_cls, kwargs, parser_args=None, defaults=None, nb_jobs=-1):
         n_jobs=nb_jobs,
         batch_size=20,
         verbose=20,
-        max_nbytes=None,
-    )(delayed(_wrap_worker)(i, worker) for i in tqdm(master.task_ids))
+        # max_nbytes=None,  # this does not work, WIP
+    )(delayed(_wrap_worker)(i, worker) for i in master.task_ids)
 
     # Gather the results
     result = dict(out)

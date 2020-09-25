@@ -13,26 +13,44 @@ from .vacuum_synthesis import PlotVacuumMorphologies
 class ValidateSynthesis(luigi.WrapperTask):
     """Main class to validate synthesis."""
 
+    with_collage = luigi.BoolParameter(default=True)
+    with_morphometrics = luigi.BoolParameter(default=True)
+    with_density_profiles = luigi.BoolParameter(default=True)
+
     def requires(self):
         """"""
-        tasks = [PlotMorphometrics(), PlotDensityProfiles(), PlotCollage()]
+        tasks = []
+        if self.with_collage:
+            tasks.append(PlotCollage())
+        if self.with_morphometrics:
+            tasks.append(PlotMorphometrics())
+        if self.with_density_profiles:
+            tasks.append(PlotDensityProfiles())
         return tasks
 
 
 class ValidateVacuumSynthesis(luigi.WrapperTask):
     """Main class to validate vacuum synthesis."""
 
+    with_vacuum_morphologies = luigi.BoolParameter(default=True)
+    with_morphometrics = luigi.BoolParameter(default=True)
+    with_density_profiles = luigi.BoolParameter(default=True)
+
     def requires(self):
         """"""
-        tasks = [
-            PlotMorphometrics(
-                base_key="rescaled_morphology_path",
-                comp_key="vacuum_morphology_path",
-                morph_type="in_vacuum",
-            ),
-            PlotVacuumMorphologies(),
-            PlotDensityProfiles(),
-        ]
+        tasks = []
+        if self.with_morphometrics:
+            tasks.append(
+                PlotMorphometrics(
+                    base_key="rescaled_morphology_path",
+                    comp_key="vacuum_morphology_path",
+                    morph_type="in_vacuum",
+                )
+            )
+        if self.with_vacuum_morphologies:
+            tasks.append(PlotVacuumMorphologies())
+        if self.with_density_profiles:
+            tasks.append(PlotDensityProfiles())
         return tasks
 
 

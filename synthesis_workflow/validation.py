@@ -5,6 +5,7 @@ import warnings
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
+from pyquaternion import Quaternion
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -14,13 +15,11 @@ import seaborn as sns
 from joblib import delayed
 from joblib import Parallel
 from matplotlib.backends.backend_pdf import PdfPages
-from scipy.linalg import expm
 from scipy.optimize import fmin
 from tqdm import tqdm
 from voxcell import CellCollection
 
 from atlas_analysis.constants import CANONICAL
-from atlas_analysis.planes.maths import Plane
 from morph_validator.feature_configs import get_feature_configs
 from morph_validator.plotting import get_features_df
 from morph_validator.plotting import plot_violin_features
@@ -28,7 +27,7 @@ from morph_validator.spatial import relative_depth_volume
 from morph_validator.spatial import sample_morph_voxel_values
 from neurom import viewer
 
-from .circuit_slicing import get_cells_between_planes
+from .circuit import get_cells_between_planes
 from .tools import ensure_dir
 
 
@@ -242,122 +241,63 @@ def _plot_cells(circuit, mtype, sample, ax):
         )
 
 
-def _plot_collage_O1(
-    mtype, circuit=None, figsize=None, x_pos=None, ax_limit=None, sample=None
-):
-    """Plot collage for a given mtype (for multiprocessing)."""
-    fig = plt.figure(mtype, figsize=figsize)
-    ax = plt.gca()
-    with warnings.catch_warnings():
-        # Ignore some warnings
-        warnings.simplefilter("ignore", category=UserWarning)
-        try:
-            _plot_layers(x_pos, circuit.atlas, ax)
-        except Exception:  # pylint: disable=broad-except
-            L.error("Unable to plot the layers for the type '%s'", mtype)
-        try:
-            _plot_cells(circuit, mtype, sample, ax)
-        except Exception:  # pylint: disable=broad-except
-            L.error("Unable to plot the cells for the type '%s'", mtype)
-    plt.axis(ax_limit)
+def get_plane_rotation_matrix(plane, target=None):
+    """Get basis vectors best aligned to target direction.
 
-    ax.set_rasterized(True)
-    ax.legend(loc="best")
-    fig.suptitle(mtype)
-    return fig
-
-
-def plot_collage_O1(circuit, sample, output_path, mtypes=None, nb_jobs=-1):
-    """Plot collage for all mtypes.
+    We define a direct orthonormal basis of the plane (e_1, e_2) such
+    that || e_2 - target || is minimal. The positive axes along the
+    vectors e_1  and e_2 correspond respectively to the horizontal and
+    vertical dimensions of the image.
 
     Args:
-        circuit (circuit): circuit
-        sample (int): number of cells to plot (None means all available)
-        output_path (str): path to save pdf file
+        plane (atlas_analysis.plane.maths.Plane): plane object
+        target (list): target vector to align each plane
+
+    Return:
+        np.ndarray: rotation matrix to map VoxelData coordinates to plane coordinates
     """
-    x_pos = 0
-    atlas_bbox = circuit.atlas.load_data("[PH]1").bbox
-    x_min = atlas_bbox[0, 2]
-    x_max = atlas_bbox[1, 2]
-    y_min = atlas_bbox[0, 1]
-    y_max = atlas_bbox[1, 1]
-
-    dx = x_max - x_min
-    x_min -= 0.1 * dx
-    x_max += 0.1 * dx
-
-    dy = y_max - y_min
-    y_min -= 0.1 * dy
-    y_max += 0.1 * dy
-
-    figsize = (0.01 * (x_max - x_min), 0.01 * (y_max - y_min))
-    ax_limit = [x_min, x_max, y_min, y_max]
-
-    if mtypes is None:
-        mtypes = sorted(list(circuit.cells.mtypes))
-
-    ensure_dir(output_path)
-    with PdfPages(output_path) as pdf:
-        f = partial(
-            _plot_collage_O1,
-            circuit=circuit,
-            figsize=figsize,
-            x_pos=x_pos,
-            ax_limit=ax_limit,
-            sample=sample,
-        )
-        for fig in Parallel(nb_jobs)(
-            delayed(f)(mtype) for mtype in tqdm(sorted(circuit.cells.mtypes))
-        ):
-            pdf.savefig(fig, bbox_inches="tight", dpi=100)
-            plt.close(fig)
-
-
-def get_aligned_basis(plane, target=None):
-    """Get basis vectors best aligned to target direction."""
     if target is None:
-        target = [0, 0, 1]
-    plane_cls = Plane.from_quaternion(plane[:3], plane[3:])
-    plane_basis = plane_cls.get_basis()
+        target = [0, 1, 0]
+    target /= np.linalg.norm(target)
 
-    quaternion = plane_cls.get_quaternion(CANONICAL[2])
-    r_axis = quaternion.rotate(CANONICAL[2])
+    quaternion = plane.get_quaternion(CANONICAL[2])
+    rotation_matrix = quaternion.rotation_matrix
 
-    def get_rot_matrix(angle):
-        """get rotation matrix for a given angle."""
-        r_basis = np.array(
-            [
-                [0, -r_axis[2], r_axis[1]],
-                [r_axis[2], 0, -r_axis[0]],
-                [-r_axis[1], r_axis[0], 0],
-            ]
+    def _get_rot_matrix(angle):
+        """Get rotation matrix for a given angle along [0, 0, 1]."""
+        return Quaternion(axis=[0, 0, 1], angle=angle).rotation_matrix
+
+    def _cost(angle):
+        return np.linalg.norm(
+            rotation_matrix.dot(
+                _get_rot_matrix(angle).dot(np.array([0, 1, 0])) - target
+            )
         )
-        return expm(angle * r_basis)
 
-    def cost(angle):
-        return np.linalg.norm(target - get_rot_matrix(angle).dot(plane_basis[0]))
-
-    angle = fmin(cost, 1, disp=False)
-    rot_matrix = get_rot_matrix(angle)
-
-    plane_basis[0] = rot_matrix.dot(plane_basis[0])
-    plane_basis[1] = rot_matrix.dot(plane_basis[1])
-    rotation_matrix = rot_matrix.dot(plane_cls.get_quaternion().rotation_matrix)
-    return plane_basis, rotation_matrix
+    angle = fmin(_cost, 1.0, disp=False)
+    return _get_rot_matrix(angle).dot(rotation_matrix)
 
 
 def get_layer_info(
     layer_annotation,
-    plane,
-    plane_basis,
-    n_pixels=512,
-    limits=None,
+    plane_origin,
+    rotation_matrix,
+    n_pixels=1024,
 ):
-    """Get information to plot layers on a plane."""
-    if limits is None:
-        limits = [-5000, 8000, -9000, 2000]
-    xs_plane = np.linspace(limits[0], limits[1], n_pixels)
-    ys_plane = np.linspace(limits[2], limits[3], n_pixels)
+    """Get information to plot layers on a plane.
+
+    Args:
+        layer_annotation (VoxelData): atlas annotations with layers
+        plane_origin (np.ndarray): origin of plane (Plane.point)
+        rotation_matrix (3*3 np.ndarray): rotation matrix to transform from real coordinates
+            to plane coordinates
+        n_pixels (int): number of pixel on each axis of the plane for plotting layers
+    """
+    bbox = layer_annotation.bbox
+    bbox_min = rotation_matrix.dot(bbox[0] - plane_origin)
+    bbox_max = rotation_matrix.dot(bbox[1] - plane_origin)
+    xs_plane = np.linspace(bbox_min[0], bbox_max[0], n_pixels)
+    ys_plane = np.linspace(bbox_min[1], bbox_max[1], n_pixels)
 
     layers = np.empty([n_pixels, n_pixels])
     X = np.empty([n_pixels, n_pixels])
@@ -365,13 +305,20 @@ def get_layer_info(
 
     for i, x_plane in enumerate(xs_plane):
         for j, y_plane in enumerate(ys_plane):
-            point = x_plane * plane_basis[0] + y_plane * plane_basis[1] + plane[:3]
-            # this plots the z-x coordinates, we would eventualy like to plot in plane coordinates
-            X[i, j] = point[2]  # x_plane
-            Y[i, j] = point[0]  # y_plane
+            X[i, j] = x_plane
+            Y[i, j] = y_plane
+
+            # transform plane coordinates into real coordinates (coordinates of VoxelData)
+            point = (
+                rotation_matrix.T.dot([x_plane, 0, 0])
+                + rotation_matrix.T.dot([0, y_plane, 0])
+                + plane_origin
+            )
+
             layers[i, j] = int(
                 layer_annotation.lookup(np.array([point]), outer_value=-1)
             )
+
     layers[layers < 1] = np.nan
     return X, Y, layers
 
@@ -381,6 +328,7 @@ def plot_cells(
     circuit,
     plane_left,
     plane_right,
+    rotation_matrix=None,
     mtype=None,
     sample=10,
 ):
@@ -395,23 +343,27 @@ def plot_cells(
     gids = get_cells_between_planes(cells, plane_left, plane_right).index
     for gid in gids[:sample]:
         morphology = circuit.morph.get(gid, transform=True, source="ascii")
+        # transform morphology in the plane coordinates
+        morphology = morphology.transform(
+            lambda p: np.dot(p - plane_left.point, rotation_matrix.T)
+        )
         viewer.plot_neuron(
             ax,
             morphology,
-            plane="zx",
+            plane="xy",
             realistic_diameters=True,
         )
 
 
 def _plot_collage(
-    plane_id, planes=None, layer_annotation=None, circuit=None, mtype=None, sample=None
+    planes, layer_annotation=None, circuit=None, mtype=None, sample=None, n_pixels=1024
 ):
     """Internal plot collage for multiprocessing."""
-    left_plane = planes[2 * plane_id]
-    right_plane = planes[2 * plane_id + 1]
-
-    plane_basis, _ = get_aligned_basis(left_plane)
-    X, Y, layers = get_layer_info(layer_annotation, left_plane, plane_basis)
+    left_plane, right_plane = planes
+    rotation_matrix = get_plane_rotation_matrix(left_plane)
+    X, Y, layers = get_layer_info(
+        layer_annotation, left_plane.point, rotation_matrix, n_pixels
+    )
 
     fig = plt.figure()
     plt.contourf(
@@ -424,15 +376,20 @@ def _plot_collage(
         levels=[1, 2, 3, 4, 5, 6],
         alpha=0.5,
     )
+
     plot_cells(
         plt.gca(),
         circuit,
         left_plane,
         right_plane,
+        rotation_matrix=rotation_matrix,
         mtype=mtype,
         sample=sample,
     )
     plt.colorbar()
+    ax = plt.gca()
+    ax.set_rasterized(True)
+    ax.set_title("")
     return fig
 
 
@@ -441,25 +398,36 @@ def plot_collage(
     planes,
     layer_annotation,
     mtype,
-    output_path="collage.pdf",
+    pdf_filename="collage.pdf",
     sample=10,
     nb_jobs=-1,
+    joblib_verbose=10,
+    dpi=1000,
 ):
-    """Plot collage of an mtyp and a list of planes."""
-    plane_ids = np.arange(int(len(planes) / 2) - 1)
+    """Plot collage of an mtype and a list of planes.
 
-    ensure_dir(output_path)
-    with PdfPages(output_path) as pdf:
+    Args:
+        circuit (circuit): should contain location of soma and mtypes
+        planes (list): list of plane objects from atlas_analysis
+        layer_annotation (VoxelData): layer annotation on atlas
+        mtype (str): mtype of cells to plot
+        pdf_filename (str): pdf filename
+        sample (int): maximum number of cells to plot
+        nb_jobs (int) : number of joblib workers
+        joblib_verbose (int) verbose level of joblib
+        dpi (int): dpi for pdf rendering (rasterized)
+    """
+    ensure_dir(pdf_filename)
+    with PdfPages(pdf_filename) as pdf:
         f = partial(
             _plot_collage,
-            planes=planes,
             layer_annotation=layer_annotation,
             circuit=circuit,
             mtype=mtype,
             sample=sample,
         )
-        for fig in Parallel(nb_jobs)(
-            delayed(f)(plane_id) for plane_id in tqdm(plane_ids)
+        for fig in Parallel(nb_jobs, verbose=joblib_verbose)(
+            delayed(f)(planes) for planes in zip(planes[:-1:3], planes[2::3])
         ):
-            pdf.savefig(fig, bbox_inches="tight", dpi=100)
+            pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
             plt.close(fig)

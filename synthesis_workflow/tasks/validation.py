@@ -2,19 +2,18 @@
 from pathlib import Path
 
 import luigi
-import numpy as np
 import pandas as pd
 from voxcell import VoxelData
+from atlas_analysis.planes.planes import load_planes_centerline
 
 from ..tools import load_circuit
 from ..validation import convert_mvd3_to_morphs_df
 from ..validation import plot_collage
-from ..validation import plot_collage_O1
 from ..validation import plot_density_profiles
 from ..validation import plot_morphometrics
 from .circuit import CreateAtlasPlanes
+from .circuit import CreateAtlasLayerAnnotations
 from .config import circuitconfigs
-from .config import logger as L
 from .config import pathconfigs
 from .synthesis import RescaleMorphologies
 from .synthesis import Synthesize
@@ -148,15 +147,20 @@ class PlotCollage(BaseTask):
 
     Args:
         collage_base_path (str): path to the output folder
-        collage_type (str): collage mode (01 or Isocortex)
         sample (float): number of cells to use, if None, all available
         mtypes (list(str)): mtypes to plot
+        nb_jobs (int) : number of joblib workers
+        joblib_verbose (int) verbose level of joblib
+        dpi (int): dpi for pdf rendering (rasterized)
+
     """
 
     collage_base_path = luigi.Parameter(default="collages")
-    collage_type = luigi.ChoiceParameter(default="O1", choices=["O1", "Isocortex"])
     sample = luigi.IntParameter(default=20)
     mtypes = luigi.ListParameter(default=None)
+    nb_jobs = luigi.IntParameter(default=-1)
+    joblib_verbose = luigi.IntParameter(default=10)
+    dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
         """"""
@@ -168,84 +172,72 @@ class PlotCollage(BaseTask):
             mtypes = pd.read_csv(pathconfigs().synth_morphs_df_path).mtype.unique()
         else:
             mtypes = self.mtypes
-
-        if self.collage_type == "O1":
+        for mtype in mtypes:
             yield PlotSingleCollage(
                 collage_base_path=self.collage_base_path,
-                collage_type=self.collage_type,
+                mtype=mtype,
                 sample=self.sample,
-                mtype=mtypes,
+                nb_jobs=self.nb_jobs,
+                joblib_verbose=self.joblib_verbose,
+                dpi=self.dpi,
             )
-        elif self.collage_type == "Isocortex":
-            for mtype in mtypes:
-                yield PlotSingleCollage(
-                    collage_base_path=self.collage_base_path,
-                    collage_type=self.collage_type,
-                    sample=self.sample,
-                    mtype=mtype,
-                )
 
     def output(self):
         """"""
         return luigi.LocalTarget(self.collage_base_path)
 
 
-class PlotSingleCollage(luigi.Task):
+class PlotSingleCollage(BaseTask):
     """Plot collage for single mtype.
 
     Args:
         collage_base_path (str): path to the output folder
-        collage_type (str): collage mode (01 or Isocortex)
+        mtype (str of list(str)): mtype(s) to plot
         sample (float): number of cells to use, if None, all available
-        mtype (str of list(str)): mtype(s) to plot (should be one str if collage_type is
-            Isocortex and a list of str if collage_type is 01)
+        nb_jobs (int) : number of joblib workers
+        joblib_verbose (int) verbose level of joblib
+        dpi (int): dpi for pdf rendering (rasterized)
     """
 
     collage_base_path = luigi.Parameter(default="collages")
-    collage_type = luigi.ChoiceParameter(default="O1", choices=["O1", "Isocortex"])
-    sample = luigi.IntParameter(default=20)
     mtype = luigi.Parameter()
+    sample = luigi.IntParameter(default=20)
+    nb_jobs = luigi.IntParameter(default=-1)
+    joblib_verbose = luigi.IntParameter(default=10)
+    dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
         """"""
-        return {"synthesis": Synthesize()}
+        return {
+            "synthesis": Synthesize(),
+            "planes": CreateAtlasPlanes(),
+            "layers": CreateAtlasLayerAnnotations(),
+        }
 
     def run(self):
         """"""
-
-        L.debug("collage_path = %s", self.output().path)
-
         circuit = load_circuit(
             path_to_mvd3=self.input()["synthesis"].path,
             path_to_morphologies=pathconfigs().synth_output_path,
             path_to_atlas=circuitconfigs().atlas_path,
         )
 
-        if self.collage_type == "O1":
-            plot_collage_O1(circuit, self.sample, self.output().path)
-
-        elif self.collage_type == "Isocortex":
-            planes_task = yield CreateAtlasPlanes()
-            planes = np.load(planes_task.path)["planes"]
-            annotation_path = Path(circuitconfigs().atlas_path) / "layers.nrrd"
-            layer_annotation = VoxelData.load_nrrd(annotation_path)
-            plot_collage(
-                circuit,
-                planes,
-                layer_annotation,
-                self.mtype,
-                self.output().path,
-                self.sample,
-            )
+        planes = load_planes_centerline(self.input()["planes"].path)["planes"]
+        layer_annotation = VoxelData.load_nrrd(self.input()["layers"].path)
+        plot_collage(
+            circuit,
+            planes,
+            layer_annotation,
+            self.mtype,
+            pdf_filename=self.output().path,
+            sample=self.sample,
+            nb_jobs=self.nb_jobs,
+            joblib_verbose=self.joblib_verbose,
+            dpi=self.dpi,
+        )
 
     def output(self):
         """"""
-        if self.collage_type == "O1":
-            collage_path = (Path(self.collage_base_path) / "collages").with_suffix(
-                ".pdf"
-            )
-        else:
-            collage_path = (Path(self.collage_base_path) / self.mtype).with_suffix(
-                ".pdf"
-            )
-        return luigi.LocalTarget(collage_path)
+        return luigi.LocalTarget(
+            (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
+        )
