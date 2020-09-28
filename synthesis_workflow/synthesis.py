@@ -26,11 +26,13 @@ from placement_algorithm.app.choose_morphologies import Worker as ChooseMorpholo
 from placement_algorithm.app.synthesize_morphologies import (
     Master as SynthesizeMorphologiesMaster,
 )
+from tmd.io.io import load_population
 from tns import extract_input
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
 from . import STR_TO_TYPES
+from .fit_utils import fit_path_distance_to_extent
 from .tools import run_master
 
 
@@ -242,9 +244,16 @@ def create_axon_morphologies_tsv(
             (morphs_df.mtype == cells_df.loc[gid, "mtype"]) & morphs_df.use_axon
         ]
         if len(all_cells) > 0:
+            cell = None
             if use_placement:
-                cell = all_cells.loc[all_cells["name"] == worker(gid)].iloc[0]
-            else:
+                try:
+                    cell = all_cells.loc[all_cells["name"] == worker(gid)].iloc[0]
+                except KeyError:
+                    L.warning(
+                        "Could not find annotations for GID=%s. Picking a random cell instead.",
+                        gid,
+                    )
+            if cell is None:
                 cell = all_cells.sample().iloc[0]
 
             axon_morphs.loc[gid, "morphology"] = cell["name"]
@@ -394,7 +403,11 @@ def rescale_morphologies(
     for mtype in tqdm(morphs_df.mtype.unique()):
         gids = morphs_df[morphs_df.mtype == mtype].index
 
-        if mtype in scaling_rules and scaling_rules[mtype] is not None:
+        if (
+            not skip_rescale
+            and mtype in scaling_rules
+            and scaling_rules[mtype] is not None
+        ):
             for neurite_type, target_layer in scaling_rules[mtype].items():
                 soma_layer = int(mtype[1])
                 target_layer = int(target_layer[1])
@@ -405,18 +418,9 @@ def rescale_morphologies(
                 )
                 for gid in gids:
                     morphology = Morphology(morphs_df.loc[gid, morphology_path])
-                    if not skip_rescale:
-                        scale = rescale_neurites(
-                            morphology, neurite_type, target_length, scaling_mode
-                        )
-                    else:
-                        scale = None
-                    if scale is None:
-                        L.debug(
-                            "The morphology '%s', with mtype '%s' was not rescaled",
-                            morphs_df.loc[gid, "name"],
-                            mtype,
-                        )
+                    scale = rescale_neurites(
+                        morphology, neurite_type, target_length, scaling_mode
+                    )
                     path = (
                         rescaled_morphology_base_path / morphs_df.loc[gid, "name"]
                     ).with_suffix(ext)
@@ -434,61 +438,127 @@ def rescale_morphologies(
     return morphs_df
 
 
+def _fit_population(mtype, file_names):
+    # Load neurons
+    if len(file_names) > 0:
+        input_population = load_population(file_names)
+    else:
+        return (mtype, None, None)
+
+    # Compute slope and intercept
+    slope, intercept = fit_path_distance_to_extent(input_population)
+
+    return mtype, slope, intercept
+
+
 def add_scaling_rules_to_parameters(
-    tmd_parameters, mean_lengths, scaling_rules, hard_limits
+    tmd_parameters,
+    morphs_df_path,
+    morphology_path,
+    scaling_rules,
+    nb_jobs=-1,
 ):
     """Add the scaling rules to TMD parameters"""
 
     def _get_target_layer(target_layer_str):
-        if re.match("^L", target_layer_str):
-            position = 0.5
-            if len(target_layer_str) == 3:
-                position = 1
-            return int(target_layer_str[1]), position
-        raise Exception("Scaling rule not understood: " + str(target_layer_str))
+        res = re.match("^L?([0-9]*)", target_layer_str)
+        if res is not None:
+            return int(res.group(1))
+        else:
+            raise Exception("Scaling rule not understood: " + str(target_layer_str))
 
-    for neurite_type in mean_lengths:
-        for mtype, mean_length in mean_lengths[neurite_type].items():
-            if (
-                mtype in scaling_rules
-                and scaling_rules[mtype] is not None
-                and neurite_type in scaling_rules[mtype]
-            ):
-                tmd_parameters[mtype][neurite_type]["expected_max_length"] = mean_length
-                layer, position = _get_target_layer(scaling_rules[mtype][neurite_type])
-                tmd_parameters[mtype][neurite_type]["target_layer"] = layer
-                tmd_parameters[mtype][neurite_type]["target_layer_position"] = position
+    def _process_scaling_rule(
+        params, mtype, neurite_type, limits, default_limits, lim_type, default_fraction
+    ):
+        # Get the given limit or the default if not given
+        if lim_type in limits:
+            lim = limits[lim_type]
+        elif lim_type in default_limits:
+            lim = default_limits[lim_type]
+        else:
+            return
 
-    for neurite_type, limits in hard_limits.items():
-        if limits is None:
+        # Update parameters
+        layer = _get_target_layer(lim.get("layer"))
+        fraction = lim.get("fraction", default_fraction)
+        L.debug(
+            "Add %s %s scaling rule to %s: %f in layer %i",
+            neurite_type,
+            lim_type,
+            mtype,
+            fraction,
+            layer,
+        )
+        context = tmd_parameters[mtype].get("context_constraints", {})
+        neurite_type_params = context.get(neurite_type, {})
+        neurite_type_params.update({lim_type: {"layer": layer, "fraction": fraction}})
+        context[neurite_type] = neurite_type_params
+        params[mtype]["context_constraints"] = context
+
+    # Add scaling rules to TMD parameters
+    default_rules = scaling_rules.get("default") or {}
+
+    for mtype in tmd_parameters.keys():
+        mtype_rules = scaling_rules.get(mtype) or {}
+        neurite_types = set(list(default_rules.keys()) + list(mtype_rules.keys()))
+        for neurite_type in neurite_types:
+            default_limits = default_rules.get(neurite_type) or {}
+            limits = mtype_rules.get(neurite_type) or {}
+            _process_scaling_rule(
+                tmd_parameters,
+                mtype,
+                neurite_type,
+                limits,
+                default_limits,
+                "hard_limit_min",
+                0,
+            )
+            _process_scaling_rule(
+                tmd_parameters,
+                mtype,
+                neurite_type,
+                limits,
+                default_limits,
+                "extent_to_target",
+                0.5,
+            )
+            _process_scaling_rule(
+                tmd_parameters,
+                mtype,
+                neurite_type,
+                limits,
+                default_limits,
+                "hard_limit_max",
+                1,
+            )
+
+    # Build the file list for each mtype
+    morphs_df = pd.read_csv(morphs_df_path)
+    file_lists = [
+        (mtype, morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
+        for mtype in scaling_rules.keys()
+    ]
+
+    # Fit data and update TMD parameters
+    for mtype, slope, intercept in Parallel(nb_jobs)(
+        delayed(_fit_population)(mtype, file_names) for mtype, file_names in file_lists
+    ):
+        if slope is None or intercept is None:
+            L.debug(
+                "Fitting parameters not found for %s (slope=%s ; intercept=%s)",
+                mtype,
+                slope,
+                intercept,
+            )
             continue
-        if "hard_limits" not in tmd_parameters[neurite_type]:
-            tmd_parameters[neurite_type]["hard_limits"] = defaultdict(dict)
-        if "min" in limits:
-            lim = limits["min"]
-            min_layer = int(lim.get("layer")[1:])
-            min_fraction = lim.get("fraction", 0.0)
-            tmd_parameters[neurite_type]["hard_limits"]["min"]["layer"] = min_layer
-            tmd_parameters[neurite_type]["hard_limits"]["min"][
-                "fraction"
-            ] = min_fraction
-            L.debug(
-                "Add min hard limit to %s: %i in %f layer",
-                neurite_type,
-                min_layer,
-                min_fraction,
-            )
-        if "max" in limits:
-            lim = limits["max"]
-            max_layer = int(lim.get("layer")[1:])
-            max_fraction = lim.get("fraction", 1.0)
-            tmd_parameters[neurite_type]["hard_limits"]["max"]["layer"] = max_layer
-            tmd_parameters[neurite_type]["hard_limits"]["max"][
-                "fraction"
-            ] = max_fraction
-            L.debug(
-                "Add max hard limit to %s: %i in %f layer",
-                neurite_type,
-                max_layer,
-                max_fraction,
-            )
+        context = tmd_parameters[mtype].get("context_constraints", {})
+        neurite_type_params = context.get("apical", {}).get("extent_to_target", {})
+        neurite_type_params.update({"slope": slope, "intercept": intercept})
+        context["apical"]["extent_to_target"] = neurite_type_params
+        tmd_parameters[mtype]["context_constraints"] = context
+        L.debug(
+            "Fitting parameters for %s: slope=%s ; intercept=%s",
+            mtype,
+            slope,
+            intercept,
+        )

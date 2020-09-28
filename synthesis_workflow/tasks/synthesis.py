@@ -1,7 +1,6 @@
 """Luigi tasks for morphology synthesis."""
 import json
 import logging
-import re
 from functools import partial
 
 import luigi
@@ -254,6 +253,7 @@ class Synthesize(BaseTask):
     apical_points_path = luigi.Parameter(default="apical_points.yaml")
     morphology_path = luigi.Parameter(default=None)
     nb_jobs = luigi.IntParameter(default=-1)
+    debug_region_grower_scales = luigi.BoolParameter(default=False)
 
     def requires(self):
         """"""
@@ -305,6 +305,15 @@ class Synthesize(BaseTask):
             "seed": str(0),
         }
 
+        if self.debug_region_grower_scales:
+            # pylint: disable=protected-access
+            # from region_grower import context
+            # context.SpaceNeuronGrower._DEBUG_SCALES = True
+            # context.SpaceContext._DEBUG_SCALES = True
+            raise NotImplementedError(
+                "This feature is not implemented yet in region-grower"
+            )
+
         run_synthesize_morphologies(kwargs, nb_jobs=self.nb_jobs)
 
     def output(self):
@@ -353,51 +362,33 @@ class AddScalingRulesToParameters(BaseTask):
     """Add scaling rules to tmd_parameter.json."""
 
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")
-    hard_limits_path = luigi.Parameter(default="hard_limits.yaml")
     tmd_parameters_path = luigi.Parameter(default=None)
+    morphology_path = luigi.Parameter(default=None)
+    nb_jobs = luigi.IntParameter(default=-1)
 
     def requires(self):
         """"""
         return {
+            "rescaled": RescaleMorphologies(),
             "tmd_parameters": BuildSynthesisParameters(),
-            "mean_lengths": GetMeanNeuriteLengths(),
         }
 
     def run(self):
         """"""
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
-        mean_lengths = yaml.full_load(self.input()["mean_lengths"].open("r"))
-        scaling_rules = yaml.full_load(open(self.scaling_rules_path, "r"))
 
-        def _get_target_layer(target_layer_str):
-            if re.match("^L", target_layer_str):
-                position = 0.5
-                if len(target_layer_str) == 3:
-                    position = 1
-                return int(target_layer_str[1]), position
-            raise Exception("Scaling rule not understood: " + str(target_layer_str))
+        if self.scaling_rules_path is not None:
+            L.debug("Load scaling rules from %s", self.scaling_rules_path)
+            scaling_rules = yaml.full_load(open(self.scaling_rules_path, "r"))
+        else:
+            scaling_rules = {}
 
-        for neurite_type in mean_lengths:
-            for mtype, mean_length in mean_lengths[neurite_type].items():
-                if (
-                    mtype in scaling_rules
-                    and scaling_rules[mtype] is not None
-                    and neurite_type in scaling_rules[mtype]
-                ):
-                    tmd_parameters[mtype][neurite_type][
-                        "expected_max_length"
-                    ] = mean_length
-                    layer, position = _get_target_layer(
-                        scaling_rules[mtype][neurite_type]
-                    )
-                    tmd_parameters[mtype][neurite_type]["target_layer"] = layer
-                    tmd_parameters[mtype][neurite_type][
-                        "target_layer_position"
-                    ] = position
-
-        hard_limits = yaml.full_load(open(self.hard_limits_path, "r"))
         add_scaling_rules_to_parameters(
-            tmd_parameters, mean_lengths, scaling_rules, hard_limits
+            tmd_parameters,
+            self.input()["rescaled"].path,
+            self.morphology_path,
+            scaling_rules,
+            self.nb_jobs,
         )
 
         with self.output().open("w") as f:

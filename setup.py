@@ -12,17 +12,40 @@ if sys.version_info < (3, 6):
 with open("README.rst", encoding="utf-8") as f:
     README = f.read()
 
-# Read the requirements
-with open("requirements.pip") as f:
-    reqs = f.read().splitlines()
+reqs = [
+    "atlas_analysis",
+    "bluepyefe",
+    "bluepyopt",
+    "diameter_synthesis",
+    "h5py",
+    "joblib",
+    "luigi",
+    "matplotlib",
+    "morph_validator",
+    "morphio",
+    "neuroc",
+    "neurom",
+    "pandas",
+    "placement_algorithm",
+    "region_grower",
+    "scipy",
+    "seaborn",
+    "tns",
+    "tmd",
+    "tqdm",
+    "voxcell",
+]
 
-# Read the doc requirements
-with open("requirements-doc.pip") as f:
-    doc_reqs = f.read().splitlines()
+doc_reqs = [
+    "sphinx",
+    "sphinx-bluebrain-theme",
+]
 
-# Read the test requirements
-with open("requirements-test.pip") as f:
-    test_reqs = f.read().splitlines()
+test_reqs = [
+    "brainbuilder",
+    "pytest",
+    "pytest-cov",
+]
 
 VERSION = imp.load_source("", "synthesis_workflow/version.py").__version__
 
@@ -36,10 +59,9 @@ setup(
     long_description_content_type="text/x-rst",
     url="https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow",
     license="BBP-internal-confidential",
-    install_requires=reqs,
     packages=find_packages(),
     python_requires=">=3.6",
-    setup_requires=["setuptools_scm"],
+    install_requires=reqs,
     extras_require={"docs": doc_reqs, "test": test_reqs},
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

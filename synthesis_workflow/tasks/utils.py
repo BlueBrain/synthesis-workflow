@@ -13,11 +13,30 @@ from .config import synthesisconfigs
 L = logging.getLogger(__name__)
 
 
+@luigi.Task.event_handler(luigi.Event.SUCCESS)
+def log_targets(task):
+    """Hook to log output target of the task"""
+    class_name = task.__class__.__name__
+    try:
+        output = task.output()
+    except AttributeError:
+        return
+    try:
+        L.debug("Output of %s task: %s", class_name, output.path)
+    except AttributeError:
+        try:
+            for k, i in output.items():
+                L.debug("Output %s of %s task: %s", k, class_name, i.path)
+        except AttributeError:
+            for i in output:
+                L.debug("Output of %s task: %s", class_name, i.path)
+
+
 @luigi.Task.event_handler(luigi.Event.START)
 def log_parameters(task):
     """Hook to log actual parameter values considering their global processing"""
     class_name = task.__class__.__name__
-    L.debug("Attributes of %s class after global processing:", class_name)
+    L.debug("Attributes of %s task after global processing:", class_name)
     for name in task.get_param_names():
         try:
             L.debug("Atribute: %s == %s", name, getattr(task, name))

@@ -9,13 +9,19 @@ from atlas_analysis.planes.planes import load_planes_centerline
 
 from ..tools import load_circuit
 from ..validation import convert_mvd3_to_morphs_df
+from ..validation import parse_log
 from ..validation import plot_collage
 from ..validation import plot_density_profiles
 from ..validation import plot_morphometrics
+from ..validation import plot_path_distance_fits
+from ..validation import plot_scale_statistics
 from .circuit import CreateAtlasPlanes
 from .circuit import CreateAtlasLayerAnnotations
 from .config import circuitconfigs
 from .config import pathconfigs
+from .config import synthesisconfigs
+from .synthesis import AddScalingRulesToParameters
+from .synthesis import BuildSynthesisDistributions
 from .synthesis import RescaleMorphologies
 from .synthesis import Synthesize
 from .utils import BaseTask
@@ -245,3 +251,106 @@ class PlotSingleCollage(BaseTask):
         return luigi.LocalTarget(
             (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
         )
+
+
+class PlotScales(BaseTask):
+    """Plot scales.
+
+    Args:
+        scales_base_path (str): path to the output folder
+        log_file (str): log file to parse
+        mtypes (list(str)): mtypes to plot
+        apical_target_length_regex (str): regex used to find apical target lengths
+        default_scale_regex (str): regex used to find default scales
+        target_scale_regex (str): regex used to find target scales
+        neurite_hard_limit_regex (str): regex used to find neurite hard limits
+    """
+
+    scales_base_path = luigi.Parameter(default="scales")
+    log_file = luigi.Parameter(default="synthesis_workflow.log")
+    mtypes = luigi.ListParameter(default=None)
+    apical_target_length_regex = luigi.Parameter(
+        default="Apical target length rescaling: (.*)"
+    )
+    default_scale_regex = luigi.Parameter(default="Default barcode scale: (.*)")
+    target_scale_regex = luigi.Parameter(default="Target barcode scale: (.*)")
+    neurite_hard_limit_regex = luigi.Parameter(
+        default="Neurite hard limit rescaling: (.*)"
+    )
+
+    def requires(self):
+        """"""
+        return ConvertMvd3()
+
+    def run(self):
+        """"""
+        if (
+            self.mtypes is None
+            or self.mtypes[0] == "all"  # pylint: disable=unsubscriptable-object
+        ):
+            mtypes = pd.read_csv(pathconfigs().synth_morphs_df_path).mtype.unique()
+        else:
+            mtypes = self.mtypes
+
+        # Plot statistics
+        scale_data = parse_log(
+            self.log_file,
+            self.apical_target_length_regex,
+            self.default_scale_regex,
+            self.target_scale_regex,
+            self.neurite_hard_limit_regex,
+        )
+        plot_scale_statistics(
+            mtypes,
+            scale_data,
+            output_dir=self.output().path,
+        )
+
+    def output(self):
+        """"""
+        return luigi.LocalTarget(self.scales_base_path)
+
+
+class PlotPathDistanceFits(luigi.Task):
+    """Plot collage for single mtype.
+
+    Args:
+        output_path (str): path to the output file
+        mtypes (list(str)): mtypes to plot
+        morphology_path (str): column name to use in the DF from RescaleMorphologies
+        outlier_percentage (int): percentage from which the outliers are removed
+        nb_jobs (int): number of jobs
+    """
+
+    output_path = luigi.Parameter(default="path_distance_fit.pdf")
+    mtypes = luigi.ListParameter(default=None)
+    morphology_path = luigi.Parameter(default=None)
+    outlier_percentage = luigi.IntParameter(default=90)
+    nb_jobs = luigi.IntParameter(default=-1)
+
+    def requires(self):
+        """"""
+        return {
+            "scaling_rules": AddScalingRulesToParameters(),
+            "rescaled": RescaleMorphologies(),
+            "distributions": BuildSynthesisDistributions(),
+        }
+
+    def run(self):
+        """"""
+
+        L.debug("output_path = %s", self.output().path)
+        plot_path_distance_fits(
+            self.input()["scaling_rules"].path,
+            synthesisconfigs().tmd_distributions_path,
+            self.input()["rescaled"].path,
+            self.morphology_path or RescaleMorphologies().rescaled_morphology_path,
+            self.output().path,
+            self.mtypes,
+            self.outlier_percentage,
+            self.nb_jobs,
+        )
+
+    def output(self):
+        """"""
+        return luigi.LocalTarget(self.output_path)

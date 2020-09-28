@@ -2,7 +2,6 @@ atlas_analysis
 bluepyefe
 bluepyopt
 diameter_synthesis
-diameter_synthesis
 h5py
 joblib
 luigi
@@ -17,5 +16,6 @@ region_grower
 scipy
 seaborn
 tns
+tmd
 tqdm
 voxcell

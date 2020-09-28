@@ -1,11 +1,13 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
+import json
 import logging
 import os
+import re
 import warnings
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
-from pyquaternion import Quaternion
+from tempfile import TemporaryDirectory
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,9 +17,9 @@ import seaborn as sns
 from joblib import delayed
 from joblib import Parallel
 from matplotlib.backends.backend_pdf import PdfPages
+from pyquaternion import Quaternion
 from scipy.optimize import fmin
 from tqdm import tqdm
-from voxcell import CellCollection
 
 from atlas_analysis.constants import CANONICAL
 from morph_validator.feature_configs import get_feature_configs
@@ -26,9 +28,18 @@ from morph_validator.plotting import plot_violin_features
 from morph_validator.spatial import relative_depth_volume
 from morph_validator.spatial import sample_morph_voxel_values
 from neurom import viewer
+from region_grower.modify import scale_target_barcode
+from tmd.io.io import load_population
+from tns import NeuronGrower
+from voxcell import CellCollection
 
 from .circuit import get_cells_between_planes
+from .fit_utils import clean_outliers
+from .fit_utils import get_path_distances
+from .fit_utils import get_path_distance_from_extent
+from .fit_utils import get_projections
 from .tools import ensure_dir
+from .utils import DisableLogger
 
 
 L = logging.getLogger(__name__)
@@ -430,4 +441,294 @@ def plot_collage(
             delayed(f)(planes) for planes in zip(planes[:-1:3], planes[2::3])
         ):
             pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
+            plt.close(fig)
+
+
+def _generate_synthetic_random_population(
+    dir_path, nb, proj_min, proj_max, tmd_parameters, tmd_distributions
+):
+    """Generate a synthetic population with random projections"""
+    files = []
+    y_synth = []
+    slope = tmd_parameters["context_constraints"]["apical"]["extent_to_target"]["slope"]
+    intercept = tmd_parameters["context_constraints"]["apical"]["extent_to_target"][
+        "intercept"
+    ]
+    for i in range(nb):
+        tmp_name = str((Path(dir_path) / str(i)).with_suffix(".h5"))
+        files.append(tmp_name)
+        projection = np.random.randint(proj_min, proj_max)
+        y_synth.append(projection)
+        target_path_distance = get_path_distance_from_extent(
+            slope, intercept, projection
+        )
+        tmd_parameters["apical"].update(
+            {
+                "modify": {
+                    "funct": scale_target_barcode,
+                    "kwargs": {"target_path_distance": target_path_distance},
+                }
+            }
+        )
+        grower = NeuronGrower(
+            input_parameters=tmd_parameters,
+            input_distributions=tmd_distributions,
+        )
+        grower.grow()
+        grower.neuron.write(tmp_name)
+
+    return files, y_synth
+
+
+def _get_fit_population(
+    mtype, files, outlier_percentage, tmd_parameters, tmd_distributions
+):
+    """Get projections and path lengths of a given biological population and a
+    synthetic population based on the first one."""
+
+    # Load biological neurons
+    if len(files) > 0:
+        input_population = load_population(files)
+    else:
+        return (mtype, None, None)
+
+    # Get X and Y from biological population
+    x = get_path_distances(input_population)
+    y = get_projections(input_population)
+    x_clean, y_clean = clean_outliers(x, y, outlier_percentage)
+
+    # Create synthetic neuron population
+    tmd_distributions["diameter"]["method"] = "M1"
+    tmd_parameters["diameter_params"]["method"] = "M1"
+
+    with TemporaryDirectory() as tmpdir:
+        neuron_paths, y_synth = _generate_synthetic_random_population(
+            tmpdir, 20, y.min(), y.max(), tmd_parameters, tmd_distributions
+        )
+        synthetic_population = load_population(neuron_paths)
+
+    # Get X and Y from synthetic population
+    x_synth = get_path_distances(synthetic_population)
+
+    return mtype, x, y, x_clean, y_clean, x_synth, y_synth
+
+
+def plot_path_distance_fits(
+    tmd_parameters_path,
+    tmd_distributions_path,
+    morphs_df_path,
+    morphology_path,
+    output_path,
+    mtypes=None,
+    outlier_percentage=90,
+    nb_jobs=-1,
+):
+    """Plot path-distance fits"""
+
+    # Read TMD parameters
+    with open(tmd_parameters_path) as f:
+        tmd_parameters = json.load(f)
+
+    # Read TMD distributions
+    with open(tmd_distributions_path) as f:
+        tmd_distributions = json.load(f)
+
+    # Read morphology DataFrame
+    morphs_df = pd.read_csv(morphs_df_path)
+
+    if mtypes is None:
+        mtypes = sorted(
+            [
+                mtype
+                for mtype in morphs_df.mtype.unique().tolist()
+                if tmd_parameters.get(mtype, {})
+                .get("context_constraints", {})
+                .get("apical", {})
+                .get("extent_to_target")
+                is not None
+            ]
+        )
+
+    # Build the file list for each mtype
+    file_lists = [
+        (mtype, morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
+        for mtype in mtypes
+    ]
+
+    ensure_dir(output_path)
+    with PdfPages(output_path) as pdf:
+        for mtype, x, y, x_clean, y_clean, x_synth, y_synth in Parallel(nb_jobs)(
+            delayed(_get_fit_population)(
+                mtype,
+                files,
+                outlier_percentage,
+                tmd_parameters[mtype],
+                tmd_distributions["mtypes"][mtype],
+            )
+            for mtype, files in file_lists
+        ):
+            fig = plt.figure()
+
+            # Plot points
+            plt.scatter(x, y, c="red", label="Outliers")
+            plt.scatter(x_clean, y_clean, c="blue", label="Clean points")
+            plt.scatter(x_synth, y_synth, c="green", label="Synthetized points")
+
+            try:
+                # Plot fit function
+                plt.plot(
+                    [
+                        get_path_distance_from_extent(
+                            tmd_parameters[mtype]["context_constraints"]["apical"][
+                                "extent_to_target"
+                            ]["slope"],
+                            tmd_parameters[mtype]["context_constraints"]["apical"][
+                                "extent_to_target"
+                            ]["intercept"],
+                            i,
+                        )
+                        for i in y
+                    ],
+                    y,
+                    label="Clean fit",
+                )
+            except AttributeError:
+                L.error("Could not plot the fit for %s", mtype)
+
+            ax = plt.gca()
+            ax.legend(loc="best")
+            fig.suptitle(mtype)
+            plt.xlabel("Path distance")
+            plt.ylabel("Projection")
+            pdf.savefig(fig, bbox_inches="tight", dpi=100)
+            plt.close(fig)
+
+
+def parse_log(
+    log_file,
+    apical_target_length_regex,
+    default_scale_regex,
+    target_scale_regex,
+    neurite_hard_limit_regex,
+):
+    """Parse log file and return a DataFrame with data"""
+    # pylint: disable=too-many-locals
+    # TODO: update this when region-grower is ready
+
+    def _search(pattern, line, data):
+        group = re.search(pattern, line)
+        if group:
+            data.append(json.loads(group.group(1)))
+
+    # Read log file
+    with open(log_file) as f:
+        lines = f.readlines()
+
+    # Get data from log
+    apical_target_length_data = []
+    default_scale_data = []
+    target_scale_data = []
+    neurite_hard_limit_data = []
+    for line in lines:
+        _search(apical_target_length_regex, line, apical_target_length_data)
+        _search(default_scale_regex, line, default_scale_data)
+        _search(target_scale_regex, line, target_scale_data)
+        _search(neurite_hard_limit_regex, line, neurite_hard_limit_data)
+
+    # Format data
+    apical_target_length_df = pd.DataFrame(apical_target_length_data)
+    default_scale_df = pd.DataFrame(default_scale_data)
+    target_scale_df = pd.DataFrame(target_scale_data)
+    neurite_hard_limit_df = pd.DataFrame(neurite_hard_limit_data)
+
+    def _pos_to_xyz(df, drop=True):
+        df[["x", "y", "z"]] = pd.DataFrame(
+            df["position"].values.tolist(), index=df.index
+        )
+        if drop:
+            df.drop(columns=["position"], inplace=True)
+
+    # Format positions
+    _pos_to_xyz(apical_target_length_df)
+
+    def _compute_min_max_scales(df, key, name_min, name_max):
+        groups = df.groupby("uuid")
+        neurite_hard_min = groups[key].min().rename(name_min).reset_index()
+        neurite_hard_max = groups[key].max().rename(name_max).reset_index()
+        return neurite_hard_min, neurite_hard_max
+
+    # Compute min/max hard limit scales
+    neurite_hard_min, neurite_hard_max = _compute_min_max_scales(
+        neurite_hard_limit_df, "scale", "hard_min_scale", "hard_max_scale"
+    )
+    default_min, default_max = _compute_min_max_scales(
+        default_scale_df, "scaling_ratio", "default_min_scale", "default_max_scale"
+    )
+    target_min, target_max = _compute_min_max_scales(
+        target_scale_df, "scaling_ratio", "target_min_scale", "target_max_scale"
+    )
+
+    # Merge data
+    result_data = apical_target_length_df
+    result_data = pd.merge(
+        result_data, default_min, on="uuid", suffixes=("", "_default_min")
+    )
+    result_data = pd.merge(
+        result_data, default_max, on="uuid", suffixes=("", "_default_max")
+    )
+    result_data = pd.merge(
+        result_data, target_min, on="uuid", suffixes=("", "_target_min")
+    )
+    result_data = pd.merge(
+        result_data, target_max, on="uuid", suffixes=("", "_target_max")
+    )
+    result_data = pd.merge(
+        result_data, neurite_hard_min, on="uuid", suffixes=("", "_hard_limit_min")
+    )
+    result_data = pd.merge(
+        result_data, neurite_hard_max, on="uuid", suffixes=("", "_hard_limit_max")
+    )
+
+    return result_data
+
+
+def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
+    """Plot collage of an mtype and a list of planes.
+
+    Args:
+        mtypes (list): mtypes of cells to plot
+        scale data (dict): dicto od DataFrame(s) with scale data
+        output_dir (str): result directory
+    """
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    # Plot statistics
+    filename = Path(output_dir) / "statistics.pdf"
+    with PdfPages(filename) as pdf:
+        if scale_data.empty:
+            fig = plt.figure()
+            ax = plt.gca()
+            ax.text(
+                0.5,
+                0.5,
+                "NO DATA TO PLOT",
+                horizontalalignment="center",
+                verticalalignment="center",
+                transform=ax.transAxes,
+            )
+            with DisableLogger():
+                pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
+            plt.close(fig)
+        if mtypes is None:
+            mtypes = scale_data["mtype"].unique().tolist()
+        for col in scale_data.columns:
+            if col in ["uuid", "mtype", "x", "y", "z"]:
+                continue
+            ax = scale_data[["mtype", col]].boxplot(by="mtype")
+
+            fig = ax.figure
+            ax.grid(True)
+            fig.suptitle("")
+            with DisableLogger():
+                pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
             plt.close(fig)
