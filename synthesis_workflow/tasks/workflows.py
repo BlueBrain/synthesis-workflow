@@ -11,7 +11,7 @@ from .vacuum_synthesis import PlotVacuumMorphologies
 
 
 class ValidateSynthesis(luigi.WrapperTask):
-    """Main class to validate synthesis."""
+    """Workflow to validate synthesis"""
 
     with_collage = luigi.BoolParameter(default=True)
     with_morphometrics = luigi.BoolParameter(default=True)
@@ -30,7 +30,7 @@ class ValidateSynthesis(luigi.WrapperTask):
 
 
 class ValidateVacuumSynthesis(luigi.WrapperTask):
-    """Main class to validate vacuum synthesis."""
+    """Workflow to validate vacuum synthesis"""
 
     with_vacuum_morphologies = luigi.BoolParameter(default=True)
     with_morphometrics = luigi.BoolParameter(default=True)
@@ -55,7 +55,7 @@ class ValidateVacuumSynthesis(luigi.WrapperTask):
 
 
 class ValidateRescaling(luigi.Task):
-    """Main class to validate rescaling."""
+    """Workflow to validate rescaling"""
 
     morphometrics_path = luigi.Parameter(default="morphometrics")
     base_key = luigi.Parameter(default="morphology_path")

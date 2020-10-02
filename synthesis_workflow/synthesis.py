@@ -34,7 +34,7 @@ from . import STR_TO_TYPES
 from .tools import run_master
 
 
-L = logging.getLogger("luigi-interface")
+L = logging.getLogger(__name__)
 matplotlib.use("Agg")
 
 

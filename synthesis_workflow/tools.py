@@ -14,7 +14,7 @@ from bluepy.v2 import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
 
 
-L = logging.getLogger("luigi-interface")
+L = logging.getLogger(__name__)
 
 
 def load_circuit(

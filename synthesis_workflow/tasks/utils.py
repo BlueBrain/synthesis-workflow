@@ -1,13 +1,16 @@
 """utils functions for luigi tasks."""
+import logging
 import re
 
 import luigi
 
 from .config import circuitconfigs
 from .config import diametrizerconfigs
-from .config import logger as L
 from .config import pathconfigs
 from .config import synthesisconfigs
+
+
+L = logging.getLogger(__name__)
 
 
 @luigi.Task.event_handler(luigi.Event.START)

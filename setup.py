@@ -51,4 +51,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
+    entry_points={
+        "console_scripts": ["synthesis_workflow=synthesis_workflow.tasks.cli:main"]
+    },
 )

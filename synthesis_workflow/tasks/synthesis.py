@@ -1,5 +1,6 @@
 """Luigi tasks for morphology synthesis."""
 import json
+import logging
 import re
 from functools import partial
 
@@ -26,7 +27,6 @@ from ..tools import get_morphs_df
 from .circuit import SliceCircuit
 from .config import circuitconfigs
 from .config import diametrizerconfigs
-from .config import logger as L
 from .config import pathconfigs
 from .config import synthesisconfigs
 from .utils import BaseTask
@@ -34,6 +34,8 @@ from .utils import ExtParameter
 
 
 morphio.set_maximum_warnings(0)
+
+L = logging.getLogger(__name__)
 
 
 class ApplySubstitutionRules(luigi.Task):

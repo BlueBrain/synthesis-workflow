@@ -1,4 +1,5 @@
 """Luigi tasks for validation of synthesis."""
+import logging
 from pathlib import Path
 
 import luigi
@@ -20,6 +21,9 @@ from .synthesis import Synthesize
 from .utils import BaseTask
 from .utils import ExtParameter
 from .vacuum_synthesis import VacuumSynthesize
+
+
+L = logging.getLogger(__name__)
 
 
 class ConvertMvd3(luigi.Task):

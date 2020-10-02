@@ -1,11 +1,7 @@
 """config functions for luigi tasks."""
-import logging
 import warnings
 
 import luigi
-
-
-logger = logging.getLogger("luigi-interface")
 
 # Add some warning filters
 warnings.filterwarnings("ignore", module="diameter_synthesis.build_diameters")

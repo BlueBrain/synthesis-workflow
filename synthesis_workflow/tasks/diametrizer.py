@@ -1,4 +1,5 @@
 """Luigi tasks to diametrize cells."""
+import logging
 import os
 import sys
 import traceback
@@ -20,10 +21,11 @@ from tqdm import tqdm
 from ..tools import get_morphs_df
 from ..tools import update_morphs_df
 from .config import diametrizerconfigs
-from .config import logger as L
 
 
 matplotlib.use("Agg")
+
+L = logging.getLogger(__name__)
 
 
 def _build_diameter_model(

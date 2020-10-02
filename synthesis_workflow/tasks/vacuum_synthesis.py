@@ -1,5 +1,6 @@
 """Luigi tasks for morphology synthesis."""
 import json
+import logging
 from pathlib import Path
 
 import luigi
@@ -11,7 +12,6 @@ from ..synthesis import get_mean_neurite_lengths
 from ..tools import ensure_dir
 from ..vacuum_synthesis import grow_vacuum_morphologies
 from ..vacuum_synthesis import plot_vacuum_morphologies
-from .config import logger as L
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import BuildSynthesisParameters
 from .synthesis import GetMeanNeuriteLengths
@@ -20,6 +20,8 @@ from .utils import BaseTask
 
 
 morphio.set_maximum_warnings(0)
+
+L = logging.getLogger(__name__)
 
 
 class VacuumSynthesize(BaseTask):
