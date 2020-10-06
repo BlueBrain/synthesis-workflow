@@ -7,6 +7,7 @@ import sys
 import luigi
 
 from synthesis_workflow.tasks import workflows
+from synthesis_workflow.utils import setup_logging
 
 
 L = logging.getLogger(__name__)
@@ -118,28 +119,7 @@ class ArgParser:
 
 def _setup_logging(log_level, log_file=None, log_file_level=None):
     """Setup logging"""
-    root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
-
-    # Setup logging formatter
-    log_format = "%(asctime)s - %(name)s - %(levelname)s -- %(message)s"
-    date_format = "%Y-%m-%d %H:%M:%S"
-    formatter = logging.Formatter(fmt=log_format, datefmt=date_format)
-
-    # Setup console logging handler
-    console = logging.StreamHandler()
-    console.setFormatter(formatter)
-    console.setLevel(log_level)
-    root.addHandler(console)
-
-    # Setup file logging handler
-    if log_file is not None:
-        if log_file_level is None:
-            log_file_level = log_level
-        fh = logging.FileHandler(log_file, mode="w")
-        fh.setLevel(log_file_level)
-        fh.setFormatter(formatter)
-        root.addHandler(fh)
+    setup_logging(log_level, log_file_level, log_file_level)
 
 
 def main(arguments=None):

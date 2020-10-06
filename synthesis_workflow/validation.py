@@ -28,10 +28,12 @@ from morph_validator.plotting import plot_violin_features
 from morph_validator.spatial import relative_depth_volume
 from morph_validator.spatial import sample_morph_voxel_values
 from neurom import viewer
+from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
 from tmd.io.io import load_population
 from tns import NeuronGrower
 from voxcell import CellCollection
+from voxcell.exceptions import VoxcellError
 
 from .circuit import get_cells_between_planes
 from .fit_utils import clean_outliers
@@ -225,31 +227,9 @@ def plot_density_profiles(
         for fig in Parallel(nb_jobs)(
             delayed(f)(mtype) for mtype in tqdm(sorted(circuit.cells.mtypes))
         ):
-            pdf.savefig(fig, bbox_inches="tight")
+            with DisableLogger():
+                pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
-
-
-def _plot_cells(circuit, mtype, sample, ax):
-    """Plot cells for collage."""
-    max_sample = (circuit.cells.get(properties="mtype") == mtype).sum()
-    if sample > max_sample:
-        L.warning(
-            "The sample value is set to '%s' for the type %s because there are no more "
-            "cells available of that type",
-            max_sample,
-            mtype,
-        )
-        sample = max_sample
-    gids = circuit.cells.ids(group={"mtype": mtype}, sample=sample)
-
-    for gid in gids:
-        morphology = circuit.morph.get(gid, transform=True, source="ascii")
-        viewer.plot_neuron(
-            ax,
-            morphology,
-            plane="zy",
-            realistic_diameters=True,
-        )
 
 
 def get_plane_rotation_matrix(plane, target=None):
@@ -303,6 +283,7 @@ def get_layer_info(
         rotation_matrix (3*3 np.ndarray): rotation matrix to transform from real coordinates
             to plane coordinates
         n_pixels (int): number of pixel on each axis of the plane for plotting layers
+        atlas (AtlasHelper): if atlas is provided, we will plot arrows with orientations
     """
     bbox = layer_annotation.bbox
     bbox_min = rotation_matrix.dot(bbox[0] - plane_origin)
@@ -311,9 +292,9 @@ def get_layer_info(
     ys_plane = np.linspace(bbox_min[1], bbox_max[1], n_pixels)
 
     layers = np.empty([n_pixels, n_pixels])
+
     X = np.empty([n_pixels, n_pixels])
     Y = np.empty([n_pixels, n_pixels])
-
     for i, x_plane in enumerate(xs_plane):
         for j, y_plane in enumerate(ys_plane):
             X[i, j] = x_plane
@@ -334,6 +315,40 @@ def get_layer_info(
     return X, Y, layers
 
 
+def get_y_info(atlas, plane_origin, rotation_matrix, n_pixels=64):
+    """Get direction of y axis on a grid on the atlas planes."""
+    bbox = atlas.orientations.bbox
+    bbox_min = rotation_matrix.dot(bbox[0] - plane_origin)
+    bbox_max = rotation_matrix.dot(bbox[1] - plane_origin)
+    xs_plane = np.linspace(bbox_min[0], bbox_max[0], n_pixels)
+    ys_plane = np.linspace(bbox_min[1], bbox_max[1], n_pixels)
+
+    orientation_u = np.zeros([n_pixels, n_pixels])
+    orientation_v = np.zeros([n_pixels, n_pixels])
+    X = np.empty([n_pixels, n_pixels])
+    Y = np.empty([n_pixels, n_pixels])
+    for i, x_plane in enumerate(xs_plane):
+        for j, y_plane in enumerate(ys_plane):
+            X[i, j] = x_plane
+            Y[i, j] = y_plane
+
+            # transform plane coordinates into real coordinates (coordinates of VoxelData)
+            point = (
+                rotation_matrix.T.dot([x_plane, 0, 0])
+                + rotation_matrix.T.dot([0, y_plane, 0])
+                + plane_origin
+            )
+            try:
+                orientation = atlas.lookup_orientation(point)
+                if orientation[0] != 0.0 and orientation[1] != 1.0:
+                    orientation_u[i, j], orientation_v[i, j] = rotation_matrix.dot(
+                        orientation
+                    )[:2]
+            except VoxcellError:
+                pass
+    return X, Y, orientation_u, orientation_v
+
+
 def plot_cells(
     ax,
     circuit,
@@ -342,6 +357,7 @@ def plot_cells(
     rotation_matrix=None,
     mtype=None,
     sample=10,
+    atlas=None,
 ):
     """Plot cells for collage."""
     cells = circuit.cells.get({"mtype": mtype})
@@ -350,60 +366,100 @@ def plot_cells(
 
     if len(cells) == 0:
         raise Exception("no cells of that mtype")
-
     gids = get_cells_between_planes(cells, plane_left, plane_right).index
     for gid in gids[:sample]:
         morphology = circuit.morph.get(gid, transform=True, source="ascii")
+
+        def _to_plane_coord(p):
+            return np.dot(p - plane_left.point, rotation_matrix.T)
+
         # transform morphology in the plane coordinates
-        morphology = morphology.transform(
-            lambda p: np.dot(p - plane_left.point, rotation_matrix.T)
-        )
+        morphology = morphology.transform(_to_plane_coord)
+
+        if atlas is not None:
+            pos_orig = circuit.cells.positions(gid).to_numpy()
+            pos_final = pos_orig + atlas.lookup_orientation(pos_orig) * 300
+            pos_orig = _to_plane_coord(pos_orig)
+            pos_final = _to_plane_coord(pos_final)
+            plt.plot(
+                [pos_orig[0], pos_final[0]],
+                [pos_orig[1], pos_final[1]],
+                c="0.5",
+                lw=0.2,
+            )
+
         viewer.plot_neuron(
-            ax,
-            morphology,
-            plane="xy",
-            realistic_diameters=True,
+            ax, morphology, plane="xy", realistic_diameters=True, linewidth=0.1
         )
 
 
 def _plot_collage(
-    planes, layer_annotation=None, circuit=None, mtype=None, sample=None, n_pixels=1024
+    planes,
+    layer_annotation=None,
+    circuit=None,
+    mtype=None,
+    sample=None,
+    n_pixels=1024,
+    atlas=None,
+    n_pixels_y=64,
+    with_y_field=True,
+    with_cells=True,
 ):
     """Internal plot collage for multiprocessing."""
+    if with_y_field and atlas is None:
+        raise Exception("Please provide an atlas with option with_y_field=True")
+
     left_plane, right_plane = planes
     rotation_matrix = get_plane_rotation_matrix(left_plane)
     X, Y, layers = get_layer_info(
         layer_annotation, left_plane.point, rotation_matrix, n_pixels
     )
+    if with_y_field:
+        X_y, Y_y, orientation_u, orientation_v = get_y_info(
+            atlas, left_plane.point, rotation_matrix, n_pixels_y
+        )
 
     fig = plt.figure()
-    plt.contourf(
-        X,
-        Y,
-        layers,
-        cmap="tab10",
-        vmin=0,
-        vmax=10,
-        levels=[1, 2, 3, 4, 5, 6],
-        alpha=0.5,
-    )
-
-    plot_cells(
-        plt.gca(),
-        circuit,
-        left_plane,
-        right_plane,
-        rotation_matrix=rotation_matrix,
-        mtype=mtype,
-        sample=sample,
+    plt.imshow(
+        layers.T,
+        extent=[X[0, 0], X[-1, 0], Y[0, 0], Y[0, -1]],
+        aspect="auto",
+        origin="lower",
+        cmap=matplotlib.colors.ListedColormap(["C0", "C1", "C2", "C3", "C4", "C5"]),
+        alpha=0.3,
     )
     plt.colorbar()
+    if with_cells:
+        plot_cells(
+            plt.gca(),
+            circuit,
+            left_plane,
+            right_plane,
+            rotation_matrix=rotation_matrix,
+            mtype=mtype,
+            sample=sample,
+            atlas=atlas,
+        )
+    if with_y_field:
+        # note: some of these parameters are harcoded for NCx plot, adjust as needed
+        plt.quiver(
+            X_y,
+            Y_y,
+            orientation_u * 100,
+            orientation_v * 100,
+            width=0.0002,
+            angles="xy",
+            scale_units="xy",
+            scale=1,
+        )
     ax = plt.gca()
+    ax.set_aspect("equal")
     ax.set_rasterized(True)
     ax.set_title("")
     return fig
 
 
+# pylint: disable=too-many-arguments
 def plot_collage(
     circuit,
     planes,
@@ -414,6 +470,9 @@ def plot_collage(
     nb_jobs=-1,
     joblib_verbose=10,
     dpi=1000,
+    n_pixels=1024,
+    with_y_field=True,
+    n_pixels_y=64,
 ):
     """Plot collage of an mtype and a list of planes.
 
@@ -427,7 +486,13 @@ def plot_collage(
         nb_jobs (int) : number of joblib workers
         joblib_verbose (int) verbose level of joblib
         dpi (int): dpi for pdf rendering (rasterized)
+        n_pixels (int): number of pixels for plotting layers
+        with_y_field (bool): plot y field
+        n_pixels_y (int): number of pixels for plotting y field
     """
+
+    atlas = AtlasHelper(circuit.atlas)
+
     ensure_dir(pdf_filename)
     with PdfPages(pdf_filename) as pdf:
         f = partial(
@@ -436,11 +501,16 @@ def plot_collage(
             circuit=circuit,
             mtype=mtype,
             sample=sample,
+            atlas=atlas,
+            n_pixels=n_pixels,
+            n_pixels_y=n_pixels_y,
+            with_y_field=with_y_field,
         )
         for fig in Parallel(nb_jobs, verbose=joblib_verbose)(
             delayed(f)(planes) for planes in zip(planes[:-1:3], planes[2::3])
         ):
-            pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
+            with DisableLogger():
+                pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
             plt.close(fig)
 
 
@@ -600,7 +670,8 @@ def plot_path_distance_fits(
             fig.suptitle(mtype)
             plt.xlabel("Path distance")
             plt.ylabel("Projection")
-            pdf.savefig(fig, bbox_inches="tight", dpi=100)
+            with DisableLogger():
+                pdf.savefig(fig, bbox_inches="tight", dpi=100)
             plt.close(fig)
 
 

@@ -17,29 +17,29 @@ from ..validation import plot_path_distance_fits
 from ..validation import plot_scale_statistics
 from .circuit import CreateAtlasPlanes
 from .circuit import CreateAtlasLayerAnnotations
-from .config import circuitconfigs
-from .config import pathconfigs
-from .config import synthesisconfigs
+from .config import CircuitConfig
+from .config import PathConfig
+from .config import SynthesisConfig
+from .luigi_tools import ExtParameter
 from .synthesis import AddScalingRulesToParameters
 from .synthesis import BuildSynthesisDistributions
-from .synthesis import RescaleMorphologies
+from .synthesis import ApplySubstitutionRules
 from .synthesis import Synthesize
-from .utils import BaseTask
-from .utils import ExtParameter
+from .utils import GlobalParamTask
 from .vacuum_synthesis import VacuumSynthesize
 
 
 L = logging.getLogger(__name__)
 
 
-class ConvertMvd3(luigi.Task):
+class ConvertMvd3(GlobalParamTask):
     """Convert synthesize mvd3 file to morphs_df.csv file.
 
     Args:
         ext (str): extension for morphology files
     """
 
-    ext = ExtParameter(default="asc")
+    ext = ExtParameter(default=None)
 
     def requires(self):
         """"""
@@ -48,49 +48,62 @@ class ConvertMvd3(luigi.Task):
     def run(self):
         """"""
         synth_morphs_df = convert_mvd3_to_morphs_df(
-            self.input().path, pathconfigs().synth_output_path, self.ext
+            self.input().path, PathConfig().synth_output_path, self.ext
         )
 
         synth_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
         """"""
-        return luigi.LocalTarget(pathconfigs().synth_morphs_df_path)
+        return luigi.LocalTarget(PathConfig().synth_morphs_df_path)
 
 
 class PlotMorphometrics(luigi.Task):
     """Plot morphometric."""
 
-    morph_type = luigi.Parameter(default="in_circuit")
+    morph_type = luigi.ChoiceParameter(
+        default="in_circuit", choices=["in_circuit", "in_vacuum"]
+    )
     config_features = luigi.DictParameter(default=None)
     morphometrics_path = luigi.Parameter(default="morphometrics")
     base_key = luigi.Parameter(default="repaired_morphology_path")
     comp_key = luigi.Parameter(default="synth_morphology_path")
     base_label = luigi.Parameter(default="bio")
     comp_label = luigi.Parameter(default="synth")
-    normalize = luigi.BoolParameter(
-        default=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
-    )
+    normalize = luigi.BoolParameter()
+
+    @staticmethod
+    def _wrong_morph_type():
+        raise ValueError(
+            "The 'morph_type' argument must be in ['in_circuit', 'in_vacuum']"
+        )
+
+    def requires(self):
+        """"""
+        if self.morph_type == "in_vacuum":
+            return [VacuumSynthesize(), ApplySubstitutionRules()]
+        elif self.morph_type == "in_circuit":
+            return ConvertMvd3()
+        else:
+            return self._wrong_morph_type()
 
     def run(self):
         """"""
         if self.morph_type == "in_vacuum":
-            synthesize_task = yield VacuumSynthesize()
+            synthesize_task = self.input()[0]
             synth_morphs_df = pd.read_csv(synthesize_task.path)
 
-            rescalemorphologies_task = yield RescaleMorphologies()
+            rescalemorphologies_task = self.input()[1]
             morphs_df = pd.read_csv(rescalemorphologies_task.path)
 
         elif self.morph_type == "in_circuit":
-            convertmvd3_task = yield ConvertMvd3()
+            convertmvd3_task = self.input()
             synth_morphs_df = pd.read_csv(convertmvd3_task.path)
 
-            morphs_df = pd.read_csv(pathconfigs().morphs_df_path)
+            morphs_df = pd.read_csv(PathConfig().morphs_df_path)
 
         else:
-            raise ValueError(
-                "The 'morph_type' argument must be in ['in_circuit', 'in_vacuum']"
-            )
+            self._wrong_morph_type()
 
         plot_morphometrics(
             morphs_df,
@@ -109,7 +122,7 @@ class PlotMorphometrics(luigi.Task):
         return luigi.LocalTarget(self.morphometrics_path)
 
 
-class PlotDensityProfiles(luigi.Task):
+class PlotDensityProfiles(GlobalParamTask):
     """Plot density profiles of neurites in an atlas.
 
     Args:
@@ -123,7 +136,7 @@ class PlotDensityProfiles(luigi.Task):
     sample_distance = luigi.FloatParameter(default=10)
     sample = luigi.IntParameter(default=None)
     region = luigi.Parameter(default="O1")
-    nb_jobs = luigi.IntParameter(default=-1)
+    nb_jobs = luigi.IntParameter(default=None)
 
     def requires(self):
         """"""
@@ -134,8 +147,8 @@ class PlotDensityProfiles(luigi.Task):
 
         circuit = load_circuit(
             path_to_mvd3=self.input().path,
-            path_to_morphologies=pathconfigs().synth_output_path,
-            path_to_atlas=circuitconfigs().atlas_path,
+            path_to_morphologies=PathConfig().synth_output_path,
+            path_to_atlas=CircuitConfig().atlas_path,
         )
 
         plot_density_profiles(
@@ -152,7 +165,7 @@ class PlotDensityProfiles(luigi.Task):
         return luigi.LocalTarget(self.density_profiles_path)
 
 
-class PlotCollage(BaseTask):
+class PlotCollage(GlobalParamTask):
     """Plot collage.
 
     Args:
@@ -168,8 +181,8 @@ class PlotCollage(BaseTask):
     collage_base_path = luigi.Parameter(default="collages")
     sample = luigi.IntParameter(default=20)
     mtypes = luigi.ListParameter(default=None)
-    nb_jobs = luigi.IntParameter(default=-1)
-    joblib_verbose = luigi.IntParameter(default=10)
+    nb_jobs = luigi.IntParameter(default=None)
+    joblib_verbose = luigi.IntParameter(default=None)
     dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
@@ -178,8 +191,12 @@ class PlotCollage(BaseTask):
 
     def run(self):
         """"""
-        if self.mtypes[0] == "all":  # pylint: disable=unsubscriptable-object
-            mtypes = pd.read_csv(pathconfigs().synth_morphs_df_path).mtype.unique()
+        if (
+            # pylint: disable=unsubscriptable-object
+            self.mtypes is None
+            or self.mtypes[0] == "all"
+        ):
+            mtypes = pd.read_csv(PathConfig().synth_morphs_df_path).mtype.unique()
         else:
             mtypes = self.mtypes
         for mtype in mtypes:
@@ -197,7 +214,7 @@ class PlotCollage(BaseTask):
         return luigi.LocalTarget(self.collage_base_path)
 
 
-class PlotSingleCollage(BaseTask):
+class PlotSingleCollage(GlobalParamTask):
     """Plot collage for single mtype.
 
     Args:
@@ -209,11 +226,11 @@ class PlotSingleCollage(BaseTask):
         dpi (int): dpi for pdf rendering (rasterized)
     """
 
-    collage_base_path = luigi.Parameter(default="collages")
+    collage_base_path = luigi.Parameter()
     mtype = luigi.Parameter()
-    sample = luigi.IntParameter(default=20)
-    nb_jobs = luigi.IntParameter(default=-1)
-    joblib_verbose = luigi.IntParameter(default=10)
+    sample = luigi.IntParameter()
+    nb_jobs = luigi.IntParameter(default=None)
+    joblib_verbose = luigi.IntParameter(default=None)
     dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
@@ -228,8 +245,8 @@ class PlotSingleCollage(BaseTask):
         """"""
         circuit = load_circuit(
             path_to_mvd3=self.input()["synthesis"].path,
-            path_to_morphologies=pathconfigs().synth_output_path,
-            path_to_atlas=circuitconfigs().atlas_path,
+            path_to_morphologies=PathConfig().synth_output_path,
+            path_to_atlas=CircuitConfig().atlas_path,
         )
 
         planes = load_planes_centerline(self.input()["planes"].path)["planes"]
@@ -253,7 +270,7 @@ class PlotSingleCollage(BaseTask):
         )
 
 
-class PlotScales(BaseTask):
+class PlotScales(GlobalParamTask):
     """Plot scales.
 
     Args:
@@ -288,7 +305,7 @@ class PlotScales(BaseTask):
             self.mtypes is None
             or self.mtypes[0] == "all"  # pylint: disable=unsubscriptable-object
         ):
-            mtypes = pd.read_csv(pathconfigs().synth_morphs_df_path).mtype.unique()
+            mtypes = pd.read_csv(PathConfig().synth_morphs_df_path).mtype.unique()
         else:
             mtypes = self.mtypes
 
@@ -311,13 +328,13 @@ class PlotScales(BaseTask):
         return luigi.LocalTarget(self.scales_base_path)
 
 
-class PlotPathDistanceFits(luigi.Task):
+class PlotPathDistanceFits(GlobalParamTask):
     """Plot collage for single mtype.
 
     Args:
         output_path (str): path to the output file
         mtypes (list(str)): mtypes to plot
-        morphology_path (str): column name to use in the DF from RescaleMorphologies
+        morphology_path (str): column name to use in the DF from ApplySubstitutionRules
         outlier_percentage (int): percentage from which the outliers are removed
         nb_jobs (int): number of jobs
     """
@@ -326,13 +343,13 @@ class PlotPathDistanceFits(luigi.Task):
     mtypes = luigi.ListParameter(default=None)
     morphology_path = luigi.Parameter(default=None)
     outlier_percentage = luigi.IntParameter(default=90)
-    nb_jobs = luigi.IntParameter(default=-1)
+    nb_jobs = luigi.IntParameter(default=None)
 
     def requires(self):
         """"""
         return {
             "scaling_rules": AddScalingRulesToParameters(),
-            "rescaled": RescaleMorphologies(),
+            "rescaled": ApplySubstitutionRules(),
             "distributions": BuildSynthesisDistributions(),
         }
 
@@ -342,9 +359,9 @@ class PlotPathDistanceFits(luigi.Task):
         L.debug("output_path = %s", self.output().path)
         plot_path_distance_fits(
             self.input()["scaling_rules"].path,
-            synthesisconfigs().tmd_distributions_path,
+            SynthesisConfig().tmd_distributions_path,
             self.input()["rescaled"].path,
-            self.morphology_path or RescaleMorphologies().rescaled_morphology_path,
+            self.morphology_path,
             self.output().path,
             self.mtypes,
             self.outlier_percentage,

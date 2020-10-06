@@ -6,6 +6,7 @@ import traceback
 from functools import partial
 from pathlib import Path
 
+import pandas as pd
 import luigi
 import matplotlib
 import yaml
@@ -18,9 +19,8 @@ from morphio.mut import Morphology
 from neurom import load_neurons
 from tqdm import tqdm
 
-from ..tools import get_morphs_df
 from ..tools import update_morphs_df
-from .config import diametrizerconfigs
+from .config import DiametrizerConfig
 
 
 matplotlib.use("Agg")
@@ -64,7 +64,6 @@ class BuildDiameterModels(luigi.Task):
     """Task to build diameter models from set of cells."""
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
-    to_use_flag = luigi.Parameter(default="all")
     morphology_path = luigi.Parameter(default="morphology_path")
     diameter_models_path = luigi.Parameter(default="diameter_models.yaml")
     by_mtypes = luigi.BoolParameter()
@@ -74,12 +73,8 @@ class BuildDiameterModels(luigi.Task):
     def run(self):
         """Run."""
 
-        config_model = diametrizerconfigs().config_model
-        morphs_df = get_morphs_df(
-            self.morphs_df_path,
-            to_use_flag=self.to_use_flag,
-            morphology_path=self.morphology_path,
-        )
+        config_model = DiametrizerConfig().config_model
+        morphs_df = pd.read_csv(self.morphs_df_path)
 
         models_params = {}
         models_data = {}
@@ -147,7 +142,6 @@ class Diametrize(luigi.Task):
     """Task to build diameter models from set of cells."""
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
-    to_use_flag = luigi.Parameter(default="all")
     morphology_path = luigi.Parameter(default="morphology_path")
     diameter_models_path = luigi.Parameter(default="diameter_models.yaml")
     new_morphology_path = luigi.Parameter(default="diametrized_morphologies")
@@ -160,19 +154,12 @@ class Diametrize(luigi.Task):
     def run(self):
         """Run."""
 
-        config = diametrizerconfigs().config_diametrizer
+        config = DiametrizerConfig().config_diametrizer
 
         with self.input().open() as f:
             models_params = yaml.safe_load(f)
 
-        morphs_df = get_morphs_df(
-            self.morphs_df_path,
-            to_use_flag=self.to_use_flag,
-            morphology_path=self.morphology_path,
-        )
-
-        if self.to_use_flag != "all":
-            morphs_df = morphs_df[morphs_df[self.to_use_flag]]
+        morphs_df = pd.read_csv(self.morphs_df_path)
 
         diametrizer = partial(
             _diametrizer,

@@ -3,7 +3,7 @@ import luigi
 import pandas as pd
 
 from ..validation import plot_morphometrics
-from .synthesis import RescaleMorphologies
+from .synthesis import ApplySubstitutionRules
 from .validation import PlotCollage
 from .validation import PlotDensityProfiles
 from .validation import PlotMorphometrics
@@ -46,7 +46,7 @@ class ValidateVacuumSynthesis(luigi.WrapperTask):
         if self.with_morphometrics:
             tasks.append(
                 PlotMorphometrics(
-                    base_key="rescaled_morphology_path",
+                    base_key="morphology_path",
                     comp_key="vacuum_morphology_path",
                     morph_type="in_vacuum",
                 )
@@ -63,21 +63,19 @@ class ValidateRescaling(luigi.Task):
 
     morphometrics_path = luigi.Parameter(default="morphometrics")
     base_key = luigi.Parameter(default="morphology_path")
-    comp_key = luigi.Parameter(default="rescaled_morphology_path")
+    comp_key = luigi.Parameter(default="morphology_path")
     base_label = luigi.Parameter(default="bio")
-    comp_label = luigi.Parameter(default="rescaled")
+    comp_label = luigi.Parameter(default="substituted")
     config_features = luigi.DictParameter(default=None)
-    normalize = luigi.BoolParameter(
-        default=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
-    )
+    normalize = luigi.BoolParameter()
 
     def requires(self):
         """"""
-        return RescaleMorphologies()
+        return ApplySubstitutionRules()
 
     def run(self):
         """"""
-
+        # TODO: just call the PlotMorphometrics task with correct arguments?
         base_morphs_df = pd.read_csv(self.requires().input().path)
         comp_morphs_df = pd.read_csv(self.input().path)
 

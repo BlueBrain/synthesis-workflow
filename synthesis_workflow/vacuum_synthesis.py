@@ -14,6 +14,7 @@ from tns import NeuronGrower
 
 from . import STR_TO_TYPES
 from .synthesis import get_max_len
+from .utils import DisableLogger
 
 
 def _grow_morphology(
@@ -76,12 +77,8 @@ def grow_vacuum_morphologies(
     return vacuum_synth_morphs_df
 
 
-def plot_vacuum_morphologies(
-    vacuum_synth_morphs_df, pdf_filename, morphology_path, mean_lengths
-):
+def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_filename, morphology_path):
     """Plot synthesized morphologies on top of each others."""
-    colors = {"apical": "m", "basal": "r", "axon": "b"}
-
     with PdfPages(pdf_filename) as pdf:
         for mtype in tqdm(sorted(vacuum_synth_morphs_df.mtype.unique())):
             plt.figure()
@@ -98,13 +95,9 @@ def plot_vacuum_morphologies(
                     if neurite.type == STR_TO_TYPES["apical"]:
                         max_len = get_max_len(neurite)
                         ax.axhline(max_len, c="0.5", lw=0.5)
-            for neurite_type in mean_lengths:
-                if mtype in mean_lengths[neurite_type]:
-                    ax.axhline(
-                        mean_lengths[neurite_type][mtype], c=colors[neurite_type]
-                    )
             ax.set_title(mtype)
             ax.set_rasterized(True)
             plt.axis([-800, 800, -800, 2000])
-            pdf.savefig()
+            with DisableLogger():
+                pdf.savefig()
             plt.close()

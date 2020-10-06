@@ -1,9 +1,7 @@
 """Functions for synthesis to be used by luigi tasks."""
-import json
 import logging
 import os
 import re
-from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
@@ -40,13 +38,12 @@ L = logging.getLogger(__name__)
 matplotlib.use("Agg")
 
 
-def get_neurite_types(pc_in_types_path, mtypes):
+def get_neurite_types(morphs_df, mtypes):
     """Get the neurite types to consider for PC or IN cells."""
-    with open(pc_in_types_path, "rb") as pc_in_file:
-        pc_in_files = yaml.full_load(pc_in_file)
-
     return {
-        mtype: ["basal"] if pc_in_files[mtype] == "IN" else ["basal", "apical"]
+        mtype: ["basal"]
+        if morphs_df.loc[morphs_df.mtype == mtype, "morph_class"].tolist()[0] == "IN"
+        else ["basal", "apical"]
         for mtype in mtypes
     }
 
@@ -129,7 +126,7 @@ def build_distributions(
 
     tmd_distributions = {
         "mtypes": {},
-        "metadata": {"cortical_thickness": json.loads(cortical_thickness)},
+        "metadata": {"cortical_thickness": cortical_thickness},
     }
     for mtype, distribution in Parallel(nb_jobs, verbose=joblib_verbose)(
         delayed(build_distributions_single_mtype)(mtype) for mtype in mtypes
@@ -307,38 +304,6 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1):
 
     # Run
     run_master(SynthesizeMorphologiesMaster, kwargs, parser_args, defaults, nb_jobs)
-
-
-def get_mean_neurite_lengths(
-    morphs_df,
-    neurite_type="apical",
-    mtypes=None,
-    morphology_path="morphology_path",
-    percentile=None,
-):
-    """Extract the mean radial neurite lengths of a population, by mtypes."""
-    if mtypes is None:
-        mtypes = ["all"]
-    if mtypes[0] != "all":
-        morphs_df = morphs_df[morphs_df.mtype.isin(mtypes)]
-
-    # Choose mean or percentile function
-    def _percentile(q, a, *args, **kwargs):
-        return np.percentile(a, q, *args, **kwargs)
-
-    if percentile is None:
-        f = np.mean
-    else:
-        f = partial(_percentile, float(percentile))
-
-    apical_lengths = defaultdict(list)
-    for gid in tqdm(morphs_df.index):
-        neuron = Morphology(morphs_df.loc[gid, morphology_path])
-        for neurite in neuron.root_sections:
-            if neurite.type == STR_TO_TYPES[neurite_type]:
-                apical_lengths[morphs_df.loc[gid, "mtype"]].append(get_max_len(neurite))
-
-    return {mtype: float(f(lengths)) for mtype, lengths in apical_lengths.items()}
 
 
 def get_target_length(soma_layer, target_layer, cortical_thicknesses):
@@ -537,6 +502,7 @@ def add_scaling_rules_to_parameters(
     file_lists = [
         (mtype, morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
         for mtype in scaling_rules.keys()
+        if mtype != "default"
     ]
 
     # Fit data and update TMD parameters

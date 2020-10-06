@@ -1,11 +1,13 @@
 """Luigi tasks for morphology synthesis."""
 from functools import partial
 from pathlib import Path
+import yaml
 
 import luigi
 import numpy as np
 
-from voxcell import VoxelData, RegionMap
+from voxcell import VoxelData
+from voxcell.nexus.voxelbrain import LocalAtlas
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
 
@@ -14,11 +16,11 @@ from ..circuit import halve_atlas
 from ..circuit import slice_circuit
 from ..circuit import create_planes
 from ..tools import ensure_dir
-from .config import circuitconfigs
-from .utils import BaseTask
+from .config import CircuitConfig
+from .utils import GlobalParamTask
 
 
-class CreateAtlasLayerAnnotations(BaseTask):
+class CreateAtlasLayerAnnotations(GlobalParamTask):
     """Create the annotation file for layers from an atlas.
 
     Args:
@@ -26,34 +28,26 @@ class CreateAtlasLayerAnnotations(BaseTask):
         use_half (bool): set to True to use half of the atlas (left or right hemisphere)
         half_axis (int): direction to select half of the atlas (can be 0, 1 or 2)
         half_side (int): side to choose to halve the atlas (0=left, 1=right)
-        layer_regex (str): to find the layer in hierarchy.json,  it is what is just before
-            the layer number, (ex: "," for O1, and "layer" for neocortex)
     """
 
     layer_annotations_path = luigi.Parameter(default="layer_annotation.nrrd")
     use_half = luigi.BoolParameter(default=False)
     half_axis = luigi.IntParameter(default=0)
     half_side = luigi.IntParameter(default=0)
-    layer_regex = luigi.Parameter(default=",")
 
     def run(self):
         """"""
+        atlas = LocalAtlas(CircuitConfig().atlas_path)
+        ids, names = atlas.get_layer_ids()
         annotation = VoxelData.load_nrrd(
-            Path(circuitconfigs().atlas_path) / "brain_regions.nrrd"
+            Path(CircuitConfig().atlas_path) / "brain_regions.nrrd"
         )
-        rmap = RegionMap.load_json(Path(circuitconfigs().atlas_path) / "hierarchy.json")
         layers = np.zeros_like(annotation.raw, dtype="uint8")
-        for layer in range(1, 7):
-            ids = rmap.find(
-                f"@.*{self.layer_regex} {layer}$", attr="name", with_descendants=True
-            )
-            layers[np.isin(annotation.raw, list(ids))] = layer
+        layer_mapping = {}
+        for layer_id, (ids_set, layer) in enumerate(zip(ids, names)):
+            layer_mapping[layer_id] = layer
+            layers[np.isin(annotation.raw, list(ids_set))] = layer_id + 1
         annotation.raw = layers
-
-        if len(np.nonzero(annotation.raw)[0]) == 0:
-            raise Exception(
-                "Empty layer annotation, please check your atlas and layer_regex"
-            )
 
         if self.use_half:
             annotation.raw = halve_atlas(
@@ -62,13 +56,20 @@ class CreateAtlasLayerAnnotations(BaseTask):
 
         ensure_dir(self.output().path)
         annotation.save_nrrd(self.output().path)
+        yaml.dump(
+            layer_mapping,
+            open(
+                str(Path(self.output().path).with_suffix("")) + "_layer_mapping.yaml",
+                "w",
+            ),
+        )
 
     def output(self):
         """"""
         return luigi.LocalTarget(self.layer_annotations_path)
 
 
-class CreateAtlasPlanes(BaseTask):
+class CreateAtlasPlanes(GlobalParamTask):
     """Create plane cuts of an atlas.
 
     Args:
@@ -122,7 +123,7 @@ class CreateAtlasPlanes(BaseTask):
         return luigi.LocalTarget(self.atlas_planes_path + ".npz")
 
 
-class SliceCircuit(BaseTask):
+class SliceCircuit(GlobalParamTask):
     """Create a smaller circuit .mvd3 file for subsampling.
 
     Args:
@@ -144,7 +145,11 @@ class SliceCircuit(BaseTask):
     def run(self):
         """"""
         mtypes = self.mtypes
-        if "all" in mtypes:  # pylint: disable=unsupported-membership-test
+        if (
+            # pylint: disable=unsupported-membership-test
+            mtypes is None
+            or "all" in mtypes
+        ):
             mtypes = None
 
         planes = load_planes_centerline(self.input().path)["planes"]
@@ -159,7 +164,7 @@ class SliceCircuit(BaseTask):
 
         ensure_dir(self.output().path)
         cells = slice_circuit(
-            circuitconfigs().circuit_somata_path, self.output().path, _slicer
+            CircuitConfig().circuit_somata_path, self.output().path, _slicer
         )
 
         if len(cells.index) == 0:

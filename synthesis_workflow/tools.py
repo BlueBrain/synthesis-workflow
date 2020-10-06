@@ -1,5 +1,7 @@
 """utils functions."""
+import json
 import logging
+import random
 import sys
 import traceback
 import warnings
@@ -7,11 +9,86 @@ from collections import namedtuple
 from pathlib import Path
 
 import pandas as pd
+import yaml
 from joblib import delayed
 from joblib import Parallel
 
 from bluepy.v2 import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
+from morph_tool.utils import neurondb_dataframe, find_morph
+
+from synthesis_workflow.utils import setup_logging
+
+
+def add_taxonomy(morphs_df, pc_in_types):
+    """From a dict with mtype to morph_class, fill in the morphs_df dataframe.
+
+    Args:
+        pc_in_types (dict): dict of the form  [mtype]: [IN|PC]
+    """
+    for mtype, morph_class in pc_in_types.items():
+        morphs_df.loc[morphs_df.mtype == mtype, "morph_class"] = morph_class
+    return morphs_df
+
+
+def add_morphology_paths(morph_df, morphology_dirs):
+    """Same as the path loader of morph_tool.utils.neurondb_dataframe, but add multiple columns.
+
+    Args:
+        morphology_dirs: (dict) If passed, a column with the path to each morphology file
+            will be added for each entry of the dict, where the column name is the dict key
+    """
+    for name, morphology_dir in morphology_dirs.items():
+        morph_df[name] = morph_df.apply(
+            lambda row, morphology_dir=morphology_dir: find_morph(
+                morphology_dir, row["name"]
+            ),
+            axis=1,
+        )
+    return morph_df
+
+
+def add_apical_points(morphs_df, apical_points):
+    """Add apical points isec in morphs_df.
+    Args:
+        apical_points (dict): name of cell as key and apical point isec as value
+    """
+
+    morphs_df["apical_point_isec"] = -1
+    for name, apical_point in apical_points.items():
+        morphs_df.loc[morphs_df.name == name, "apical_point_isec"] = apical_point
+    morphs_df["apical_point_isec"] = morphs_df["apical_point_isec"].astype(int)
+    return morphs_df
+
+
+def load_neurondb_to_dataframe(
+    neurondb_path, morphology_dirs=None, pc_in_types_path=None, apical_points_path=None
+):
+    """Loads morphology release to a dataframe.
+
+    Args:
+        neurondb_path (str): path to a neurondb.xml file
+        morphology_dirs: (dict) If passed, a column with the path to each morphology file
+            will be added for each entry of the dict, where the column name is the dict key
+        pc_in_types (dict): dict of the form  [mtype]: [IN|PC]
+        apical_points (dict): name of cell as key and apical point isec as value
+    """
+    morphs_df = neurondb_dataframe(neurondb_path)
+
+    if morphology_dirs is not None:
+        morphs_df = add_morphology_paths(morphs_df, morphology_dirs)
+
+    if apical_points_path is not None:
+        with open(apical_points_path, "r") as f:
+            apical_points = json.load(f)
+        morphs_df = add_apical_points(morphs_df, apical_points)
+
+    if pc_in_types_path is not None:
+        with open(pc_in_types_path, "r") as f:
+            pc_in_types = yaml.full_load(f)
+        morphs_df = add_taxonomy(morphs_df, pc_in_types)
+
+    return morphs_df
 
 
 L = logging.getLogger(__name__)
@@ -40,31 +117,16 @@ def ensure_dir(file_path):
     Path(file_path).parent.mkdir(parents=True, exist_ok=True)
 
 
-def get_morphs_df(
-    morphs_df_path,
-    to_use_flag="all",
-    morphology_path="morphology_path",
-    h5_path=None,
-):
-    """Get valid morphs_df for diametrizer (select using flag + remove duplicates)."""
-    morphs_df = pd.read_csv(morphs_df_path)
-    if to_use_flag != "all":
-        morphs_df = morphs_df.loc[morphs_df[to_use_flag]]
-    if h5_path is not None:
-        morphs_df[morphology_path] = morphs_df[
-            "_".join(morphology_path.split("_")[:-1])
-        ].apply(lambda path: str((Path(h5_path) / Path(path).stem).with_suffix(".h5")))
-    return morphs_df[["name", "mtype", morphology_path]].drop_duplicates()
-
-
 def update_morphs_df(morphs_df_path, new_morphs_df):
     """Update a morphs_df with new entries to preserve duplicates."""
     return pd.read_csv(morphs_df_path).merge(new_morphs_df, how="left")
 
 
-def _wrap_worker(_id, worker):
+def _wrap_worker(_id, worker, logger_kwargs=None):
     """Wrap the worker job and catch exceptions that must be caught"""
     try:
+        if logger_kwargs is not None:
+            setup_logging(**logger_kwargs)
         with warnings.catch_warnings():
             # Ignore all warnings in workers
             warnings.simplefilter("ignore")
@@ -79,8 +141,16 @@ def _wrap_worker(_id, worker):
         raise
 
 
-def run_master(master_cls, kwargs, parser_args=None, defaults=None, nb_jobs=-1):
-    """To-be-executed on master node (MPI_RANK == 0).
+def run_master(
+    master_cls,
+    kwargs,
+    parser_args=None,
+    defaults=None,
+    nb_jobs=-1,
+    verbose=10,
+    logger_kwargs=None,
+):
+    """Runing the parrallel computation, (adapted from placement_algorithm).
 
     Args:
         master_cls: The Master application
@@ -88,6 +158,7 @@ def run_master(master_cls, kwargs, parser_args=None, defaults=None, nb_jobs=-1):
         parser_args: The arguments of the parser
         defaults: The default values
         nb_jobs: Number of threads used
+        logger_kwargs: Parameters given to logger in each processes
     """
     # Format keys to be compliant with argparse
     underscored = {k.replace("-", "_"): v for k, v in kwargs.items()}
@@ -113,14 +184,14 @@ def run_master(master_cls, kwargs, parser_args=None, defaults=None, nb_jobs=-1):
     worker = master.setup(args)
     worker.setup(args)
 
+    L.info("Running %d iterations.", len(master.task_ids))
+
     # Run the worker
-    out = Parallel(
+    random.shuffle(master.task_ids)
+    results = Parallel(
         n_jobs=nb_jobs,
-        batch_size=20,
-        verbose=20,
-        # max_nbytes=None,  # this does not work, WIP
+        verbose=verbose,
     )(delayed(_wrap_worker)(i, worker) for i in master.task_ids)
 
     # Gather the results
-    result = dict(out)
-    master.finalize(result)
+    master.finalize(dict(results))

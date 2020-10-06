@@ -3,6 +3,9 @@ import warnings
 
 import luigi
 
+from .luigi_tools import ExtParameter
+
+
 # Add some warning filters
 warnings.filterwarnings("ignore", module="diameter_synthesis.build_diameters")
 warnings.filterwarnings("ignore", module="joblib")
@@ -12,7 +15,7 @@ warnings.filterwarnings("ignore", module="neurom.features")
 warnings.filterwarnings("ignore", module="scipy")
 
 
-class diametrizerconfigs(luigi.Config):
+class DiametrizerConfig(luigi.Config):
     """Diametrizer configuration."""
 
     model = luigi.Parameter(default="generic")
@@ -52,27 +55,43 @@ class diametrizerconfigs(luigi.Config):
         }
 
 
-class synthesisconfigs(luigi.Config):
-    """Circuit configuration."""
+class RunnerConfig(luigi.Config):
+    """Runner global configuration."""
+
+    nb_jobs = luigi.IntParameter(
+        default=-1, description="Number of jobs used by parallel tasks"
+    )
+    joblib_verbose = luigi.NumericalParameter(
+        default=0,
+        var_type=int,
+        min_value=0,
+        max_value=50,
+        description="Verbosity level used by the joblib library",
+    )
+
+
+class SynthesisConfig(luigi.Config):
+    """Synthesis global configuration."""
 
     tmd_parameters_path = luigi.Parameter(default="tmd_parameters.json")
     tmd_distributions_path = luigi.Parameter(default="tmd_distributions.json")
-    pc_in_types_path = luigi.Parameter(default="pc_in_types.yaml")
-    cortical_thickness = luigi.Parameter(default="[165, 149, 353, 190, 525, 700]")
-    to_use_flag = luigi.Parameter(default="all")
-    mtypes = luigi.ListParameter(default=["all"])
+    cortical_thickness = luigi.ListParameter(default=[165, 149, 353, 190, 525, 700])
+    mtypes = luigi.ListParameter(default=None)
 
 
-class circuitconfigs(luigi.Config):
+class CircuitConfig(luigi.Config):
     """Circuit configuration."""
 
     circuit_somata_path = luigi.Parameter(default="circuit_somata.mvd3")
     atlas_path = luigi.Parameter(default=None)
 
 
-class pathconfigs(luigi.Config):
+class PathConfig(luigi.Config):
     """Morphology path configuration."""
 
+    ext = ExtParameter(default="asc")
+    # TODO: use out_path as suffix for all output paths
+    out_path = luigi.Parameter(default="out")
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
     synth_morphs_df_path = luigi.Parameter(default="synth_morphs_df.csv")
