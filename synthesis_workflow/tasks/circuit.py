@@ -17,7 +17,10 @@ from ..circuit import slice_circuit
 from ..circuit import create_planes
 from ..tools import ensure_dir
 from .config import CircuitConfig
-from .utils import GlobalParamTask
+from .config import SynthesisConfig
+from .luigi_tools import copy_params
+from .luigi_tools import GlobalParamTask
+from .luigi_tools import ParamLink
 
 
 class CreateAtlasLayerAnnotations(GlobalParamTask):
@@ -123,6 +126,9 @@ class CreateAtlasPlanes(GlobalParamTask):
         return luigi.LocalTarget(self.atlas_planes_path + ".npz")
 
 
+@copy_params(
+    mtypes=ParamLink(SynthesisConfig),
+)
 class SliceCircuit(GlobalParamTask):
     """Create a smaller circuit .mvd3 file for subsampling.
 
@@ -134,7 +140,6 @@ class SliceCircuit(GlobalParamTask):
     """
 
     sliced_circuit_path = luigi.Parameter(default="sliced_circuit_somata.mvd3")
-    mtypes = luigi.ListParameter(default=None)
     n_cells = luigi.IntParameter(default=10)
     hemisphere = luigi.Parameter(default=None)
 

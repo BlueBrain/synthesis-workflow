@@ -21,6 +21,10 @@ from tqdm import tqdm
 
 from ..tools import update_morphs_df
 from .config import DiametrizerConfig
+from .config import RunnerConfig
+from .luigi_tools import copy_params
+from .luigi_tools import GlobalParamTask
+from .luigi_tools import ParamLink
 
 
 matplotlib.use("Agg")
@@ -60,7 +64,10 @@ def _plot_models(models_params, models_data, fig_folder="figures", ext=".png"):
             )
 
 
-class BuildDiameterModels(luigi.Task):
+@copy_params(
+    nb_jobs=ParamLink(RunnerConfig),
+)
+class BuildDiameterModels(GlobalParamTask):
     """Task to build diameter models from set of cells."""
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
@@ -68,7 +75,6 @@ class BuildDiameterModels(luigi.Task):
     diameter_models_path = luigi.Parameter(default="diameter_models.yaml")
     by_mtypes = luigi.BoolParameter()
     plot_models = luigi.BoolParameter()
-    nb_jobs = luigi.IntParameter(default=-1)
 
     def run(self):
         """Run."""

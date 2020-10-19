@@ -25,9 +25,11 @@ from .circuit import SliceCircuit
 from .config import CircuitConfig
 from .config import DiametrizerConfig
 from .config import PathConfig
+from .config import RunnerConfig
 from .config import SynthesisConfig
-from .luigi_tools import ExtParameter
-from .utils import GlobalParamTask
+from .luigi_tools import copy_params
+from .luigi_tools import GlobalParamTask
+from .luigi_tools import ParamLink
 
 
 morphio.set_maximum_warnings(0)
@@ -60,6 +62,9 @@ class ApplySubstitutionRules(luigi.Task):
         return luigi.LocalTarget(PathConfig().substituted_morphs_df_path)
 
 
+@copy_params(
+    tmd_parameters_path=ParamLink(SynthesisConfig),
+)
 class BuildSynthesisParameters(GlobalParamTask):
     """Build the tmd_parameter.json for synthesis.
 
@@ -69,7 +74,6 @@ class BuildSynthesisParameters(GlobalParamTask):
     """
 
     input_tmd_parameters_path = luigi.Parameter(default=None)
-    tmd_parameters_path = luigi.Parameter(default=None)
 
     def requires(self):
         """"""
@@ -112,14 +116,15 @@ class BuildSynthesisParameters(GlobalParamTask):
         return luigi.LocalTarget(self.tmd_parameters_path)
 
 
+@copy_params(
+    morphology_path=ParamLink(PathConfig),
+)
 class BuildSynthesisDistributions(GlobalParamTask):
     """Build the tmd_distribution.json for synthesis.
 
     Args:
         morphology_path (str): column name in morphology dataframe to access morphology paths
     """
-
-    morphology_path = luigi.Parameter(default=None)
 
     def requires(self):
         """"""
@@ -160,6 +165,9 @@ class BuildSynthesisModels(luigi.WrapperTask):
         return [BuildSynthesisParameters(), BuildSynthesisDistributions()]
 
 
+@copy_params(
+    nb_jobs=ParamLink(RunnerConfig),
+)
 class BuildAxonMorphologies(GlobalParamTask):
     """Run choose-morphologies to synthesize axon morphologies.
 
@@ -177,7 +185,6 @@ class BuildAxonMorphologies(GlobalParamTask):
     placement_alpha = luigi.FloatParameter(default=1.0)
     placement_scales = luigi.ListParameter(default=None)
     placement_seed = luigi.IntParameter(default=0)
-    nb_jobs = luigi.IntParameter(default=None)
 
     def requires(self):
         """"""
@@ -220,6 +227,11 @@ class BuildAxonMorphologies(GlobalParamTask):
         return luigi.LocalTarget(self.axon_morphs_path)
 
 
+@copy_params(
+    ext=ParamLink(PathConfig),
+    morphology_path=ParamLink(PathConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+)
 class Synthesize(GlobalParamTask):
     """Run placement-algorithm to synthesize morphologies.
 
@@ -234,11 +246,8 @@ class Synthesize(GlobalParamTask):
     """
 
     out_circuit_path = luigi.Parameter(default="sliced_circuit_morphologies.mvd3")
-    ext = ExtParameter(default=None)
     axon_morphs_base_dir = luigi.OptionalParameter(default=None)
     apical_points_path = luigi.Parameter(default="apical_points.yaml")
-    morphology_path = luigi.Parameter(default=None)
-    nb_jobs = luigi.IntParameter(default=None)
     debug_region_grower_scales = luigi.BoolParameter(default=False)
 
     def requires(self):
@@ -307,13 +316,15 @@ class Synthesize(GlobalParamTask):
         return luigi.LocalTarget(self.out_circuit_path)
 
 
+@copy_params(
+    morphology_path=ParamLink(PathConfig),
+    tmd_parameters_path=ParamLink(SynthesisConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+)
 class AddScalingRulesToParameters(GlobalParamTask):
     """Add scaling rules to tmd_parameter.json."""
 
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")
-    tmd_parameters_path = luigi.Parameter(default=None)
-    morphology_path = luigi.Parameter(default=None)
-    nb_jobs = luigi.IntParameter(default=None)
 
     def requires(self):
         """"""
@@ -348,10 +359,13 @@ class AddScalingRulesToParameters(GlobalParamTask):
         return luigi.LocalTarget(self.tmd_parameters_path)
 
 
+@copy_params(
+    morphology_path=ParamLink(PathConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+)
 class RescaleMorphologies(GlobalParamTask):
     """Rescale morphologies for synthesis input."""
 
-    morphology_path = luigi.Parameter(default=None)
     rescaled_morphology_path = luigi.Parameter(default="rescaled_morphology_path")
     rescaled_morphology_base_path = luigi.Parameter(default="rescaled_morphologies")
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")

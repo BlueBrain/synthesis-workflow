@@ -10,9 +10,14 @@ import pandas as pd
 from ..tools import ensure_dir
 from ..vacuum_synthesis import grow_vacuum_morphologies
 from ..vacuum_synthesis import plot_vacuum_morphologies
+from .config import PathConfig
+from .config import RunnerConfig
+from .config import SynthesisConfig
+from .luigi_tools import copy_params
+from .luigi_tools import GlobalParamTask
+from .luigi_tools import ParamLink
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import BuildSynthesisParameters
-from .utils import GlobalParamTask
 
 
 morphio.set_maximum_warnings(0)
@@ -20,15 +25,17 @@ morphio.set_maximum_warnings(0)
 L = logging.getLogger(__name__)
 
 
+@copy_params(
+    mtypes=ParamLink(SynthesisConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+    joblib_verbose=ParamLink(RunnerConfig),
+)
 class VacuumSynthesize(GlobalParamTask):
     """Grow cells in vacuum, for annotation tasks."""
 
-    mtypes = luigi.ListParameter(default=None)
     vacuum_synth_morphology_path = luigi.Parameter(default="vacuum_synth_morphologies")
     vacuum_synth_morphs_df_path = luigi.Parameter(default="vacuum_synth_morphs_df.csv")
     n_cells = luigi.IntParameter(default=10)
-    nb_jobs = luigi.IntParameter(default=None)
-    joblib_verbose = luigi.IntParameter(default=None)
 
     def requires(self):
         """"""
@@ -69,11 +76,13 @@ class VacuumSynthesize(GlobalParamTask):
         return luigi.LocalTarget(self.vacuum_synth_morphs_df_path)
 
 
+@copy_params(
+    morphology_path=ParamLink(PathConfig, default="vacuum_morphology_path"),
+)
 class PlotVacuumMorphologies(GlobalParamTask):
     """Plot morphologies to obtain annotations."""
 
     pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
-    morphology_path = luigi.Parameter(default="vacuum_morphology_path")
 
     def requires(self):
         """"""

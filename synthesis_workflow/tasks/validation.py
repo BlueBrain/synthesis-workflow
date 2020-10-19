@@ -19,27 +19,30 @@ from .circuit import CreateAtlasPlanes
 from .circuit import CreateAtlasLayerAnnotations
 from .config import CircuitConfig
 from .config import PathConfig
+from .config import RunnerConfig
 from .config import SynthesisConfig
-from .luigi_tools import ExtParameter
+from .luigi_tools import copy_params
+from .luigi_tools import GlobalParamTask
+from .luigi_tools import ParamLink
 from .synthesis import AddScalingRulesToParameters
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import ApplySubstitutionRules
 from .synthesis import Synthesize
-from .utils import GlobalParamTask
 from .vacuum_synthesis import VacuumSynthesize
 
 
 L = logging.getLogger(__name__)
 
 
+@copy_params(
+    ext=ParamLink(PathConfig),
+)
 class ConvertMvd3(GlobalParamTask):
     """Convert synthesize mvd3 file to morphs_df.csv file.
 
     Args:
         ext (str): extension for morphology files
     """
-
-    ext = ExtParameter(default=None)
 
     def requires(self):
         """"""
@@ -122,6 +125,9 @@ class PlotMorphometrics(luigi.Task):
         return luigi.LocalTarget(self.morphometrics_path)
 
 
+@copy_params(
+    nb_jobs=ParamLink(RunnerConfig),
+)
 class PlotDensityProfiles(GlobalParamTask):
     """Plot density profiles of neurites in an atlas.
 
@@ -136,7 +142,6 @@ class PlotDensityProfiles(GlobalParamTask):
     sample_distance = luigi.FloatParameter(default=10)
     sample = luigi.IntParameter(default=None)
     region = luigi.Parameter(default="O1")
-    nb_jobs = luigi.IntParameter(default=None)
 
     def requires(self):
         """"""
@@ -165,6 +170,11 @@ class PlotDensityProfiles(GlobalParamTask):
         return luigi.LocalTarget(self.density_profiles_path)
 
 
+@copy_params(
+    mtypes=ParamLink(SynthesisConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+    joblib_verbose=ParamLink(RunnerConfig),
+)
 class PlotCollage(GlobalParamTask):
     """Plot collage.
 
@@ -180,9 +190,6 @@ class PlotCollage(GlobalParamTask):
 
     collage_base_path = luigi.Parameter(default="collages")
     sample = luigi.IntParameter(default=20)
-    mtypes = luigi.ListParameter(default=None)
-    nb_jobs = luigi.IntParameter(default=None)
-    joblib_verbose = luigi.IntParameter(default=None)
     dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
@@ -214,6 +221,10 @@ class PlotCollage(GlobalParamTask):
         return luigi.LocalTarget(self.collage_base_path)
 
 
+@copy_params(
+    nb_jobs=ParamLink(RunnerConfig),
+    joblib_verbose=ParamLink(RunnerConfig),
+)
 class PlotSingleCollage(GlobalParamTask):
     """Plot collage for single mtype.
 
@@ -229,8 +240,6 @@ class PlotSingleCollage(GlobalParamTask):
     collage_base_path = luigi.Parameter()
     mtype = luigi.Parameter()
     sample = luigi.IntParameter()
-    nb_jobs = luigi.IntParameter(default=None)
-    joblib_verbose = luigi.IntParameter(default=None)
     dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
@@ -270,6 +279,9 @@ class PlotSingleCollage(GlobalParamTask):
         )
 
 
+@copy_params(
+    mtypes=ParamLink(SynthesisConfig),
+)
 class PlotScales(GlobalParamTask):
     """Plot scales.
 
@@ -285,7 +297,6 @@ class PlotScales(GlobalParamTask):
 
     scales_base_path = luigi.Parameter(default="scales")
     log_file = luigi.Parameter(default="synthesis_workflow.log")
-    mtypes = luigi.ListParameter(default=None)
     apical_target_length_regex = luigi.Parameter(
         default="Apical target length rescaling: (.*)"
     )
@@ -328,6 +339,11 @@ class PlotScales(GlobalParamTask):
         return luigi.LocalTarget(self.scales_base_path)
 
 
+@copy_params(
+    mtypes=ParamLink(SynthesisConfig),
+    morphology_path=ParamLink(PathConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+)
 class PlotPathDistanceFits(GlobalParamTask):
     """Plot collage for single mtype.
 
@@ -340,10 +356,7 @@ class PlotPathDistanceFits(GlobalParamTask):
     """
 
     output_path = luigi.Parameter(default="path_distance_fit.pdf")
-    mtypes = luigi.ListParameter(default=None)
-    morphology_path = luigi.Parameter(default=None)
     outlier_percentage = luigi.IntParameter(default=90)
-    nb_jobs = luigi.IntParameter(default=None)
 
     def requires(self):
         """"""

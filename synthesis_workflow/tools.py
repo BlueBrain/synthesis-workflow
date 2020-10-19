@@ -191,7 +191,7 @@ def run_master(
     results = Parallel(
         n_jobs=nb_jobs,
         verbose=verbose,
-    )(delayed(_wrap_worker)(i, worker) for i in master.task_ids)
+    )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in master.task_ids)
 
     # Gather the results
     master.finalize(dict(results))

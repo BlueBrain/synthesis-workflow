@@ -1,6 +1,7 @@
 """utils functions for luigi parameters."""
 import logging
 import re
+from copy import deepcopy
 
 import luigi
 
@@ -39,6 +40,34 @@ def log_parameters(task):
             L.debug("Can't print '%s' attribute for unknown reason", name)
 
 
+class GlobalParamTask(luigi.Task):
+    """Base class used to add customisable global parameters"""
+
+    def __getattribute__(self, name):
+        tmp = super().__getattribute__(name)
+        if tmp is not None:
+            return tmp
+        if hasattr(self, "_global_params"):
+            global_param = self._global_params.get(name)
+            if global_param is not None:
+                return getattr(global_param.cls(), global_param.name)
+        return tmp
+
+    def __setattr__(self, name, value):
+        if value is None and name in self.get_param_names():
+            L.warning(
+                "The Parameter '%s' of the task '%s' is set to None, thus the global "
+                "value will be taken frow now on",
+                name,
+                self.__class__.__name__,
+            )
+        return super().__setattr__(name, value)
+
+
+class BaseWrapperTask(GlobalParamTask, luigi.WrapperTask):
+    """Base wrapper class with global parameters"""
+
+
 class ExtParameter(luigi.Parameter):
     """Class to parse file extension parameters"""
 
@@ -46,3 +75,92 @@ class ExtParameter(luigi.Parameter):
         pattern = re.compile(r"\.?(.*)")
         match = re.match(pattern, x)
         return match.group(1)
+
+
+class ParamLink:
+    """Class to store parameter linking informations"""
+
+    def __init__(self, cls, name=None, default=None):
+        self.cls = cls
+        self.name = name
+        self.default = default
+
+
+class copy_params:
+    """
+    Copy a parameter from another Task.
+    If no value is given to this parameter, the value from the other task is taken.
+
+    **Usage**:
+
+    .. code-block:: python
+
+        class AnotherTask(luigi.Task):
+            m = luigi.IntParameter(default=1)
+
+        @copy_params(m=ParamLink(AnotherTask))
+        class MyFirstTask(luigi.Task):
+            def run(self):
+               print(self.m) # this will be defined and print 1
+               # ...
+
+        @copy_params(another_m=ParamLink(AnotherTask, "m"))
+        class MySecondTask(luigi.Task):
+            def run(self):
+               print(self.another_m) # this will be defined and print 1
+               # ...
+
+        @copy_params(another_m=ParamLink(AnotherTask, "m", 5))
+        class MyFirstTask(luigi.Task):
+            def run(self):
+               print(self.another_m) # this will be defined and print 5
+               # ...
+
+        @copy_params(another_m=ParamLink(AnotherTask, "m"))
+        class MyFirstTask(GlobalParamTask):
+            def run(self):
+               print(self.another_m) # this will be defined and print 1 if self.another_m is None
+               # ...
+    """
+
+    def __init__(self, **params_to_copy):
+        """Init."""
+        super().__init__()
+        if not params_to_copy:
+            raise TypeError("params_to_copy cannot be empty")
+
+        self.params_to_copy = params_to_copy
+
+    def __call__(self, task_that_inherits):
+        """Call."""
+        # Get all parameters
+        for param_name, attr in self.params_to_copy.items():
+            # Check if the parameter exists in the inheriting task
+            if not hasattr(task_that_inherits, param_name):
+                if attr.name is None:
+                    attr.name = param_name
+                par = getattr(attr.cls, attr.name)
+
+                # Copy param
+                new_param = deepcopy(par)
+
+                # Set default value is required
+                if attr.default is not None:
+                    new_param._default = attr.default
+                elif (
+                    issubclass(task_that_inherits, GlobalParamTask)
+                    and attr.default is None
+                ):
+                    new_param._default = None
+
+                # Add it to the inheriting task with new default values
+                setattr(task_that_inherits, param_name, new_param)
+
+                # Add link to global parameter
+                if issubclass(task_that_inherits, GlobalParamTask):
+                    task = task_that_inherits
+                    if not hasattr(task, "_global_params"):
+                        task._global_params = {}
+                    task._global_params[param_name] = attr
+
+        return task_that_inherits

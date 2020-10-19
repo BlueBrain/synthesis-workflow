@@ -12,7 +12,7 @@ def empty_morph_df():
     return df
 
 
-def test_get_mean_neurite_lengths(empty_morph_df):
-    """Test the computation of the mean neurite lengths"""
-    res = synthesis.get_mean_neurite_lengths(empty_morph_df)
-    assert res == {}
+# def test_get_mean_neurite_lengths(empty_morph_df):
+#     """Test the computation of the mean neurite lengths"""
+#     res = synthesis.get_mean_neurite_lengths(empty_morph_df)
+#     assert res == {}

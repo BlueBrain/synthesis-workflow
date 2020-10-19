@@ -119,7 +119,7 @@ class ArgParser:
 
 def _setup_logging(log_level, log_file=None, log_file_level=None):
     """Setup logging"""
-    setup_logging(log_level, log_file_level, log_file_level)
+    setup_logging(log_level, log_file, log_file_level)
 
 
 def main(arguments=None):
