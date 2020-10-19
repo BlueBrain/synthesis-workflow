@@ -248,7 +248,7 @@ class Synthesize(GlobalParamTask):
     out_circuit_path = luigi.Parameter(default="sliced_circuit_morphologies.mvd3")
     axon_morphs_base_dir = luigi.OptionalParameter(default=None)
     apical_points_path = luigi.Parameter(default="apical_points.yaml")
-    debug_region_grower_scales = luigi.BoolParameter(default=False)
+    debug_region_grower_scales = luigi.OptionalParameter(default=None)
 
     def requires(self):
         """"""
@@ -300,16 +300,9 @@ class Synthesize(GlobalParamTask):
             "seed": str(0),
         }
 
-        if self.debug_region_grower_scales:
-            # pylint: disable=protected-access
-            # from region_grower import context
-            # context.SpaceNeuronGrower._DEBUG_SCALES = True
-            # context.SpaceContext._DEBUG_SCALES = True
-            raise NotImplementedError(
-                "This feature is not implemented yet in region-grower"
-            )
-
-        run_synthesize_morphologies(kwargs, nb_jobs=self.nb_jobs)
+        run_synthesize_morphologies(
+            kwargs, nb_jobs=self.nb_jobs, debug_scales=self.debug_region_grower_scales
+        )
 
     def output(self):
         """"""

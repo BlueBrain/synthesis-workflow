@@ -1,3 +1,5 @@
 brainbuilder
 pytest
 pytest-cov
+pytest-html
+pytest-mpl

@@ -289,7 +289,7 @@ class PlotScales(GlobalParamTask):
         scales_base_path (str): path to the output folder
         log_file (str): log file to parse
         mtypes (list(str)): mtypes to plot
-        apical_target_length_regex (str): regex used to find apical target lengths
+        neuron_type_position_regex (str): regex used to find neuron type and position
         default_scale_regex (str): regex used to find default scales
         target_scale_regex (str): regex used to find target scales
         neurite_hard_limit_regex (str): regex used to find neurite hard limits
@@ -297,13 +297,17 @@ class PlotScales(GlobalParamTask):
 
     scales_base_path = luigi.Parameter(default="scales")
     log_file = luigi.Parameter(default="synthesis_workflow.log")
-    apical_target_length_regex = luigi.Parameter(
-        default="Apical target length rescaling: (.*)"
+    neuron_type_position_regex = luigi.Parameter(
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite type and position: (.*)"
     )
-    default_scale_regex = luigi.Parameter(default="Default barcode scale: (.*)")
-    target_scale_regex = luigi.Parameter(default="Target barcode scale: (.*)")
+    default_scale_regex = luigi.Parameter(
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Default barcode scale: (.*)"
+    )
+    target_scale_regex = luigi.Parameter(
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Target barcode scale: (.*)"
+    )
     neurite_hard_limit_regex = luigi.Parameter(
-        default="Neurite hard limit rescaling: (.*)"
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite hard limit rescaling: (.*)"
     )
 
     def requires(self):
@@ -323,7 +327,7 @@ class PlotScales(GlobalParamTask):
         # Plot statistics
         scale_data = parse_log(
             self.log_file,
-            self.apical_target_length_regex,
+            self.neuron_type_position_regex,
             self.default_scale_regex,
             self.target_scale_regex,
             self.neurite_hard_limit_regex,

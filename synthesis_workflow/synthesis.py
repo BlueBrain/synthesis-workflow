@@ -259,7 +259,7 @@ def create_axon_morphologies_tsv(
     axon_morphs.to_csv(axon_morphs_path, sep="\t", index=True)
 
 
-def run_synthesize_morphologies(kwargs, nb_jobs=-1):
+def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales=None):
     """Run placement algorithm from python.
 
     Args:
@@ -301,8 +301,23 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1):
         "seed": 0,
     }
 
+    # Set logging arguments
+    logger_kwargs = None
+    if debug_scales is not None:
+        logger_kwargs = {
+            "log_level": logging.DEBUG,
+            "log_file": debug_scales,
+        }
+
     # Run
-    run_master(SynthesizeMorphologiesMaster, kwargs, parser_args, defaults, nb_jobs)
+    run_master(
+        SynthesizeMorphologiesMaster,
+        kwargs,
+        parser_args,
+        defaults,
+        nb_jobs,
+        logger_kwargs=logger_kwargs,
+    )
 
 
 def get_target_length(soma_layer, target_layer, cortical_thicknesses):

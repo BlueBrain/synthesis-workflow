@@ -1,5 +1,6 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
 import json
+import glob
 import logging
 import os
 import re
@@ -677,7 +678,7 @@ def plot_path_distance_fits(
 
 def parse_log(
     log_file,
-    apical_target_length_regex,
+    neuron_type_position_regex,
     default_scale_regex,
     target_scale_regex,
     neurite_hard_limit_regex,
@@ -689,25 +690,34 @@ def parse_log(
     def _search(pattern, line, data):
         group = re.search(pattern, line)
         if group:
-            data.append(json.loads(group.group(1)))
+            groups = group.groups()
+            new_data = json.loads(groups[1])
+            new_data["worker_task_id"] = groups[0]
+            data.append(new_data)
+
+    # List log files
+    log_files = glob.glob(log_file + "*")
 
     # Read log file
-    with open(log_file) as f:
-        lines = f.readlines()
+    all_lines = []
+    for file in log_files:
+        with open(file) as f:
+            lines = f.readlines()
+            all_lines.extend(lines)
 
     # Get data from log
-    apical_target_length_data = []
+    neuron_type_position_data = []
     default_scale_data = []
     target_scale_data = []
     neurite_hard_limit_data = []
-    for line in lines:
-        _search(apical_target_length_regex, line, apical_target_length_data)
+    for line in all_lines:
+        _search(neuron_type_position_regex, line, neuron_type_position_data)
         _search(default_scale_regex, line, default_scale_data)
         _search(target_scale_regex, line, target_scale_data)
         _search(neurite_hard_limit_regex, line, neurite_hard_limit_data)
 
     # Format data
-    apical_target_length_df = pd.DataFrame(apical_target_length_data)
+    neuron_type_position_df = pd.DataFrame(neuron_type_position_data)
     default_scale_df = pd.DataFrame(default_scale_data)
     target_scale_df = pd.DataFrame(target_scale_data)
     neurite_hard_limit_df = pd.DataFrame(neurite_hard_limit_data)
@@ -720,10 +730,10 @@ def parse_log(
             df.drop(columns=["position"], inplace=True)
 
     # Format positions
-    _pos_to_xyz(apical_target_length_df)
+    _pos_to_xyz(neuron_type_position_df)
 
     def _compute_min_max_scales(df, key, name_min, name_max):
-        groups = df.groupby("uuid")
+        groups = df.groupby("worker_task_id")
         neurite_hard_min = groups[key].min().rename(name_min).reset_index()
         neurite_hard_max = groups[key].max().rename(name_max).reset_index()
         return neurite_hard_min, neurite_hard_max
@@ -740,24 +750,30 @@ def parse_log(
     )
 
     # Merge data
-    result_data = apical_target_length_df
+    result_data = neuron_type_position_df
     result_data = pd.merge(
-        result_data, default_min, on="uuid", suffixes=("", "_default_min")
+        result_data, default_min, on="worker_task_id", suffixes=("", "_default_min")
     )
     result_data = pd.merge(
-        result_data, default_max, on="uuid", suffixes=("", "_default_max")
+        result_data, default_max, on="worker_task_id", suffixes=("", "_default_max")
     )
     result_data = pd.merge(
-        result_data, target_min, on="uuid", suffixes=("", "_target_min")
+        result_data, target_min, on="worker_task_id", suffixes=("", "_target_min")
     )
     result_data = pd.merge(
-        result_data, target_max, on="uuid", suffixes=("", "_target_max")
+        result_data, target_max, on="worker_task_id", suffixes=("", "_target_max")
     )
     result_data = pd.merge(
-        result_data, neurite_hard_min, on="uuid", suffixes=("", "_hard_limit_min")
+        result_data,
+        neurite_hard_min,
+        on="worker_task_id",
+        suffixes=("", "_hard_limit_min"),
     )
     result_data = pd.merge(
-        result_data, neurite_hard_max, on="uuid", suffixes=("", "_hard_limit_max")
+        result_data,
+        neurite_hard_max,
+        on="worker_task_id",
+        suffixes=("", "_hard_limit_max"),
     )
 
     return result_data
@@ -793,7 +809,7 @@ def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
         if mtypes is None:
             mtypes = scale_data["mtype"].unique().tolist()
         for col in scale_data.columns:
-            if col in ["uuid", "mtype", "x", "y", "z"]:
+            if col in ["worker_task_id", "mtype", "x", "y", "z"]:
                 continue
             ax = scale_data[["mtype", col]].boxplot(by="mtype")
 

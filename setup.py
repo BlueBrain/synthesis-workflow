@@ -16,6 +16,7 @@ reqs = [
     "atlas_analysis",
     "bluepyefe",
     "bluepyopt",
+    "bluepymm",
     "diameter_synthesis",
     "h5py",
     "joblib",
@@ -45,6 +46,8 @@ test_reqs = [
     "brainbuilder",
     "pytest",
     "pytest-cov",
+    "pytest-html",
+    "pytest-mpl",
 ]
 
 VERSION = imp.load_source("", "synthesis_workflow/version.py").__version__

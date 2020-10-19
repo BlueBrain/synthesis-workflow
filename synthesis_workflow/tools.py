@@ -17,8 +17,6 @@ from bluepy.v2 import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
 from morph_tool.utils import neurondb_dataframe, find_morph
 
-from synthesis_workflow.utils import setup_logging
-
 
 def add_taxonomy(morphs_df, pc_in_types):
     """From a dict with mtype to morph_class, fill in the morphs_df dataframe.
@@ -26,8 +24,7 @@ def add_taxonomy(morphs_df, pc_in_types):
     Args:
         pc_in_types (dict): dict of the form  [mtype]: [IN|PC]
     """
-    for mtype, morph_class in pc_in_types.items():
-        morphs_df.loc[morphs_df.mtype == mtype, "morph_class"] = morph_class
+    morphs_df["morph_class"] = morphs_df["mtype"].map(pc_in_types)
     return morphs_df
 
 
@@ -122,15 +119,82 @@ def update_morphs_df(morphs_df_path, new_morphs_df):
     return pd.read_csv(morphs_df_path).merge(new_morphs_df, how="left")
 
 
+class IdProcessingFormatter(logging.Formatter):
+    """Logging formatter class"""
+
+    def __init__(self, fmt=None, datefmt=None, current_id=None):
+        if fmt is None:
+            fmt = "%(asctime)s - %(name)s - %(levelname)s -- %(message)s"
+        if datefmt is None:
+            datefmt = "%Y/%m/%d %H:%M:%S"
+
+        super().__init__(fmt, datefmt)
+        self.orig_datefmt = datefmt
+        self.orig_fmt = fmt
+        if current_id is not None:
+            self.set_id(current_id)
+
+    def set_id(self, new_id):
+        """Update current ID to insert in format"""
+        if new_id is None:
+            new_fmt = self.orig_fmt
+        else:
+            msg_marker = "%(message)s"
+            parts = self.orig_fmt.split(msg_marker, maxsplit=1)
+            new_fmt = parts[0] + f"[WORKER TASK ID={new_id}] " + msg_marker + parts[1]
+        super().__init__(new_fmt, self.orig_datefmt)
+
+
+class DebugingFileHandler(logging.FileHandler):
+    """Logging class that can be retrieved"""
+
+
 def _wrap_worker(_id, worker, logger_kwargs=None):
     """Wrap the worker job and catch exceptions that must be caught"""
     try:
+        file_handler = None
         if logger_kwargs is not None:
-            setup_logging(**logger_kwargs)
+
+            # Search old handlers
+            root = logging.getLogger()
+            root.setLevel(logging.DEBUG)
+            for i in root.handlers:
+                if isinstance(i, DebugingFileHandler):
+                    file_handler = i
+                    break
+
+            # If no DebugingFileHandler was found
+            if file_handler is None:
+                # Setup file name
+                log_file = logger_kwargs.get("log_file", worker.__class__.__name__)
+                log_file = str(Path(log_file).with_suffix("")) + f"-{_id}.log"
+                ensure_dir(log_file)
+
+                # Setup log formatter
+                formatter = IdProcessingFormatter(
+                    fmt=logger_kwargs.get("log_format"),
+                    datefmt=logger_kwargs.get("date_format"),
+                    current_id=_id,
+                )
+
+                # Setup handler
+                file_handler = DebugingFileHandler(log_file)
+                file_handler.setFormatter(formatter)
+                file_handler.setLevel(logging.DEBUG)
+                root.addHandler(file_handler)
+            else:
+                file_handler.formatter.set_id(_id)
+
         with warnings.catch_warnings():
             # Ignore all warnings in workers
             warnings.simplefilter("ignore")
-            res = _id, worker(_id)
+            try:
+                old_level = root.level
+                root.setLevel(logging.DEBUG)
+                res = _id, worker(_id)
+            finally:
+                root.setLevel(old_level)
+
         return res
     except SkipSynthesisError:
         return _id, None
@@ -186,12 +250,26 @@ def run_master(
 
     L.info("Running %d iterations.", len(master.task_ids))
 
-    # Run the worker
-    random.shuffle(master.task_ids)
-    results = Parallel(
-        n_jobs=nb_jobs,
-        verbose=verbose,
-    )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in master.task_ids)
+    try:
+        # Keep current log level to reset afterwards
+        root = logging.getLogger()
+        old_level = root.level
+        if logger_kwargs is not None:
+            root.setLevel(logging.DEBUG)
 
-    # Gather the results
-    master.finalize(dict(results))
+        # Run the worker
+        random.shuffle(master.task_ids)
+        results = Parallel(
+            n_jobs=nb_jobs,
+            verbose=verbose,
+        )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in master.task_ids)
+
+        # Gather the results
+        master.finalize(dict(results))
+
+    finally:
+        # This is usefull only when using joblib with 1 process
+        root.setLevel(old_level)
+        for i in root.handlers:
+            if isinstance(i, DebugingFileHandler):
+                root.removeHandler(i)

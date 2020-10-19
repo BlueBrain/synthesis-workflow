@@ -41,7 +41,7 @@ class CreateAtlasLayerAnnotations(GlobalParamTask):
     def run(self):
         """"""
         atlas = LocalAtlas(CircuitConfig().atlas_path)
-        ids, names = atlas.get_layer_ids()
+        ids, names = atlas.get_layer_ids()  # pylint: disable=no-member
         annotation = VoxelData.load_nrrd(
             Path(CircuitConfig().atlas_path) / "brain_regions.nrrd"
         )

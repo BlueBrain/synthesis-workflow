@@ -8,3 +8,5 @@ doc/build
 build
 dist
 .eggs
+
+reports
