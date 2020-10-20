@@ -124,27 +124,32 @@ def test_copy_params_with_globals():
     )
 
 
+def create_empty_file(filename):
+    with open(filename, "w") as f:
+        pass
+
+
+def check_empty_file(filename):
+    with open(filename) as f:
+        return f.read() == ""
+
+
+def create_not_empty_file(filename):
+    with open(filename, "w") as f:
+        f.write("NOT EMPTY")
+
+
+def check_not_empty_file(filename):
+    with open(filename) as f:
+        return f.read() == "NOT EMPTY"
+
+
+def set_new_state(task_class):
+    """Set a new state to a luigi.Task class to force luigi to check this class again"""
+    task_class.counter = luigi.IntParameter(default=task_class().counter + 1)
+
+
 def test_forceable_tasks(tmpdir):
-    def create_empty_file(filename):
-        with open(filename, "w") as f:
-            pass
-
-    def check_empty_file(filename):
-        with open(filename) as f:
-            return f.read() == ""
-
-    def create_not_empty_file(filename):
-        with open(filename, "w") as f:
-            f.write("NOT EMPTY")
-
-    def check_not_empty_file(filename):
-        with open(filename) as f:
-            return f.read() == "NOT EMPTY"
-
-    def set_new_state(task_class):
-        """Set a new state to a luigi.Task class to force luigi to check this class again"""
-        task_class.counter = luigi.IntParameter(default=task_class().counter + 1)
-
     class TaskA(luigi_tools.WorkflowTask):
         """"""
 
@@ -358,3 +363,29 @@ def test_forceable_tasks(tmpdir):
             if task_name in ["TaskA", "TaskC"]
         ]
     )
+
+
+def test_remove_folder_target(tmpdir):
+    class TaskA(luigi_tools.WorkflowTask):
+        """"""
+
+        def run(self):
+            for i in luigi.task.flatten(self.output()):
+                i.makedirs()
+
+            os.makedirs(self.output()[0].path)
+            create_not_empty_file(self.output()[1].path)
+            create_not_empty_file(self.output()[0].path + "/file.test")
+
+            for i in luigi.task.flatten(self.output()):
+                assert i.exists()
+                luigi_tools.target_remove(i)
+                assert not i.exists()
+
+        def output(self):
+            return [
+                luigi.LocalTarget(tmpdir / "TaskA"),
+                luigi.LocalTarget(tmpdir / "TaskA_bis" / "file.test"),
+            ]
+
+    assert luigi.build([TaskA()], local_scheduler=True)
