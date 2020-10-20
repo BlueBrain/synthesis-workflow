@@ -9,23 +9,77 @@ import luigi
 L = logging.getLogger(__name__)
 
 
+def recursive_check(task, attr="rerun"):
+    """Check if a task or any of its recursive dependencies has a given attribute set to True"""
+    val = getattr(task, attr, False)
+
+    for dep in task.deps():
+        val = val or getattr(dep, attr, False) or recursive_check(dep, attr)
+
+    return val
+
+
+def target_remove(target, *args, **kwargs):
+    """Remove a given target by calling its 'exists()' and 'remove()' methods"""
+    try:
+        if target.exists():
+            target.remove()
+    except AttributeError as e:
+        raise AttributeError(
+            "The target must have 'exists()' and 'remove()' methods"
+        ) from e
+
+
+def apply_over_luigi_iterable(luigi_iterable, func):
+    """Apply the given function to a luigi iterable (task.input() or task.output())"""
+    try:
+        for key, i in luigi_iterable.items():
+            func(i, key)
+    except AttributeError:
+        for i in luigi.task.flatten(luigi_iterable):
+            func(i)
+
+
+def apply_over_inputs(task, func):
+    """Apply the given function to all inputs of a luigi task.
+    The given function should accept the following arguments:
+    * luigi_iterable: the inputs or outputs of the task
+    * key=None: the key when the iterable is a dictionnary
+    """
+    try:
+        inputs = task.input()
+    except AttributeError:
+        return
+
+    apply_over_luigi_iterable(inputs, func)
+
+
+def apply_over_outputs(task, func):
+    """Apply the given function to all outputs of a luigi task.
+    The given function should accept the following arguments:
+    * luigi_iterable: the inputs or outputs of the task
+    * key=None: the key when the iterable is a dictionnary
+    """
+    try:
+        outputs = task.output()
+    except AttributeError:
+        return
+
+    apply_over_luigi_iterable(outputs, func)
+
+
 @luigi.Task.event_handler(luigi.Event.SUCCESS)
 def log_targets(task):
     """Hook to log output target of the task"""
-    class_name = task.__class__.__name__
-    try:
-        output = task.output()
-    except AttributeError:
-        return
-    try:
-        L.debug("Output of %s task: %s", class_name, output.path)
-    except AttributeError:
-        try:
-            for k, i in output.items():
-                L.debug("Output %s of %s task: %s", k, class_name, i.path)
-        except AttributeError:
-            for i in output:
-                L.debug("Output of %s task: %s", class_name, i.path)
+
+    def log_func(target, key=None):
+        class_name = task.__class__.__name__
+        if key is None:
+            L.debug("Output of %s task: %s", class_name, target.path)
+        else:
+            L.debug("Output %s of %s task: %s", key, class_name, target.path)
+
+    apply_over_outputs(task, log_func)
 
 
 @luigi.Task.event_handler(luigi.Event.START)
@@ -40,8 +94,20 @@ def log_parameters(task):
             L.debug("Can't print '%s' attribute for unknown reason", name)
 
 
+class ForceableTask(luigi.Task):
+    """A luigi task that can be forced running again by setting the 'rerun' parameter to True."""
+
+    rerun = luigi.BoolParameter(significant=False, default=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if recursive_check(self):
+            apply_over_outputs(self, target_remove)
+
+
 class GlobalParamTask(luigi.Task):
-    """Base class used to add customisable global parameters"""
+    """Mixin used to add customisable global parameters"""
 
     def __getattribute__(self, name):
         tmp = super().__getattribute__(name)
@@ -64,7 +130,13 @@ class GlobalParamTask(luigi.Task):
         return super().__setattr__(name, value)
 
 
-class BaseWrapperTask(GlobalParamTask, luigi.WrapperTask):
+class WorkflowTask(GlobalParamTask, ForceableTask):
+    """Default task used in workflows
+    This task can be forced running again by setting the 'rerun' parameter to True.
+    It can also use copy and link parameters from other tasks."""
+
+
+class WorkflowWrapperTask(WorkflowTask, luigi.WrapperTask):
     """Base wrapper class with global parameters"""
 
 

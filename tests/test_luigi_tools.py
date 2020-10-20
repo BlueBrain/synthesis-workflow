@@ -122,3 +122,239 @@ def test_copy_params_with_globals():
         ],
         local_scheduler=True,
     )
+
+
+def test_forceable_tasks(tmpdir):
+    def create_empty_file(filename):
+        with open(filename, "w") as f:
+            pass
+
+    def check_empty_file(filename):
+        with open(filename) as f:
+            return f.read() == ""
+
+    def create_not_empty_file(filename):
+        with open(filename, "w") as f:
+            f.write("NOT EMPTY")
+
+    def check_not_empty_file(filename):
+        with open(filename) as f:
+            return f.read() == "NOT EMPTY"
+
+    def set_new_state(task_class):
+        """Set a new state to a luigi.Task class to force luigi to check this class again"""
+        task_class.counter = luigi.IntParameter(default=task_class().counter + 1)
+
+    class TaskA(luigi_tools.WorkflowTask):
+        """"""
+
+        counter = luigi.IntParameter(default=0)
+        rerun = luigi.BoolParameter()
+
+        def run(self):
+            for i in luigi.task.flatten(self.output()):
+                create_not_empty_file(i.path)
+
+        def output(self):
+            return luigi.LocalTarget(tmpdir / "TaskA.target")
+
+    class TaskB(luigi_tools.WorkflowTask):
+        """"""
+
+        counter = luigi.IntParameter(default=0)
+        rerun = luigi.BoolParameter()
+
+        def requires(self):
+            return TaskA()
+
+        def run(self):
+            for i in luigi.task.flatten(self.output()):
+                create_not_empty_file(i.path)
+
+        def output(self):
+            return [
+                luigi.LocalTarget(tmpdir / "TaskB.target"),
+                [
+                    luigi.LocalTarget(tmpdir / "TaskB2.target"),
+                    luigi.LocalTarget(tmpdir / "TaskB3.target"),
+                ],
+            ]
+
+    class TaskC(luigi_tools.WorkflowTask):
+        """"""
+
+        counter = luigi.IntParameter(default=0)
+        rerun = luigi.BoolParameter()
+
+        def requires(self):
+            return TaskA()
+
+        def run(self):
+            for i in luigi.task.flatten(self.output()):
+                create_not_empty_file(i.path)
+
+        def output(self):
+            return {
+                "first_target": luigi.LocalTarget(tmpdir / "TaskC.target"),
+                "second_target": luigi.LocalTarget(tmpdir / "TaskC2.target"),
+            }
+
+    class TaskD(luigi_tools.WorkflowTask):
+        """"""
+
+        counter = luigi.IntParameter(default=0)
+        rerun = luigi.BoolParameter()
+
+        def requires(self):
+            return [TaskB(), TaskC()]
+
+        def run(self):
+            for i in luigi.task.flatten(self.output()):
+                create_not_empty_file(i.path)
+
+        def output(self):
+            return [
+                luigi.LocalTarget(tmpdir / "TaskD.target"),
+                luigi.LocalTarget(tmpdir / "TaskD2.target"),
+            ]
+
+    class TaskE(luigi_tools.WorkflowTask):
+        """"""
+
+        counter = luigi.IntParameter(default=0)
+        rerun = luigi.BoolParameter()
+
+        def requires(self):
+            return TaskD()
+
+        def run(self):
+            for i in luigi.task.flatten(self.output()):
+                create_not_empty_file(i.path)
+
+        def output(self):
+            return {
+                "first_target": luigi.LocalTarget(tmpdir / "TaskE.target"),
+                "other_targets": {
+                    "second_target": luigi.LocalTarget(tmpdir / "TaskE2.target"),
+                    "third_target": luigi.LocalTarget(tmpdir / "TaskE3.target"),
+                },
+            }
+
+    all_targets = {}
+    for task in [TaskA(), TaskB(), TaskC(), TaskD(), TaskE()]:
+        all_targets[task.__class__.__name__] = task.output()
+
+    # Test that everything is runned when all rerun are False and targets are missing
+    print("=================== FIRST BUILD ====================")
+    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
+        set_new_state(task_class)
+
+    assert luigi.build([TaskE()], local_scheduler=True)
+
+    assert all([check_not_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
+
+    # Test that nothing is runned when all rerun are False and targets are present
+    for i in luigi.task.flatten(all_targets):
+        create_empty_file(i.path)
+
+    print("=================== SECOND BUILD ====================")
+    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
+        set_new_state(task_class)
+    assert luigi.build([TaskE()], local_scheduler=True)
+
+    assert all([check_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
+
+    # Test that everything is runned when rerun = True for the root task and targets are present
+    for i in luigi.task.flatten(all_targets):
+        create_empty_file(i.path)
+
+    print("=================== THIRD BUILD ====================")
+    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
+        set_new_state(task_class)
+    TaskA.rerun = luigi.BoolParameter(default=True)
+    assert luigi.build([TaskE()], local_scheduler=True)
+    TaskA.rerun = luigi.BoolParameter()
+
+    assert all([check_not_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
+
+    # Test that only the parents of the task with rerun = True are runned
+    for i in luigi.task.flatten(all_targets):
+        create_empty_file(i.path)
+
+    print("=================== FORTH BUILD ====================")
+    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
+        set_new_state(task_class)
+    TaskB.rerun = luigi.BoolParameter(default=True)
+    assert luigi.build([TaskE()], local_scheduler=True)
+    TaskB.rerun = luigi.BoolParameter()
+
+    assert all(
+        [
+            check_not_empty_file(i.path)
+            for task_name, targets in all_targets.items()
+            for j in luigi.task.flatten(targets)
+            if task_name not in ["TaskA", "TaskC"]
+        ]
+    )
+    assert all(
+        [
+            check_empty_file(j.path)
+            for task_name, targets in all_targets.items()
+            for j in luigi.task.flatten(targets)
+            if task_name in ["TaskA", "TaskC"]
+        ]
+    )
+
+    # Test that calling a task inside another one does not remove its targets
+
+    class TaskF(luigi_tools.WorkflowTask):
+        """"""
+
+        counter = luigi.IntParameter(default=0)
+        rerun = luigi.BoolParameter()
+
+        def requires(self):
+            return TaskE()
+
+        def run(self):
+            # Call A inside F but the targets of A should not be removed
+            _ = TaskA(counter=999)
+
+            for i in luigi.task.flatten(self.output()):
+                create_not_empty_file(i.path)
+
+        def output(self):
+            return {
+                "first_target": luigi.LocalTarget(tmpdir / "TaskF.target"),
+                "other_targets": {
+                    "second_target": luigi.LocalTarget(tmpdir / "TaskE2.target"),
+                    "third_target": luigi.LocalTarget(tmpdir / "TaskE3.target"),
+                },
+            }
+
+    for i in luigi.task.flatten(all_targets):
+        create_empty_file(i.path)
+
+    print("=================== FORTH BUILD ====================")
+    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
+        set_new_state(task_class)
+    TaskB.rerun = luigi.BoolParameter(default=True)
+    assert luigi.build([TaskF()], local_scheduler=True)
+    TaskB.rerun = luigi.BoolParameter()
+
+    assert all(
+        [
+            check_not_empty_file(i.path)
+            for task_name, targets in all_targets.items()
+            for j in luigi.task.flatten(targets)
+            if task_name not in ["TaskA", "TaskC"]
+        ]
+    )
+    assert all(
+        [
+            check_empty_file(j.path)
+            for task_name, targets in all_targets.items()
+            for j in luigi.task.flatten(targets)
+            if task_name in ["TaskA", "TaskC"]
+        ]
+    )

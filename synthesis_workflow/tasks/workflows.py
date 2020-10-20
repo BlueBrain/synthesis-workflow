@@ -3,6 +3,8 @@ import luigi
 import pandas as pd
 
 from ..validation import plot_morphometrics
+from .luigi_tools import WorkflowTask
+from .luigi_tools import WorkflowWrapperTask
 from .synthesis import ApplySubstitutionRules
 from .validation import PlotCollage
 from .validation import PlotDensityProfiles
@@ -11,7 +13,7 @@ from .validation import PlotPathDistanceFits
 from .vacuum_synthesis import PlotVacuumMorphologies
 
 
-class ValidateSynthesis(luigi.WrapperTask):
+class ValidateSynthesis(WorkflowWrapperTask):
     """Workflow to validate synthesis"""
 
     with_collage = luigi.BoolParameter(default=True)
@@ -33,7 +35,7 @@ class ValidateSynthesis(luigi.WrapperTask):
         return tasks
 
 
-class ValidateVacuumSynthesis(luigi.WrapperTask):
+class ValidateVacuumSynthesis(WorkflowWrapperTask):
     """Workflow to validate vacuum synthesis"""
 
     with_vacuum_morphologies = luigi.BoolParameter(default=True)
@@ -58,7 +60,7 @@ class ValidateVacuumSynthesis(luigi.WrapperTask):
         return tasks
 
 
-class ValidateRescaling(luigi.Task):
+class ValidateRescaling(WorkflowTask):
     """Workflow to validate rescaling"""
 
     morphometrics_path = luigi.Parameter(default="morphometrics")
@@ -71,6 +73,7 @@ class ValidateRescaling(luigi.Task):
 
     def requires(self):
         """"""
+        # pylint: disable=no-self-use
         return ApplySubstitutionRules()
 
     def run(self):
