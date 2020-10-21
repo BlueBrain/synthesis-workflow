@@ -24,6 +24,7 @@ from .config import SynthesisConfig
 from .luigi_tools import copy_params
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
+from .luigi_tools import WorkflowError
 from .synthesis import AddScalingRulesToParameters
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import ApplySubstitutionRules
@@ -296,7 +297,7 @@ class PlotScales(WorkflowTask):
     """
 
     scales_base_path = luigi.Parameter(default="scales")
-    log_file = luigi.Parameter(default="synthesis_workflow.log")
+    log_file = luigi.OptionalParameter(default=None)
     neuron_type_position_regex = luigi.Parameter(
         default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite type and position: (.*)"
     )
@@ -323,6 +324,17 @@ class PlotScales(WorkflowTask):
             mtypes = pd.read_csv(PathConfig().synth_morphs_df_path).mtype.unique()
         else:
             mtypes = self.mtypes
+
+        if self.log_file is None:
+            debug_scales = self.requires().input()["debug_scales"]
+            if debug_scales is not None:
+                self.log_file = debug_scales.path
+            else:
+                raise WorkflowError(
+                    "%s task: either a 'log_file' argument must be provided, either the "
+                    "'Synthesize' task must be run with 'debug_region_grower_scales' set "
+                    "to a valid directory path" % self.__class__.__name__
+                )
 
         # Plot statistics
         scale_data = parse_log(

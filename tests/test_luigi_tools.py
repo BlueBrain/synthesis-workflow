@@ -249,7 +249,7 @@ def test_forceable_tasks(tmpdir):
     for task in [TaskA(), TaskB(), TaskC(), TaskD(), TaskE()]:
         all_targets[task.__class__.__name__] = task.output()
 
-    # Test that everything is runned when all rerun are False and targets are missing
+    # Test that everything is run when all rerun are False and targets are missing
     print("=================== FIRST BUILD ====================")
     for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
         set_new_state(task_class)
@@ -258,7 +258,7 @@ def test_forceable_tasks(tmpdir):
 
     assert all([check_not_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
 
-    # Test that nothing is runned when all rerun are False and targets are present
+    # Test that nothing is run when all rerun are False and targets are present
     for i in luigi.task.flatten(all_targets):
         create_empty_file(i.path)
 
@@ -269,7 +269,7 @@ def test_forceable_tasks(tmpdir):
 
     assert all([check_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
 
-    # Test that everything is runned when rerun = True for the root task and targets are present
+    # Test that everything is run when rerun = True for the root task and targets are present
     for i in luigi.task.flatten(all_targets):
         create_empty_file(i.path)
 
@@ -282,7 +282,7 @@ def test_forceable_tasks(tmpdir):
 
     assert all([check_not_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
 
-    # Test that only the parents of the task with rerun = True are runned
+    # Test that only the parents of the task with rerun = True are run
     for i in luigi.task.flatten(all_targets):
         create_empty_file(i.path)
 

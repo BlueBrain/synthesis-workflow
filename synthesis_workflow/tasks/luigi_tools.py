@@ -9,6 +9,10 @@ import luigi
 L = logging.getLogger(__name__)
 
 
+class WorkflowError(Exception):
+    """Exception raised when the workflow is not consistent"""
+
+
 def recursive_check(task, attr="rerun"):
     """Check if a task or any of its recursive dependencies has a given attribute set to True"""
     val = getattr(task, attr, False)

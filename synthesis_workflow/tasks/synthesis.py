@@ -311,7 +311,9 @@ class Synthesize(WorkflowTask):
         return {
             "out_mvd3": luigi.LocalTarget(self.out_circuit_path),
             "out_morphologies": luigi.LocalTarget(PathConfig().synth_output_path),
-            "debug_scales": luigi.LocalTarget(self.debug_region_grower_scales),
+            "debug_scales": luigi.LocalTarget(self.debug_region_grower_scales)
+            if self.debug_region_grower_scales
+            else None,
         }
 
 

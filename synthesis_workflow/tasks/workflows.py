@@ -10,6 +10,7 @@ from .validation import PlotCollage
 from .validation import PlotDensityProfiles
 from .validation import PlotMorphometrics
 from .validation import PlotPathDistanceFits
+from .validation import PlotScales
 from .vacuum_synthesis import PlotVacuumMorphologies
 
 
@@ -20,6 +21,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
     with_morphometrics = luigi.BoolParameter(default=True)
     with_density_profiles = luigi.BoolParameter(default=True)
     with_path_distance_fits = luigi.BoolParameter(default=True)
+    with_scale_statistics = luigi.BoolParameter(default=True)
 
     def requires(self):
         """"""
@@ -32,6 +34,8 @@ class ValidateSynthesis(WorkflowWrapperTask):
             tasks.append(PlotDensityProfiles())
         if self.with_path_distance_fits:
             tasks.append(PlotPathDistanceFits())
+        if self.with_scale_statistics:
+            tasks.append(PlotScales())
         return tasks
 
 

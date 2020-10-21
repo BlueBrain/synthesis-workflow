@@ -415,10 +415,6 @@ def _plot_collage(
     X, Y, layers = get_layer_info(
         layer_annotation, left_plane.point, rotation_matrix, n_pixels
     )
-    if with_y_field:
-        X_y, Y_y, orientation_u, orientation_v = get_y_info(
-            atlas, left_plane.point, rotation_matrix, n_pixels_y
-        )
 
     fig = plt.figure()
     plt.imshow(
@@ -443,6 +439,9 @@ def _plot_collage(
         )
     if with_y_field:
         # note: some of these parameters are harcoded for NCx plot, adjust as needed
+        X_y, Y_y, orientation_u, orientation_v = get_y_info(
+            atlas, left_plane.point, rotation_matrix, n_pixels_y
+        )
         plt.quiver(
             X_y,
             Y_y,
@@ -696,7 +695,7 @@ def parse_log(
             data.append(new_data)
 
     # List log files
-    log_files = glob.glob(log_file + "*")
+    log_files = glob.glob(log_file + "/*")
 
     # Read log file
     all_lines = []
