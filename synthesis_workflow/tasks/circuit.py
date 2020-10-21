@@ -19,11 +19,11 @@ from ..tools import ensure_dir
 from .config import CircuitConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
-from .luigi_tools import GlobalParamTask
 from .luigi_tools import ParamLink
+from .luigi_tools import WorkflowTask
 
 
-class CreateAtlasLayerAnnotations(GlobalParamTask):
+class CreateAtlasLayerAnnotations(WorkflowTask):
     """Create the annotation file for layers from an atlas.
 
     Args:
@@ -72,7 +72,7 @@ class CreateAtlasLayerAnnotations(GlobalParamTask):
         return luigi.LocalTarget(self.layer_annotations_path)
 
 
-class CreateAtlasPlanes(GlobalParamTask):
+class CreateAtlasPlanes(WorkflowTask):
     """Create plane cuts of an atlas.
 
     Args:
@@ -129,7 +129,7 @@ class CreateAtlasPlanes(GlobalParamTask):
 @copy_params(
     mtypes=ParamLink(SynthesisConfig),
 )
-class SliceCircuit(GlobalParamTask):
+class SliceCircuit(WorkflowTask):
     """Create a smaller circuit .mvd3 file for subsampling.
 
     Args:

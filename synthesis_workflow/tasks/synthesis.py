@@ -28,8 +28,8 @@ from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
-from .luigi_tools import GlobalParamTask
 from .luigi_tools import ParamLink
+from .luigi_tools import WorkflowTask
 
 
 morphio.set_maximum_warnings(0)
@@ -37,7 +37,7 @@ morphio.set_maximum_warnings(0)
 L = logging.getLogger(__name__)
 
 
-class ApplySubstitutionRules(luigi.Task):
+class ApplySubstitutionRules(WorkflowTask):
     """Apply substitution rules to the morphology dataframe.
 
     Args:
@@ -65,7 +65,7 @@ class ApplySubstitutionRules(luigi.Task):
 @copy_params(
     tmd_parameters_path=ParamLink(SynthesisConfig),
 )
-class BuildSynthesisParameters(GlobalParamTask):
+class BuildSynthesisParameters(WorkflowTask):
     """Build the tmd_parameter.json for synthesis.
 
     Args:
@@ -119,7 +119,7 @@ class BuildSynthesisParameters(GlobalParamTask):
 @copy_params(
     morphology_path=ParamLink(PathConfig),
 )
-class BuildSynthesisDistributions(GlobalParamTask):
+class BuildSynthesisDistributions(WorkflowTask):
     """Build the tmd_distribution.json for synthesis.
 
     Args:
@@ -168,7 +168,7 @@ class BuildSynthesisModels(luigi.WrapperTask):
 @copy_params(
     nb_jobs=ParamLink(RunnerConfig),
 )
-class BuildAxonMorphologies(GlobalParamTask):
+class BuildAxonMorphologies(WorkflowTask):
     """Run choose-morphologies to synthesize axon morphologies.
 
     Args:
@@ -232,7 +232,7 @@ class BuildAxonMorphologies(GlobalParamTask):
     morphology_path=ParamLink(PathConfig),
     nb_jobs=ParamLink(RunnerConfig),
 )
-class Synthesize(GlobalParamTask):
+class Synthesize(WorkflowTask):
     """Run placement-algorithm to synthesize morphologies.
 
     Args:
@@ -265,9 +265,11 @@ class Synthesize(GlobalParamTask):
         """"""
 
         axon_morphs_path = self.input()["axons"].path
+        out_mvd3 = self.output()["out_mvd3"]
+        debug_scales = self.output()["debug_scales"]
 
         ensure_dir(axon_morphs_path)
-        ensure_dir(self.output().path)
+        ensure_dir(out_mvd3.path)
         ensure_dir(self.apical_points_path)
         ensure_dir(PathConfig().synth_output_path)
 
@@ -288,7 +290,7 @@ class Synthesize(GlobalParamTask):
             "tmd_parameters": self.input()["tmd_parameters"].path,
             "tmd_distributions": self.input()["tmd_distributions"].path,
             "atlas": CircuitConfig().atlas_path,
-            "out_mvd3": self.output().path,
+            "out_mvd3": out_mvd3.path,
             "out_apical": self.apical_points_path,
             "out_morph_ext": [str(self.ext)],
             "out_morph_dir": PathConfig().synth_output_path,
@@ -301,12 +303,16 @@ class Synthesize(GlobalParamTask):
         }
 
         run_synthesize_morphologies(
-            kwargs, nb_jobs=self.nb_jobs, debug_scales=self.debug_region_grower_scales
+            kwargs, nb_jobs=self.nb_jobs, debug_scales=debug_scales.path
         )
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.out_circuit_path)
+        return {
+            "out_mvd3": luigi.LocalTarget(self.out_circuit_path),
+            "out_morphologies": luigi.LocalTarget(PathConfig().synth_output_path),
+            "debug_scales": luigi.LocalTarget(self.debug_region_grower_scales),
+        }
 
 
 @copy_params(
@@ -314,7 +320,7 @@ class Synthesize(GlobalParamTask):
     tmd_parameters_path=ParamLink(SynthesisConfig),
     nb_jobs=ParamLink(RunnerConfig),
 )
-class AddScalingRulesToParameters(GlobalParamTask):
+class AddScalingRulesToParameters(WorkflowTask):
     """Add scaling rules to tmd_parameter.json."""
 
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")
@@ -356,7 +362,7 @@ class AddScalingRulesToParameters(GlobalParamTask):
     morphology_path=ParamLink(PathConfig),
     nb_jobs=ParamLink(RunnerConfig),
 )
-class RescaleMorphologies(GlobalParamTask):
+class RescaleMorphologies(WorkflowTask):
     """Rescale morphologies for synthesis input."""
 
     rescaled_morphology_path = luigi.Parameter(default="rescaled_morphology_path")

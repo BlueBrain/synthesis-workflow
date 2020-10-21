@@ -14,8 +14,8 @@ from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
-from .luigi_tools import GlobalParamTask
 from .luigi_tools import ParamLink
+from .luigi_tools import WorkflowTask
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import BuildSynthesisParameters
 
@@ -30,7 +30,7 @@ L = logging.getLogger(__name__)
     nb_jobs=ParamLink(RunnerConfig),
     joblib_verbose=ParamLink(RunnerConfig),
 )
-class VacuumSynthesize(GlobalParamTask):
+class VacuumSynthesize(WorkflowTask):
     """Grow cells in vacuum, for annotation tasks."""
 
     vacuum_synth_morphology_path = luigi.Parameter(default="vacuum_synth_morphologies")
@@ -58,8 +58,8 @@ class VacuumSynthesize(GlobalParamTask):
         else:
             mtypes = self.mtypes
 
-        Path(self.vacuum_synth_morphology_path).mkdir(parents=True, exist_ok=True)
-        morphology_base_path = Path(self.vacuum_synth_morphology_path).absolute()
+        Path(self.output()["out_morphologies"].path).mkdir(parents=True, exist_ok=True)
+        morphology_base_path = Path(self.output()["out_morphologies"].path).absolute()
         vacuum_synth_morphs_df = grow_vacuum_morphologies(
             mtypes,
             self.n_cells,
@@ -69,17 +69,20 @@ class VacuumSynthesize(GlobalParamTask):
             joblib_verbose=self.joblib_verbose,
             nb_jobs=self.nb_jobs,
         )
-        vacuum_synth_morphs_df.to_csv(self.output().path, index=False)
+        vacuum_synth_morphs_df.to_csv(self.output()["out_morphs_df"].path, index=False)
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.vacuum_synth_morphs_df_path)
+        return {
+            "out_morphs_df": luigi.LocalTarget(self.vacuum_synth_morphs_df_path),
+            "out_morphologies": luigi.LocalTarget(self.vacuum_synth_morphology_path),
+        }
 
 
 @copy_params(
     morphology_path=ParamLink(PathConfig, default="vacuum_morphology_path"),
 )
-class PlotVacuumMorphologies(GlobalParamTask):
+class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations."""
 
     pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
@@ -90,7 +93,7 @@ class PlotVacuumMorphologies(GlobalParamTask):
 
     def run(self):
         """"""
-        vacuum_synth_morphs_df = pd.read_csv(self.input().path)
+        vacuum_synth_morphs_df = pd.read_csv(self.input()["out_morphs_df"].path)
         ensure_dir(self.output().path)
         plot_vacuum_morphologies(
             vacuum_synth_morphs_df,

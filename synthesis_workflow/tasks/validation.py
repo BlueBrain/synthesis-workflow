@@ -22,8 +22,8 @@ from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
-from .luigi_tools import GlobalParamTask
 from .luigi_tools import ParamLink
+from .luigi_tools import WorkflowTask
 from .synthesis import AddScalingRulesToParameters
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import ApplySubstitutionRules
@@ -37,7 +37,7 @@ L = logging.getLogger(__name__)
 @copy_params(
     ext=ParamLink(PathConfig),
 )
-class ConvertMvd3(GlobalParamTask):
+class ConvertMvd3(WorkflowTask):
     """Convert synthesize mvd3 file to morphs_df.csv file.
 
     Args:
@@ -51,7 +51,7 @@ class ConvertMvd3(GlobalParamTask):
     def run(self):
         """"""
         synth_morphs_df = convert_mvd3_to_morphs_df(
-            self.input().path, PathConfig().synth_output_path, self.ext
+            self.input()["out_mvd3"].path, PathConfig().synth_output_path, self.ext
         )
 
         synth_morphs_df.to_csv(self.output().path, index=False)
@@ -61,7 +61,7 @@ class ConvertMvd3(GlobalParamTask):
         return luigi.LocalTarget(PathConfig().synth_morphs_df_path)
 
 
-class PlotMorphometrics(luigi.Task):
+class PlotMorphometrics(WorkflowTask):
     """Plot morphometric."""
 
     morph_type = luigi.ChoiceParameter(
@@ -128,7 +128,7 @@ class PlotMorphometrics(luigi.Task):
 @copy_params(
     nb_jobs=ParamLink(RunnerConfig),
 )
-class PlotDensityProfiles(GlobalParamTask):
+class PlotDensityProfiles(WorkflowTask):
     """Plot density profiles of neurites in an atlas.
 
     Args:
@@ -151,7 +151,7 @@ class PlotDensityProfiles(GlobalParamTask):
         """"""
 
         circuit = load_circuit(
-            path_to_mvd3=self.input().path,
+            path_to_mvd3=self.input()["out_mvd3"].path,
             path_to_morphologies=PathConfig().synth_output_path,
             path_to_atlas=CircuitConfig().atlas_path,
         )
@@ -175,7 +175,7 @@ class PlotDensityProfiles(GlobalParamTask):
     nb_jobs=ParamLink(RunnerConfig),
     joblib_verbose=ParamLink(RunnerConfig),
 )
-class PlotCollage(GlobalParamTask):
+class PlotCollage(WorkflowTask):
     """Plot collage.
 
     Args:
@@ -225,7 +225,7 @@ class PlotCollage(GlobalParamTask):
     nb_jobs=ParamLink(RunnerConfig),
     joblib_verbose=ParamLink(RunnerConfig),
 )
-class PlotSingleCollage(GlobalParamTask):
+class PlotSingleCollage(WorkflowTask):
     """Plot collage for single mtype.
 
     Args:
@@ -253,7 +253,7 @@ class PlotSingleCollage(GlobalParamTask):
     def run(self):
         """"""
         circuit = load_circuit(
-            path_to_mvd3=self.input()["synthesis"].path,
+            path_to_mvd3=self.input()["synthesis"]["out_mvd3"].path,
             path_to_morphologies=PathConfig().synth_output_path,
             path_to_atlas=CircuitConfig().atlas_path,
         )
@@ -282,7 +282,7 @@ class PlotSingleCollage(GlobalParamTask):
 @copy_params(
     mtypes=ParamLink(SynthesisConfig),
 )
-class PlotScales(GlobalParamTask):
+class PlotScales(WorkflowTask):
     """Plot scales.
 
     Args:
@@ -348,7 +348,7 @@ class PlotScales(GlobalParamTask):
     morphology_path=ParamLink(PathConfig),
     nb_jobs=ParamLink(RunnerConfig),
 )
-class PlotPathDistanceFits(GlobalParamTask):
+class PlotPathDistanceFits(WorkflowTask):
     """Plot collage for single mtype.
 
     Args:

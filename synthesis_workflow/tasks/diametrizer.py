@@ -23,8 +23,8 @@ from ..tools import update_morphs_df
 from .config import DiametrizerConfig
 from .config import RunnerConfig
 from .luigi_tools import copy_params
-from .luigi_tools import GlobalParamTask
 from .luigi_tools import ParamLink
+from .luigi_tools import WorkflowTask
 
 
 matplotlib.use("Agg")
@@ -67,7 +67,7 @@ def _plot_models(models_params, models_data, fig_folder="figures", ext=".png"):
 @copy_params(
     nb_jobs=ParamLink(RunnerConfig),
 )
-class BuildDiameterModels(GlobalParamTask):
+class BuildDiameterModels(WorkflowTask):
     """Task to build diameter models from set of cells."""
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
@@ -144,7 +144,7 @@ def _diametrizer(
     return gid, new_path, exception
 
 
-class Diametrize(luigi.Task):
+class Diametrize(WorkflowTask):
     """Task to build diameter models from set of cells."""
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")

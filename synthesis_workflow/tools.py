@@ -167,7 +167,7 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
             if file_handler is None:
                 # Setup file name
                 log_file = logger_kwargs.get("log_file", worker.__class__.__name__)
-                log_file = str(Path(log_file).with_suffix("")) + f"-{_id}.log"
+                log_file = str(Path(log_file).with_suffix("") / f"scale-{_id}.log")
                 ensure_dir(log_file)
 
                 # Setup log formatter
