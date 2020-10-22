@@ -18,6 +18,7 @@ reqs = [
     "bluepyopt",
     "bluepymm",
     "diameter_synthesis",
+    "gitpython",
     "h5py",
     "joblib",
     "luigi",
