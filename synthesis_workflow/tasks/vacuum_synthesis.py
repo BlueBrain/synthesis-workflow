@@ -80,7 +80,7 @@ class VacuumSynthesize(WorkflowTask):
 
 
 @copy_params(
-    morphology_path=ParamLink(PathConfig, default="vacuum_morphology_path"),
+    morphology_path=ParamLink(PathConfig),
 )
 class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations."""

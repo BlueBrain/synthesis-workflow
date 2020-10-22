@@ -60,7 +60,7 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
         if self.with_vacuum_morphologies:
             tasks.append(PlotVacuumMorphologies())
         if self.with_density_profiles:
-            tasks.append(PlotDensityProfiles())
+            tasks.append(PlotDensityProfiles(region="in_vacuum"))
         return tasks
 
 

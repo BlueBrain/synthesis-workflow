@@ -15,6 +15,7 @@ from ..validation import plot_density_profiles
 from ..validation import plot_morphometrics
 from ..validation import plot_path_distance_fits
 from ..validation import plot_scale_statistics
+from ..validation import VacuumCircuit
 from .circuit import CreateAtlasPlanes
 from .circuit import CreateAtlasLayerAnnotations
 from .config import CircuitConfig
@@ -95,7 +96,7 @@ class PlotMorphometrics(WorkflowTask):
         """"""
         if self.morph_type == "in_vacuum":
             synthesize_task = self.input()[0]
-            synth_morphs_df = pd.read_csv(synthesize_task.path)
+            synth_morphs_df = pd.read_csv(synthesize_task["out_morphs_df"].path)
 
             rescalemorphologies_task = self.input()[1]
             morphs_df = pd.read_csv(rescalemorphologies_task.path)
@@ -146,16 +147,27 @@ class PlotDensityProfiles(WorkflowTask):
 
     def requires(self):
         """"""
-        return Synthesize()
+        if self.region == "in_vacuum":
+            return VacuumSynthesize()
+        else:
+            return Synthesize()
 
     def run(self):
         """"""
 
-        circuit = load_circuit(
-            path_to_mvd3=self.input()["out_mvd3"].path,
-            path_to_morphologies=PathConfig().synth_output_path,
-            path_to_atlas=CircuitConfig().atlas_path,
-        )
+        if self.region == "in_vacuum":
+            df = pd.read_csv(self.input()["out_morphs_df"].path)
+            circuit = VacuumCircuit(
+                morphs_df=df,
+                cells=pd.DataFrame(df["mtype"].unique(), columns=["mtypes"]),
+                morphology_path=PathConfig().morphology_path,
+            )
+        else:
+            circuit = load_circuit(
+                path_to_mvd3=self.input()["out_mvd3"].path,
+                path_to_morphologies=PathConfig().synth_output_path,
+                path_to_atlas=CircuitConfig().atlas_path,
+            )
 
         plot_density_profiles(
             circuit,

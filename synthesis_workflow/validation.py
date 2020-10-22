@@ -6,6 +6,7 @@ import os
 import re
 import warnings
 from collections import defaultdict
+from collections import namedtuple
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -20,15 +21,17 @@ from joblib import Parallel
 from matplotlib.backends.backend_pdf import PdfPages
 from pyquaternion import Quaternion
 from scipy.optimize import fmin
-from tqdm import tqdm
 
 from atlas_analysis.constants import CANONICAL
+from bluepy.v2 import Circuit
 from morph_validator.feature_configs import get_feature_configs
 from morph_validator.plotting import get_features_df
 from morph_validator.plotting import plot_violin_features
 from morph_validator.spatial import relative_depth_volume
 from morph_validator.spatial import sample_morph_voxel_values
+from morphio.mut import Morphology
 from neurom import viewer
+from neurom.core.dataformat import COLS
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
 from tmd.io.io import load_population
@@ -47,6 +50,9 @@ from .utils import DisableLogger
 
 L = logging.getLogger(__name__)
 matplotlib.use("Agg")
+
+
+VacuumCircuit = namedtuple("VacuumCircuit", ["cells", "morphs_df", "morphology_path"])
 
 
 def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext="asc"):
@@ -127,13 +133,14 @@ def plot_morphometrics(
 
     all_features_df = pd.concat([base_features_df, comp_features_df])
     ensure_dir(output_path)
-    plot_violin_features(
-        all_features_df,
-        ["basal_dendrite", "apical_dendrite"],
-        output_dir=Path(output_path),
-        bw=0.1,
-        normalize=normalize,
-    )
+    with DisableLogger():
+        plot_violin_features(
+            all_features_df,
+            ["basal_dendrite", "apical_dendrite"],
+            output_dir=Path(output_path),
+            bw=0.1,
+            normalize=normalize,
+        )
 
 
 def _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance):
@@ -151,7 +158,30 @@ def _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance):
             point_depths[neurite_type.name] += data.tolist()
 
     df = pd.DataFrame.from_dict(point_depths, orient="index").T
-    return df.melt(var_name="neurite_type", value_name="y").dropna()
+    return (
+        df.melt(var_name="neurite_type", value_name="y")
+        .dropna()
+        .sort_values("neurite_type")
+    )
+
+
+def _get_vacuum_depths_df(circuit, mtype):
+    """Create dataframe with depths data for violin plots."""
+    morphs_df = circuit.morphs_df
+    path = circuit.morphology_path
+    cells = morphs_df.loc[morphs_df["mtype"] == mtype, path]
+    point_depths = defaultdict(list)
+    for cell_path in cells:
+        morph = Morphology(cell_path)
+        for i in morph.iter():
+            point_depths[i.type.name] += i.points[COLS.Y].tolist()
+
+    df = pd.DataFrame.from_dict(point_depths, orient="index").T
+    return (
+        df.melt(var_name="neurite_type", value_name="y")
+        .dropna()
+        .sort_values("neurite_type")
+    )
 
 
 def _plot_layers(x_pos, atlas, ax):
@@ -187,11 +217,16 @@ def _plot_density_profile(
     """Plot density profile of an mtype."""
     fig = plt.figure()
     ax = plt.gca()
-    _plot_layers(x_pos, circuit.atlas, ax)
     try:
-        plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
-        sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
-        ax.legend(loc="best")
+        if isinstance(circuit, Circuit):
+            _plot_layers(x_pos, circuit.atlas, ax)
+            plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
+            ax.legend(loc="best")
+        elif isinstance(circuit, VacuumCircuit):
+            plot_df = _get_vacuum_depths_df(circuit, mtype)
+
+        with DisableLogger():
+            sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
     except Exception:  # pylint: disable=broad-except
         ax.text(
             0.5,
@@ -212,7 +247,12 @@ def plot_density_profiles(
 
     WIP function, waiting on complete atlas to update.
     """
-    voxeldata = relative_depth_volume(circuit.atlas, in_region=region, relative=False)
+    if region == "in_vacuum":
+        voxeldata = None
+    else:
+        voxeldata = relative_depth_volume(
+            circuit.atlas, in_region=region, relative=False
+        )
     x_pos = 0
 
     ensure_dir(output_path)
@@ -226,7 +266,7 @@ def plot_density_profiles(
             sample_distance=sample_distance,
         )
         for fig in Parallel(nb_jobs)(
-            delayed(f)(mtype) for mtype in tqdm(sorted(circuit.cells.mtypes))
+            delayed(f)(mtype) for mtype in sorted(circuit.cells.mtypes)
         ):
             with DisableLogger():
                 pdf.savefig(fig, bbox_inches="tight")

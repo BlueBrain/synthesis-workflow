@@ -73,10 +73,20 @@ class RunnerConfig(luigi.Config):
 class SynthesisConfig(luigi.Config):
     """Synthesis global configuration."""
 
-    tmd_parameters_path = luigi.Parameter(default="tmd_parameters.json")
-    tmd_distributions_path = luigi.Parameter(default="tmd_distributions.json")
-    cortical_thickness = luigi.ListParameter(default=[165, 149, 353, 190, 525, 700])
-    mtypes = luigi.ListParameter(default=None)
+    tmd_parameters_path = luigi.Parameter(
+        default="tmd_parameters.json", description="The path to the TMD parameters"
+    )
+    tmd_distributions_path = luigi.Parameter(
+        default="tmd_distributions.json",
+        description="The path to the TMD distributions",
+    )
+    cortical_thickness = luigi.ListParameter(
+        default=[165, 149, 353, 190, 525, 700],
+        description="The list of cortical thicknesses",
+    )
+    mtypes = luigi.ListParameter(
+        default=None, description="The list of mtypes to process"
+    )
 
 
 class CircuitConfig(luigi.Config):
@@ -90,8 +100,8 @@ class PathConfig(luigi.Config):
     """Morphology path configuration."""
 
     ext = ExtParameter(default="asc")
-    # TODO: use out_path as suffix for all output paths
-    out_path = luigi.Parameter(default="out")
+    # TODO: use result_path as suffix for all output paths
+    result_path = luigi.Parameter(default="out")
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
     synth_morphs_df_path = luigi.Parameter(default="synth_morphs_df.csv")
