@@ -100,10 +100,12 @@ class PathConfig(luigi.Config):
     """Morphology path configuration."""
 
     ext = ExtParameter(default="asc")
-    # TODO: use result_path as suffix for all output paths
+    # TODO: use result_path as prefix for all output paths
     result_path = luigi.Parameter(default="out")
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
+    mtype_taxonomy_path = luigi.Parameter(description="path to the taxonomy file (TSV)")
+    pc_in_types_path = luigi.Parameter(default="pc_in_types.yaml")
     synth_morphs_df_path = luigi.Parameter(default="synth_morphs_df.csv")
     synth_output_path = luigi.Parameter(default="synthesized_morphologies")
     substituted_morphs_df_path = luigi.Parameter(default="substituted_morphs_df.csv")

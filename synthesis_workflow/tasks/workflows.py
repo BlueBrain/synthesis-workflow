@@ -6,6 +6,8 @@ from ..validation import plot_morphometrics
 from .luigi_tools import WorkflowTask
 from .luigi_tools import WorkflowWrapperTask
 from .synthesis import ApplySubstitutionRules
+from .synthesis import BuildCircuit
+from .synthesis import BuildMorphsDF
 from .validation import PlotCollage
 from .validation import PlotDensityProfiles
 from .validation import PlotMorphometrics
@@ -17,6 +19,8 @@ from .vacuum_synthesis import PlotVacuumMorphologies
 class ValidateSynthesis(WorkflowWrapperTask):
     """Workflow to validate synthesis"""
 
+    build_circuit = luigi.BoolParameter(default=False)
+    build_morphs_df = luigi.BoolParameter(default=False)
     with_collage = luigi.BoolParameter(default=True)
     with_morphometrics = luigi.BoolParameter(default=True)
     with_density_profiles = luigi.BoolParameter(default=True)
@@ -26,6 +30,10 @@ class ValidateSynthesis(WorkflowWrapperTask):
     def requires(self):
         """"""
         tasks = []
+        if self.build_circuit:
+            tasks.append(BuildCircuit())
+        if self.build_morphs_df:
+            tasks.append(BuildMorphsDF())
         if self.with_collage:
             tasks.append(PlotCollage())
         if self.with_morphometrics:

@@ -6,6 +6,7 @@ import sys
 import traceback
 import warnings
 from collections import namedtuple
+from functools import partial
 from pathlib import Path
 
 import pandas as pd
@@ -28,21 +29,17 @@ def add_taxonomy(morphs_df, pc_in_types):
     return morphs_df
 
 
-def add_morphology_paths(morph_df, morphology_dirs):
+def add_morphology_paths(morphs_df, morphology_dirs):
     """Same as the path loader of morph_tool.utils.neurondb_dataframe, but add multiple columns.
 
     Args:
         morphology_dirs: (dict) If passed, a column with the path to each morphology file
             will be added for each entry of the dict, where the column name is the dict key
     """
-    for name, morphology_dir in morphology_dirs.items():
-        morph_df[name] = morph_df.apply(
-            lambda row, morphology_dir=morphology_dir: find_morph(
-                morphology_dir, row["name"]
-            ),
-            axis=1,
-        )
-    return morph_df
+    for col_name, morphology_dir in morphology_dirs.items():
+        f = partial(find_morph, Path(morphology_dir))
+        morphs_df[col_name] = morphs_df["name"].apply(f)
+    return morphs_df
 
 
 def add_apical_points(morphs_df, apical_points):
@@ -52,6 +49,7 @@ def add_apical_points(morphs_df, apical_points):
     """
 
     morphs_df["apical_point_isec"] = -1
+    # morphs_df["apical_point_isec_test"] = morphs_df["name"].map(apical_points)
     for name, apical_point in apical_points.items():
         morphs_df.loc[morphs_df.name == name, "apical_point_isec"] = apical_point
     morphs_df["apical_point_isec"] = morphs_df["apical_point_isec"].astype(int)
@@ -70,7 +68,7 @@ def load_neurondb_to_dataframe(
         pc_in_types (dict): dict of the form  [mtype]: [IN|PC]
         apical_points (dict): name of cell as key and apical point isec as value
     """
-    morphs_df = neurondb_dataframe(neurondb_path)
+    morphs_df = neurondb_dataframe(Path(neurondb_path))
 
     if morphology_dirs is not None:
         morphs_df = add_morphology_paths(morphs_df, morphology_dirs)

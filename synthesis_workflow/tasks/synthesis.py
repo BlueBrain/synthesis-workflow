@@ -22,6 +22,7 @@ from ..synthesis import get_neurite_types
 from ..synthesis import rescale_morphologies
 from ..synthesis import run_synthesize_morphologies
 from ..tools import ensure_dir
+from ..tools import load_neurondb_to_dataframe
 from .circuit import SliceCircuit
 from .config import CircuitConfig
 from .config import DiametrizerConfig
@@ -36,6 +37,46 @@ from .luigi_tools import WorkflowTask
 morphio.set_maximum_warnings(0)
 
 L = logging.getLogger(__name__)
+
+
+@copy_params(
+    pc_in_types_path=ParamLink(PathConfig),
+)
+class BuildMorphsDF(WorkflowTask):
+    """Generate the list of morphologies with their mtypes and paths.
+
+    Args:
+        neurondb_path (str): path to the neuronDB file (XML)
+        pc_in_types_path (str): path to the pc_in_types file (TSV)
+        morphology_dirs (str): dict (JSON format) in which keys are column names and values
+            are the paths to each morphology file
+        apical_points_path (str): path to the apical points file (JSON)
+    """
+
+    neurondb_path = luigi.Parameter(description="path to the neuronDB file (XML)")
+    morphology_dirs = luigi.DictParameter(
+        description=(
+            "dict (JSON format) in which keys are column names and values are the paths to each "
+            "morphology file"
+        )
+    )
+    apical_points_path = luigi.OptionalParameter(
+        default=None, description="path to the apical points file (JSON)"
+    )
+
+    def run(self):
+        """"""
+        morphs_df = load_neurondb_to_dataframe(
+            self.neurondb_path,
+            self.morphology_dirs,
+            self.pc_in_types_path,
+            self.apical_points_path,
+        )
+        morphs_df.to_csv(self.output().path)
+
+    def output(self):
+        """"""
+        return luigi.LocalTarget(PathConfig().morphs_df_path)
 
 
 class ApplySubstitutionRules(WorkflowTask):
@@ -401,12 +442,15 @@ class RescaleMorphologies(WorkflowTask):
         return luigi.LocalTarget(self.rescaled_morphs_df_path)
 
 
+@copy_params(
+    mtype_taxonomy_path=ParamLink(PathConfig),
+)
 class BuildCircuit(WorkflowTask):
     """Generate cell positions and me-types from atlas, compositions and taxonomy.
 
     Args:
         cell_composition_path (str): path to the cell composition file (YAML)
-        mtype_taxonomy_path (str): path to the taxonomy file (tsv)
+        mtype_taxonomy_path (str): path to the taxonomy file (TSV)
         density_factor (float): density factor
         seed (int): pseudo-random generator seed
     """
@@ -414,7 +458,6 @@ class BuildCircuit(WorkflowTask):
     cell_composition_path = luigi.Parameter(
         description="path to the cell composition file (YAML)"
     )
-    mtype_taxonomy_path = luigi.Parameter(description="path to the taxonomy file (tsv)")
     density_factor = luigi.NumericalParameter(
         default=0.01,
         var_type=float,
