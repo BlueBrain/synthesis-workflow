@@ -4,6 +4,7 @@ import warnings
 import luigi
 
 from .luigi_tools import ExtParameter
+from .luigi_tools import OutputLocalTarget
 
 
 # Add some warning filters
@@ -100,7 +101,6 @@ class PathConfig(luigi.Config):
     """Morphology path configuration."""
 
     ext = ExtParameter(default="asc")
-    # TODO: use result_path as prefix for all output paths
     result_path = luigi.Parameter(default="out")
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
@@ -109,3 +109,9 @@ class PathConfig(luigi.Config):
     synth_morphs_df_path = luigi.Parameter(default="synth_morphs_df.csv")
     synth_output_path = luigi.Parameter(default="synthesized_morphologies")
     substituted_morphs_df_path = luigi.Parameter(default="substituted_morphs_df.csv")
+    debug_region_grower_scales_path = luigi.Parameter(
+        default="region_grower_scales_logs"
+    )
+
+
+OutputLocalTarget.set_default_prefix(PathConfig().result_path)

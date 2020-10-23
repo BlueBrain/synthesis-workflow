@@ -14,6 +14,7 @@ from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
+from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
 from .synthesis import BuildSynthesisDistributions
@@ -78,8 +79,8 @@ class VacuumSynthesize(WorkflowTask):
     def output(self):
         """"""
         return {
-            "out_morphs_df": luigi.LocalTarget(self.vacuum_synth_morphs_df_path),
-            "out_morphologies": luigi.LocalTarget(self.vacuum_synth_morphology_path),
+            "out_morphs_df": OutputLocalTarget(self.vacuum_synth_morphs_df_path),
+            "out_morphologies": OutputLocalTarget(self.vacuum_synth_morphology_path),
         }
 
 
@@ -89,7 +90,7 @@ class VacuumSynthesize(WorkflowTask):
 class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations."""
 
-    pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
+    pdf_filename = luigi.Parameter(default="validation/vacuum_morphologies.pdf")
 
     def requires(self):
         """"""
@@ -107,4 +108,4 @@ class PlotVacuumMorphologies(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.pdf_filename)
+        return OutputLocalTarget(self.pdf_filename)

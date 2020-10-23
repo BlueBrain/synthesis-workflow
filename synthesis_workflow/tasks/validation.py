@@ -23,6 +23,7 @@ from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
+from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
 from .luigi_tools import WorkflowError
@@ -53,14 +54,16 @@ class ConvertMvd3(WorkflowTask):
     def run(self):
         """"""
         synth_morphs_df = convert_mvd3_to_morphs_df(
-            self.input()["out_mvd3"].path, PathConfig().synth_output_path, self.ext
+            self.input()["out_mvd3"].path,
+            self.input()["out_morphologies"].path,
+            self.ext,
         )
 
         synth_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
         """"""
-        return luigi.LocalTarget(PathConfig().synth_morphs_df_path)
+        return OutputLocalTarget(PathConfig().synth_morphs_df_path)
 
 
 class PlotMorphometrics(WorkflowTask):
@@ -70,7 +73,7 @@ class PlotMorphometrics(WorkflowTask):
         default="in_circuit", choices=["in_circuit", "in_vacuum"]
     )
     config_features = luigi.DictParameter(default=None)
-    morphometrics_path = luigi.Parameter(default="morphometrics")
+    morphometrics_path = luigi.Parameter(default="validation/morphometrics")
     base_key = luigi.Parameter(default="repaired_morphology_path")
     comp_key = luigi.Parameter(default="synth_morphology_path")
     base_label = luigi.Parameter(default="bio")
@@ -124,7 +127,7 @@ class PlotMorphometrics(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.morphometrics_path)
+        return OutputLocalTarget(self.morphometrics_path)
 
 
 @copy_params(
@@ -140,7 +143,7 @@ class PlotDensityProfiles(WorkflowTask):
         region (str): name of the region (O1, etc...)
     """
 
-    density_profiles_path = luigi.Parameter(default="density_profiles.pdf")
+    density_profiles_path = luigi.Parameter(default="validation/density_profiles.pdf")
     sample_distance = luigi.FloatParameter(default=10)
     sample = luigi.IntParameter(default=None)
     region = luigi.Parameter(default="O1")
@@ -180,7 +183,7 @@ class PlotDensityProfiles(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.density_profiles_path)
+        return OutputLocalTarget(self.density_profiles_path)
 
 
 @copy_params(
@@ -201,7 +204,7 @@ class PlotCollage(WorkflowTask):
 
     """
 
-    collage_base_path = luigi.Parameter(default="collages")
+    collage_base_path = luigi.Parameter(default="validation/collages")
     sample = luigi.IntParameter(default=20)
     dpi = luigi.IntParameter(default=1000)
 
@@ -231,7 +234,7 @@ class PlotCollage(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.collage_base_path)
+        return OutputLocalTarget(self.collage_base_path)
 
 
 @copy_params(
@@ -287,7 +290,7 @@ class PlotSingleCollage(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(
+        return OutputLocalTarget(
             (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
         )
 
@@ -300,7 +303,7 @@ class PlotScales(WorkflowTask):
 
     Args:
         scales_base_path (str): path to the output folder
-        log_file (str): log file to parse
+        log_files (str): (optional) directory containing log files to parse
         mtypes (list(str)): mtypes to plot
         neuron_type_position_regex (str): regex used to find neuron type and position
         default_scale_regex (str): regex used to find default scales
@@ -309,7 +312,7 @@ class PlotScales(WorkflowTask):
     """
 
     scales_base_path = luigi.Parameter(default="scales")
-    log_file = luigi.OptionalParameter(default=None)
+    log_files = luigi.OptionalParameter(default=None)
     neuron_type_position_regex = luigi.Parameter(
         default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite type and position: (.*)"
     )
@@ -337,20 +340,19 @@ class PlotScales(WorkflowTask):
         else:
             mtypes = self.mtypes
 
-        if self.log_file is None:
-            debug_scales = self.requires().input()["debug_scales"]
-            if debug_scales is not None:
-                self.log_file = debug_scales.path
-            else:
+        debug_scales = self.log_files
+        if debug_scales is None:
+            debug_scales = self.requires().input()["debug_scales"].path
+            if debug_scales is None:
                 raise WorkflowError(
-                    "%s task: either a 'log_file' argument must be provided, either the "
+                    "%s task: either a 'log_files' argument must be provided, either the "
                     "'Synthesize' task must be run with 'debug_region_grower_scales' set "
                     "to a valid directory path" % self.__class__.__name__
                 )
 
         # Plot statistics
         scale_data = parse_log(
-            self.log_file,
+            debug_scales,
             self.neuron_type_position_regex,
             self.default_scale_regex,
             self.target_scale_regex,
@@ -364,7 +366,7 @@ class PlotScales(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.scales_base_path)
+        return OutputLocalTarget(self.scales_base_path)
 
 
 @copy_params(
@@ -383,7 +385,7 @@ class PlotPathDistanceFits(WorkflowTask):
         nb_jobs (int): number of jobs
     """
 
-    output_path = luigi.Parameter(default="path_distance_fit.pdf")
+    output_path = luigi.Parameter(default="validation/path_distance_fit.pdf")
     outlier_percentage = luigi.IntParameter(default=90)
 
     def requires(self):
@@ -400,7 +402,7 @@ class PlotPathDistanceFits(WorkflowTask):
         L.debug("output_path = %s", self.output().path)
         plot_path_distance_fits(
             self.input()["scaling_rules"].path,
-            SynthesisConfig().tmd_distributions_path,
+            self.input()["distributions"].path,
             self.input()["rescaled"].path,
             self.morphology_path,
             self.output().path,
@@ -411,4 +413,4 @@ class PlotPathDistanceFits(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.output_path)
+        return OutputLocalTarget(self.output_path)

@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 from ..tools import update_morphs_df
 from .config import DiametrizerConfig
+from .config import OutputLocalTarget
 from .config import RunnerConfig
 from .luigi_tools import copy_params
 from .luigi_tools import ParamLink
@@ -112,7 +113,7 @@ class BuildDiameterModels(WorkflowTask):
 
     def output(self):
         """Output."""
-        return luigi.LocalTarget(self.diameter_models_path)
+        return OutputLocalTarget(self.diameter_models_path)
 
 
 def _diametrizer(
@@ -192,4 +193,4 @@ class Diametrize(WorkflowTask):
 
     def output(self):
         """Output."""
-        return luigi.LocalTarget(self.new_morphs_df_path)
+        return OutputLocalTarget(self.new_morphs_df_path)

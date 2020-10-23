@@ -8,6 +8,7 @@ from git import Repo
 
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
+from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
 
@@ -23,7 +24,7 @@ class GitClone(WorkflowTask):
         Repo.clone_from(self.url, self.output().path)
 
     def output(self):
-        return luigi.LocalTarget(self.dest)
+        return OutputLocalTarget(self.dest)
 
 
 @copy_params(
@@ -48,15 +49,15 @@ class GetOfficialConfiguration(WorkflowTask):
                 r.git.checkout(self.version)
             shutil.copy(
                 dest / "entities" / "bionames" / self.specie / "tmd_parameters.json",
-                self.tmd_parameters_path,
+                self.output()["tmd_parameters"].path,
             )
             shutil.copy(
                 dest / "entities" / "bionames" / self.specie / "tmd_distributions.json",
-                self.tmd_distributions_path,
+                self.output()["tmd_distributions"].path,
             )
 
     def output(self):
         return {
-            "tmd_parameters": luigi.LocalTarget(self.tmd_parameters_path),
-            "tmd_distributions": luigi.LocalTarget(self.tmd_distributions_path),
+            "tmd_parameters": OutputLocalTarget(self.tmd_parameters_path),
+            "tmd_distributions": OutputLocalTarget(self.tmd_distributions_path),
         }

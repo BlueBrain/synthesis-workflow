@@ -307,7 +307,7 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales=None):
     if debug_scales is not None:
         logger_kwargs = {
             "log_level": logging.DEBUG,
-            "log_file": debug_scales,
+            "log_file": debug_scales.path,
         }
 
     # Run

@@ -26,6 +26,7 @@ from ..tools import load_neurondb_to_dataframe
 from .circuit import SliceCircuit
 from .config import CircuitConfig
 from .config import DiametrizerConfig
+from .config import OutputLocalTarget
 from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
@@ -76,7 +77,7 @@ class BuildMorphsDF(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(PathConfig().morphs_df_path)
+        return OutputLocalTarget(PathConfig().morphs_df_path)
 
 
 class ApplySubstitutionRules(WorkflowTask):
@@ -101,7 +102,7 @@ class ApplySubstitutionRules(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(PathConfig().substituted_morphs_df_path)
+        return OutputLocalTarget(PathConfig().substituted_morphs_df_path)
 
 
 @copy_params(
@@ -155,7 +156,7 @@ class BuildSynthesisParameters(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.tmd_parameters_path)
+        return OutputLocalTarget(self.tmd_parameters_path)
 
 
 @copy_params(
@@ -196,7 +197,7 @@ class BuildSynthesisDistributions(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(SynthesisConfig().tmd_distributions_path)
+        return OutputLocalTarget(SynthesisConfig().tmd_distributions_path)
 
 
 class BuildSynthesisModels(luigi.WrapperTask):
@@ -266,7 +267,7 @@ class BuildAxonMorphologies(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.axon_morphs_path)
+        return OutputLocalTarget(self.axon_morphs_path)
 
 
 @copy_params(
@@ -290,7 +291,7 @@ class Synthesize(WorkflowTask):
     out_circuit_path = luigi.Parameter(default="sliced_circuit_morphologies.mvd3")
     axon_morphs_base_dir = luigi.OptionalParameter(default=None)
     apical_points_path = luigi.Parameter(default="apical_points.yaml")
-    debug_region_grower_scales = luigi.OptionalParameter(default=None)
+    debug_region_grower_scales = luigi.BoolParameter(default=False)
 
     def requires(self):
         """"""
@@ -308,7 +309,7 @@ class Synthesize(WorkflowTask):
 
         axon_morphs_path = self.input()["axons"].path
         out_mvd3 = self.output()["out_mvd3"]
-        debug_scales = self.output()["debug_scales"]
+        debug_scales = self.output().get("debug_scales")
 
         ensure_dir(axon_morphs_path)
         ensure_dir(out_mvd3.path)
@@ -335,7 +336,7 @@ class Synthesize(WorkflowTask):
             "out_mvd3": out_mvd3.path,
             "out_apical": self.apical_points_path,
             "out_morph_ext": [str(self.ext)],
-            "out_morph_dir": PathConfig().synth_output_path,
+            "out_morph_dir": self.output()["out_morphologies"].path,
             "overwrite": True,
             "no_mpi": True,
             "morph-axon": axon_morphs_path,
@@ -345,18 +346,20 @@ class Synthesize(WorkflowTask):
         }
 
         run_synthesize_morphologies(
-            kwargs, nb_jobs=self.nb_jobs, debug_scales=debug_scales.path
+            kwargs, nb_jobs=self.nb_jobs, debug_scales=debug_scales
         )
 
     def output(self):
         """"""
-        return {
-            "out_mvd3": luigi.LocalTarget(self.out_circuit_path),
-            "out_morphologies": luigi.LocalTarget(PathConfig().synth_output_path),
-            "debug_scales": luigi.LocalTarget(self.debug_region_grower_scales)
-            if self.debug_region_grower_scales
-            else None,
+        outputs = {
+            "out_mvd3": OutputLocalTarget(self.out_circuit_path),
+            "out_morphologies": OutputLocalTarget(PathConfig().synth_output_path),
         }
+        if self.debug_region_grower_scales:
+            outputs["debug_scales"] = OutputLocalTarget(
+                PathConfig().debug_region_grower_scales_path
+            )
+        return outputs
 
 
 @copy_params(
@@ -399,7 +402,7 @@ class AddScalingRulesToParameters(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.tmd_parameters_path)
+        return OutputLocalTarget(self.tmd_parameters_path)
 
 
 @copy_params(
@@ -439,7 +442,7 @@ class RescaleMorphologies(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.rescaled_morphs_df_path)
+        return OutputLocalTarget(self.rescaled_morphs_df_path)
 
 
 @copy_params(
@@ -480,4 +483,4 @@ class BuildCircuit(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(CircuitConfig().circuit_somata_path)
+        return OutputLocalTarget(CircuitConfig().circuit_somata_path)

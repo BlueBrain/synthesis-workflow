@@ -3,6 +3,7 @@ import luigi
 import pandas as pd
 
 from ..validation import plot_morphometrics
+from .luigi_tools import OutputLocalTarget
 from .luigi_tools import WorkflowTask
 from .luigi_tools import WorkflowWrapperTask
 from .synthesis import ApplySubstitutionRules
@@ -108,4 +109,4 @@ class ValidateRescaling(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.morphometrics_path)
+        return OutputLocalTarget(self.morphometrics_path)

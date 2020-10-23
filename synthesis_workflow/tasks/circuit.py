@@ -19,6 +19,7 @@ from ..tools import ensure_dir
 from .config import CircuitConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
+from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
 
@@ -69,7 +70,7 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.layer_annotations_path)
+        return OutputLocalTarget(self.layer_annotations_path)
 
 
 class CreateAtlasPlanes(WorkflowTask):
@@ -123,7 +124,7 @@ class CreateAtlasPlanes(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.atlas_planes_path + ".npz")
+        return OutputLocalTarget(self.atlas_planes_path + ".npz")
 
 
 @copy_params(
@@ -177,4 +178,4 @@ class SliceCircuit(WorkflowTask):
 
     def output(self):
         """"""
-        return luigi.LocalTarget(self.sliced_circuit_path)
+        return OutputLocalTarget(self.sliced_circuit_path)

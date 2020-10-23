@@ -389,3 +389,45 @@ def test_remove_folder_target(tmpdir):
             ]
 
     assert luigi.build([TaskA()], local_scheduler=True)
+
+
+def test_output_target(tmpdir):
+    """
+    4 tests for the OutputLocalTarget class:
+        * using explicit prefix, so the default prefix is ignored
+        * using absolute path, so the prefix is ignored
+        * using explicit prefix with relative paths, so the default prefix is ignored
+        * using default prefix
+    """
+
+    class TaskA_OutputLocalTarget(luigi_tools.WorkflowTask):
+        """"""
+
+        def run(self):
+            """"""
+
+            for i in luigi.task.flatten(self.output()):
+                os.makedirs(i.ppath.parent, exist_ok=True)
+                create_not_empty_file(i.path)
+                assert i.exists()
+                luigi_tools.target_remove(i)
+                assert not i.exists()
+
+        def output(self):
+            return [
+                luigi_tools.OutputLocalTarget("output_target.test", prefix=tmpdir),
+                luigi_tools.OutputLocalTarget(
+                    tmpdir / "absolute_output_target_no_prefix.test"
+                ),
+                luigi_tools.OutputLocalTarget(
+                    "relative_output_target.test", prefix=tmpdir / "test" / ".."
+                ),
+                luigi_tools.OutputLocalTarget("output_target_default_prefix.test"),
+            ]
+
+    try:
+        current_prefix = luigi_tools.OutputLocalTarget._prefix
+        luigi_tools.OutputLocalTarget.set_default_prefix(tmpdir / "subdir")
+        assert luigi.build([TaskA_OutputLocalTarget()], local_scheduler=True)
+    finally:
+        luigi_tools.OutputLocalTarget.set_default_prefix(current_prefix)
