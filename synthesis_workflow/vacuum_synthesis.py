@@ -11,6 +11,7 @@ from morphio.mut import Morphology
 from neurom import load_neuron
 from neurom import viewer
 from tns import NeuronGrower
+from diameter_synthesis import build_diameters
 
 from . import STR_TO_TYPES
 from .synthesis import get_max_len
@@ -18,7 +19,12 @@ from .utils import DisableLogger
 
 
 def _grow_morphology(
-    gid, mtype, tmd_parameters, tmd_distributions, morphology_base_path
+    gid,
+    mtype,
+    tmd_parameters,
+    tmd_distributions,
+    morphology_base_path,
+    external_diametrizer=None,
 ):
     """Grow single morphology for parallel computations."""
 
@@ -30,7 +36,7 @@ def _grow_morphology(
     grower = NeuronGrower(
         input_parameters=tmd_parameters,
         input_distributions=tmd_distributions,
-        external_diametrizer=None,
+        external_diametrizer=external_diametrizer,
     )
     grower.grow()
     grower.neuron.write(morphology_path)
@@ -49,17 +55,36 @@ def grow_vacuum_morphologies(
     tmd_parameters,
     tmd_distributions,
     morphology_base_path,
+    diametrizer="external",
     joblib_verbose=0,
     nb_jobs=1,
 ):
-    """Grow morphologies in vacuum."""
+    """Grow morphologies in vacuum.
+
+    With diametrizer='external', we will use diameter-synthesis,
+    otherwise 'M1-M5' from TNS are allowed.
+    """
 
     global_gid = 0
     vacuum_synth_morphs_df = pd.DataFrame()
     for mtype in tqdm(mtypes):
-        # no need to realistic diameters here, using internal TNS diametrizer
-        tmd_parameters[mtype]["diameter_params"]["method"] = "M1"
-        tmd_distributions["mtypes"][mtype]["diameter"]["method"] = "M1"
+        tmd_parameters[mtype]["diameter_params"]["method"] = diametrizer
+        tmd_distributions["mtypes"][mtype]["diameter"]["method"] = diametrizer
+
+        if diametrizer == "external":
+
+            def external_diametrizer(neuron, model, neurite_type):
+                return build_diameters.build(
+                    neuron,
+                    model,
+                    [neurite_type],
+                    tmd_parameters[mtype][  # pylint: disable=cell-var-from-loop
+                        "diameter_params"
+                    ],
+                )
+
+        else:
+            external_diametrizer = None
 
         gids = range(global_gid, global_gid + n_cells)
         global_gid += n_cells
@@ -70,6 +95,7 @@ def grow_vacuum_morphologies(
                 tmd_parameters[mtype],
                 tmd_distributions["mtypes"][mtype],
                 morphology_base_path,
+                external_diametrizer=external_diametrizer,
             )
             for gid in gids
         ):

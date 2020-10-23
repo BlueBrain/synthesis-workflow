@@ -35,6 +35,9 @@ class VacuumSynthesize(WorkflowTask):
 
     vacuum_synth_morphology_path = luigi.Parameter(default="vacuum_synth_morphologies")
     vacuum_synth_morphs_df_path = luigi.Parameter(default="vacuum_synth_morphs_df.csv")
+    diametrizer = luigi.ChoiceParameter(
+        default="external", choices=["external"] + [f"M{i}" for i in range(1, 6)]
+    )
     n_cells = luigi.IntParameter(default=10)
 
     def requires(self):
@@ -66,6 +69,7 @@ class VacuumSynthesize(WorkflowTask):
             tmd_parameters,
             tmd_distributions,
             morphology_base_path,
+            diametrizer=self.diametrizer,
             joblib_verbose=self.joblib_verbose,
             nb_jobs=self.nb_jobs,
         )
