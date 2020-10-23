@@ -14,6 +14,7 @@ from tns import extract_input
 
 from ..synthesis import add_scaling_rules_to_parameters
 from ..synthesis import apply_substitutions
+from ..synthesis import build_circuit
 from ..synthesis import build_distributions
 from ..synthesis import create_axon_morphologies_tsv
 from ..synthesis import get_axon_base_dir
@@ -398,3 +399,42 @@ class RescaleMorphologies(WorkflowTask):
     def output(self):
         """"""
         return luigi.LocalTarget(self.rescaled_morphs_df_path)
+
+
+class BuildCircuit(WorkflowTask):
+    """Generate cell positions and me-types from atlas, compositions and taxonomy.
+
+    Args:
+        cell_composition_path (str): path to the cell composition file (YAML)
+        mtype_taxonomy_path (str): path to the taxonomy file (tsv)
+        density_factor (float): density factor
+        seed (int): pseudo-random generator seed
+    """
+
+    cell_composition_path = luigi.Parameter(
+        description="path to the cell composition file (YAML)"
+    )
+    mtype_taxonomy_path = luigi.Parameter(description="path to the taxonomy file (tsv)")
+    density_factor = luigi.NumericalParameter(
+        default=0.01,
+        var_type=float,
+        min_value=0,
+        max_value=1,
+        description="The density of positions generated from the atlas",
+    )
+    seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")
+
+    def run(self):
+        """"""
+        cells = build_circuit(
+            self.cell_composition_path,
+            self.mtype_taxonomy_path,
+            CircuitConfig().atlas_path,
+            self.density_factor,
+            self.seed,
+        )
+        cells.save(self.output().path)
+
+    def output(self):
+        """"""
+        return luigi.LocalTarget(CircuitConfig().circuit_somata_path)

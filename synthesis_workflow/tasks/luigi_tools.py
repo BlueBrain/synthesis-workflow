@@ -124,7 +124,11 @@ class GlobalParamTask(luigi.Task):
         return tmp
 
     def __setattr__(self, name, value):
-        if value is None and name in self.get_param_names():
+        try:
+            global_params = self._global_params
+        except AttributeError:
+            global_params = {}
+        if value is None and name in global_params:
             L.warning(
                 "The Parameter '%s' of the task '%s' is set to None, thus the global "
                 "value will be taken frow now on",
