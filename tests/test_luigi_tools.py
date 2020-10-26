@@ -423,6 +423,10 @@ def test_output_target(tmpdir):
                     "relative_output_target.test", prefix=tmpdir / "test" / ".."
                 ),
                 luigi_tools.OutputLocalTarget("output_target_default_prefix.test"),
+                luigi_tools.OutputLocalTarget(
+                    tmpdir / "absolute_output_target_prefix.test",
+                    prefix=tmpdir / "test",
+                ),
             ]
 
     try:
