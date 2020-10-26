@@ -3,6 +3,8 @@ import luigi
 import pandas as pd
 
 from ..validation import plot_morphometrics
+from .utils import GetSynthesisInputs
+from .luigi_tools import BoolParameter
 from .luigi_tools import OutputLocalTarget
 from .luigi_tools import WorkflowTask
 from .luigi_tools import WorkflowWrapperTask
@@ -18,20 +20,19 @@ from .vacuum_synthesis import PlotVacuumMorphologies
 class ValidateSynthesis(WorkflowWrapperTask):
     """Workflow to validate synthesis"""
 
-    build_circuit = luigi.BoolParameter(default=False)
-    with_collage = luigi.BoolParameter(default=True)
-    with_morphometrics = luigi.BoolParameter(default=True)
-    with_density_profiles = luigi.BoolParameter(default=True)
-    with_path_distance_fits = luigi.BoolParameter(default=True)
-    with_scale_statistics = luigi.BoolParameter(default=True)
+    with_collage = BoolParameter(default=True)
+    with_morphometrics = BoolParameter(default=True)
+    with_density_profiles = BoolParameter(default=True)
+    with_path_distance_fits = BoolParameter(default=True)
+    with_scale_statistics = BoolParameter(default=True)
 
     def requires(self):
         """"""
-        tasks = []
+        tasks = [GetSynthesisInputs()]
         if self.with_collage:
             tasks.append(PlotCollage())
         if self.with_morphometrics:
-            tasks.append(PlotMorphometrics())
+            tasks.append(PlotMorphometrics(in_atlas=True))
         if self.with_density_profiles:
             tasks.append(PlotDensityProfiles())
         if self.with_path_distance_fits:
@@ -44,19 +45,19 @@ class ValidateSynthesis(WorkflowWrapperTask):
 class ValidateVacuumSynthesis(WorkflowWrapperTask):
     """Workflow to validate vacuum synthesis"""
 
-    with_vacuum_morphologies = luigi.BoolParameter(default=True)
-    with_morphometrics = luigi.BoolParameter(default=True)
-    with_density_profiles = luigi.BoolParameter(default=True)
+    with_vacuum_morphologies = BoolParameter(default=True)
+    with_morphometrics = BoolParameter(default=True)
+    with_density_profiles = BoolParameter(default=True)
 
     def requires(self):
         """"""
-        tasks = []
+        tasks = [GetSynthesisInputs()]
         if self.with_morphometrics:
-            tasks.append(PlotMorphometrics(morph_type="in_vacuum"))
+            tasks.append(PlotMorphometrics(in_atlas=False))
         if self.with_vacuum_morphologies:
             tasks.append(PlotVacuumMorphologies())
         if self.with_density_profiles:
-            tasks.append(PlotDensityProfiles(region="in_vacuum"))
+            tasks.append(PlotDensityProfiles(in_atlas=False))
         return tasks
 
 
@@ -69,7 +70,7 @@ class ValidateRescaling(WorkflowTask):
     base_label = luigi.Parameter(default="bio")
     comp_label = luigi.Parameter(default="substituted")
     config_features = luigi.DictParameter(default=None)
-    normalize = luigi.BoolParameter()
+    normalize = BoolParameter()
 
     def requires(self):
         """"""

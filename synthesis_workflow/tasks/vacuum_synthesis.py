@@ -12,6 +12,7 @@ from ..vacuum_synthesis import grow_vacuum_morphologies
 from ..vacuum_synthesis import plot_vacuum_morphologies
 from .config import RunnerConfig
 from .config import SynthesisConfig
+from .config import ValidationLocalTarget
 from .luigi_tools import copy_params
 from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
@@ -90,7 +91,7 @@ class VacuumSynthesize(WorkflowTask):
 class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations."""
 
-    pdf_filename = luigi.Parameter(default="validation/vacuum_morphologies.pdf")
+    pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
 
     def requires(self):
         """"""
@@ -108,4 +109,4 @@ class PlotVacuumMorphologies(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.pdf_filename)
+        return ValidationLocalTarget(self.pdf_filename)

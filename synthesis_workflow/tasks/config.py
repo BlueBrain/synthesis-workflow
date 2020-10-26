@@ -4,6 +4,7 @@ import warnings
 import luigi
 
 from .luigi_tools import ExtParameter
+from .luigi_tools import OptionalIntParameter
 from .luigi_tools import OutputLocalTarget
 
 
@@ -113,4 +114,20 @@ class PathConfig(luigi.Config):
     )
 
 
+class ValidationConfig(luigi.Config):
+    """Validation configuration."""
+
+    validation_subpath = luigi.Parameter(default="validation")
+    sample = OptionalIntParameter(default=None)
+
+
+class ValidationLocalTarget(OutputLocalTarget):
+    """Specific target for validation tasks"""
+
+
 OutputLocalTarget.set_default_prefix(PathConfig().result_path)
+ValidationLocalTarget.set_default_prefix(
+    # pylint: disable=protected-access
+    OutputLocalTarget._prefix
+    / ValidationConfig().validation_subpath
+)

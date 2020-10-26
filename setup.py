@@ -14,6 +14,7 @@ with open("README.rst", encoding="utf-8") as f:
 
 reqs = [
     "atlas_analysis",
+    "brainbuilder",
     "bluepyefe",
     "bluepyopt",
     "bluepymm",
@@ -44,7 +45,6 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "brainbuilder",
     "pytest",
     "pytest-cov",
     "pytest-html",

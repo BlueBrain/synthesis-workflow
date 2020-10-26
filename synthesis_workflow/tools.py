@@ -153,11 +153,10 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
     """Wrap the worker job and catch exceptions that must be caught"""
     try:
         file_handler = None
+        root = logging.getLogger()
         if logger_kwargs is not None:
 
             # Search old handlers
-            root = logging.getLogger()
-            root.setLevel(logging.DEBUG)
             for i in root.handlers:
                 if isinstance(i, DebugingFileHandler):
                     file_handler = i
@@ -190,7 +189,8 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
             warnings.simplefilter("ignore")
             try:
                 old_level = root.level
-                root.setLevel(logging.DEBUG)
+                if logger_kwargs is not None:
+                    root.setLevel(logger_kwargs.get("log_level", logging.DEBUG))
                 res = _id, worker(_id)
             finally:
                 root.setLevel(old_level)

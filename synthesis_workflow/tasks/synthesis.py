@@ -29,6 +29,7 @@ from .config import OutputLocalTarget
 from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
+from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
@@ -61,7 +62,7 @@ class BuildMorphsDF(WorkflowTask):
         )
     )
     apical_points_path = luigi.OptionalParameter(
-        default=None, description="path to the apical points file (JSON)"
+        default=None, description="path to the apical points file (YAML)"
     )
 
     def run(self):
@@ -294,8 +295,11 @@ class Synthesize(WorkflowTask):
 
     out_circuit_path = luigi.Parameter(default="sliced_circuit_morphologies.mvd3")
     axon_morphs_base_dir = luigi.OptionalParameter(default=None)
-    apical_points_path = luigi.Parameter(default="apical_points.yaml")
-    debug_region_grower_scales = luigi.BoolParameter(default=False)
+    apical_points_path = luigi.Parameter(
+        default="apical_points.yaml",
+        description="path to the apical points file (YAML)",
+    )
+    debug_region_grower_scales = BoolParameter(default=False)
 
     def requires(self):
         """"""
@@ -313,12 +317,14 @@ class Synthesize(WorkflowTask):
 
         axon_morphs_path = self.input()["axons"].path
         out_mvd3 = self.output()["out_mvd3"]
+        out_morphologies = self.output()["out_morphologies"]
+        out_apical_points = self.output()["apical_points"]
         debug_scales = self.output().get("debug_scales")
 
         ensure_dir(axon_morphs_path)
         ensure_dir(out_mvd3.path)
-        ensure_dir(self.apical_points_path)
-        ensure_dir(PathConfig().synth_output_path)
+        ensure_dir(out_apical_points.path)
+        ensure_dir(out_morphologies.path)
 
         # Get base-morph-dir argument value
         if self.axon_morphs_base_dir is None:
@@ -338,9 +344,9 @@ class Synthesize(WorkflowTask):
             "tmd_distributions": self.input()["tmd_distributions"].path,
             "atlas": CircuitConfig().atlas_path,
             "out_mvd3": out_mvd3.path,
-            "out_apical": self.apical_points_path,
+            "out_apical": out_apical_points.path,
             "out_morph_ext": [str(self.ext)],
-            "out_morph_dir": self.output()["out_morphologies"].path,
+            "out_morph_dir": out_morphologies.path,
             "overwrite": True,
             "no_mpi": True,
             "morph-axon": axon_morphs_path,
@@ -358,6 +364,7 @@ class Synthesize(WorkflowTask):
         outputs = {
             "out_mvd3": OutputLocalTarget(self.out_circuit_path),
             "out_morphologies": OutputLocalTarget(PathConfig().synth_output_path),
+            "apical_points": OutputLocalTarget(self.apical_points_path),
         }
         if self.debug_region_grower_scales:
             outputs["debug_scales"] = OutputLocalTarget(
@@ -421,7 +428,7 @@ class RescaleMorphologies(WorkflowTask):
     scaling_rules_path = luigi.Parameter(default="scaling_rules.yaml")
     rescaled_morphs_df_path = luigi.Parameter(default="rescaled_morphs_df.csv")
     scaling_mode = luigi.ChoiceParameter(default="y", choices=["y", "radial"])
-    skip_rescale = luigi.BoolParameter(default=False)
+    skip_rescale = BoolParameter(default=False)
 
     def requires(self):
         """"""

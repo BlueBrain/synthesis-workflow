@@ -2,6 +2,7 @@
 import logging
 import os
 import re
+import warnings
 from copy import deepcopy
 from pathlib import Path
 
@@ -157,6 +158,35 @@ class ExtParameter(luigi.Parameter):
         pattern = re.compile(r"\.?(.*)")
         match = re.match(pattern, x)
         return match.group(1)
+
+
+class OptionalIntParameter(luigi.OptionalParameter, luigi.IntParameter):
+    """Class to parse optional int parameters"""
+
+    def parse(self, x):
+        if x:
+            return int(x)
+        else:
+            return None
+
+    def _warn_on_wrong_param_type(self, param_name, param_value):
+        if self.__class__ != OptionalIntParameter:
+            return
+        if not isinstance(param_value, int) and param_value is not None:
+            warnings.warn(
+                'OptionalIntParameter "{}" with value "{}" is not of type int or None.'.format(
+                    param_name, param_value
+                )
+            )
+
+
+class BoolParameter(luigi.BoolParameter):
+    """Class to parse boolean parameters and set explicit parsing when default is True"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self._default is True:
+            self.parsing = self.__class__.EXPLICIT_PARSING
 
 
 class OutputLocalTarget(luigi.LocalTarget):

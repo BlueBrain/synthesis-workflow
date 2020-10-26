@@ -22,6 +22,9 @@ from .config import CircuitConfig
 from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
+from .config import ValidationConfig
+from .config import ValidationLocalTarget
+from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
 from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
@@ -68,43 +71,42 @@ class ConvertMvd3(WorkflowTask):
 
 
 class PlotMorphometrics(WorkflowTask):
-    """Plot morphometric."""
+    """Plot morphometric.
 
-    morph_type = luigi.ChoiceParameter(
-        default="in_circuit", choices=["in_circuit", "in_vacuum"]
-    )
+    Args:
+        in_atlas (bool): set to True to consider cells in an atlas
+        config_features (dict): the feature from ``morph_validator.feature_configs`` to plot
+        morphometrics_path (str): path to output directory (relative from PathConfig.result_path)
+        base_key (str): base key to use in the morphology DataFrame
+        comp_key (str): compared key to use in the morphology DataFrame
+        base_label (str): label for base morphologies
+        comp_label (str): label for compared morphologies
+        normalize (str): normalize data if set to True
+    """
+
+    in_atlas = BoolParameter(default=False)
     config_features = luigi.DictParameter(default=None)
-    morphometrics_path = luigi.Parameter(default="validation/morphometrics")
+    morphometrics_path = luigi.Parameter(default="morphometrics")
     base_key = luigi.Parameter(default="repaired_morphology_path")
     comp_key = luigi.Parameter(default="synth_morphology_path")
     base_label = luigi.Parameter(default="bio")
     comp_label = luigi.Parameter(default="synth")
-    normalize = luigi.BoolParameter()
-
-    @staticmethod
-    def _wrong_morph_type():
-        raise ValueError(
-            "The 'morph_type' argument must be in ['in_circuit', 'in_vacuum']"
-        )
+    normalize = BoolParameter()
 
     def requires(self):
         """"""
-        if self.morph_type == "in_vacuum":
-            return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
-        elif self.morph_type == "in_circuit":
+        if self.in_atlas:
             return {"morphs": BuildMorphsDF(), "mvd3": ConvertMvd3()}
         else:
-            return self._wrong_morph_type()
+            return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
 
     def run(self):
         """"""
         morphs_df = pd.read_csv(self.input()["morphs"].path)
-        if self.morph_type == "in_vacuum":
-            synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)
-        elif self.morph_type == "in_circuit":
+        if self.in_atlas:
             synth_morphs_df = pd.read_csv(self.input()["mvd3"].path)
         else:
-            self._wrong_morph_type()
+            synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)
 
         plot_morphometrics(
             morphs_df,
@@ -120,11 +122,12 @@ class PlotMorphometrics(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.morphometrics_path)
+        return ValidationLocalTarget(self.morphometrics_path)
 
 
 @copy_params(
     nb_jobs=ParamLink(RunnerConfig),
+    sample=ParamLink(ValidationConfig),
 )
 class PlotDensityProfiles(WorkflowTask):
     """Plot density profiles of neurites in an atlas.
@@ -133,42 +136,41 @@ class PlotDensityProfiles(WorkflowTask):
         density_profiles_path (str): path for pdf file
         sample_distance (float): distance between sampled points along neurites
         sample (float): number of cells to use, if None, all available
-        region (str): name of the region (O1, etc...)
+        circuit_type (str): type of the circuit (in_vacuum, O1, etc...)
+        nb_jobs (int) : number of joblib workers
     """
 
-    density_profiles_path = luigi.Parameter(default="validation/density_profiles.pdf")
+    density_profiles_path = luigi.Parameter(default="density_profiles.pdf")
     sample_distance = luigi.FloatParameter(default=10)
-    sample = luigi.IntParameter(default=None)
-    region = luigi.Parameter(default="O1")
+    in_atlas = BoolParameter(default=False)
 
     def requires(self):
         """"""
-        if self.region == "in_vacuum":
-            return VacuumSynthesize()
-        else:
+        if self.in_atlas:
             return Synthesize()
+        else:
+            return VacuumSynthesize()
 
     def run(self):
         """"""
-
-        if self.region == "in_vacuum":
+        if self.in_atlas:
+            circuit = load_circuit(
+                path_to_mvd3=self.input()["out_mvd3"].path,
+                path_to_morphologies=self.input()["out_morphologies"].path,
+                path_to_atlas=CircuitConfig().atlas_path,
+            )
+        else:
             df = pd.read_csv(self.input()["out_morphs_df"].path)
             circuit = VacuumCircuit(
                 morphs_df=df,
                 cells=pd.DataFrame(df["mtype"].unique(), columns=["mtypes"]),
                 morphology_path=PathConfig().morphology_path,
             )
-        else:
-            circuit = load_circuit(
-                path_to_mvd3=self.input()["out_mvd3"].path,
-                path_to_morphologies=PathConfig().synth_output_path,
-                path_to_atlas=CircuitConfig().atlas_path,
-            )
 
         plot_density_profiles(
             circuit,
             self.sample,
-            self.region,
+            self.in_atlas,
             self.sample_distance,
             self.output().path,
             self.nb_jobs,
@@ -176,13 +178,14 @@ class PlotDensityProfiles(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.density_profiles_path)
+        return ValidationLocalTarget(self.density_profiles_path)
 
 
 @copy_params(
     mtypes=ParamLink(SynthesisConfig),
     nb_jobs=ParamLink(RunnerConfig),
     joblib_verbose=ParamLink(RunnerConfig),
+    sample=ParamLink(ValidationConfig, default=20),
 )
 class PlotCollage(WorkflowTask):
     """Plot collage.
@@ -197,8 +200,7 @@ class PlotCollage(WorkflowTask):
 
     """
 
-    collage_base_path = luigi.Parameter(default="validation/collages")
-    sample = luigi.IntParameter(default=20)
+    collage_base_path = luigi.Parameter(default="collages")
     dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
@@ -227,12 +229,14 @@ class PlotCollage(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.collage_base_path)
+        return ValidationLocalTarget(self.collage_base_path)
 
 
 @copy_params(
     nb_jobs=ParamLink(RunnerConfig),
     joblib_verbose=ParamLink(RunnerConfig),
+    collage_base_path=ParamLink(PlotCollage),
+    sample=ParamLink(ValidationConfig),
 )
 class PlotSingleCollage(WorkflowTask):
     """Plot collage for single mtype.
@@ -246,9 +250,7 @@ class PlotSingleCollage(WorkflowTask):
         dpi (int): dpi for pdf rendering (rasterized)
     """
 
-    collage_base_path = luigi.Parameter()
     mtype = luigi.Parameter()
-    sample = luigi.IntParameter()
     dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
@@ -263,12 +265,14 @@ class PlotSingleCollage(WorkflowTask):
         """"""
         circuit = load_circuit(
             path_to_mvd3=self.input()["synthesis"]["out_mvd3"].path,
-            path_to_morphologies=PathConfig().synth_output_path,
+            path_to_morphologies=self.input()["synthesis"]["out_morphologies"].path,
             path_to_atlas=CircuitConfig().atlas_path,
         )
 
         planes = load_planes_centerline(self.input()["planes"].path)["planes"]
-        layer_annotation = VoxelData.load_nrrd(self.input()["layers"].path)
+        layer_annotation = VoxelData.load_nrrd(
+            self.input()["layers"]["annotations"].path
+        )
         plot_collage(
             circuit,
             planes,
@@ -283,7 +287,7 @@ class PlotSingleCollage(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(
+        return ValidationLocalTarget(
             (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
         )
 
@@ -359,7 +363,7 @@ class PlotScales(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.scales_base_path)
+        return ValidationLocalTarget(self.scales_base_path)
 
 
 @copy_params(
@@ -378,7 +382,7 @@ class PlotPathDistanceFits(WorkflowTask):
         nb_jobs (int): number of jobs
     """
 
-    output_path = luigi.Parameter(default="validation/path_distance_fit.pdf")
+    output_path = luigi.Parameter(default="path_distance_fit.pdf")
     outlier_percentage = luigi.IntParameter(default=90)
 
     def requires(self):
@@ -406,4 +410,4 @@ class PlotPathDistanceFits(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.output_path)
+        return ValidationLocalTarget(self.output_path)

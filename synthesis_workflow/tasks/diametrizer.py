@@ -23,6 +23,7 @@ from ..tools import update_morphs_df
 from .config import DiametrizerConfig
 from .config import OutputLocalTarget
 from .config import RunnerConfig
+from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
@@ -74,8 +75,8 @@ class BuildDiameterModels(WorkflowTask):
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     morphology_path = luigi.Parameter(default="morphology_path")
     diameter_models_path = luigi.Parameter(default="diameter_models.yaml")
-    by_mtypes = luigi.BoolParameter()
-    plot_models = luigi.BoolParameter()
+    by_mtypes = BoolParameter()
+    plot_models = BoolParameter()
 
     def run(self):
         """Run."""

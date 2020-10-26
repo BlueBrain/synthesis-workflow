@@ -4,7 +4,9 @@ from tqdm import tqdm
 from voxcell import CellCollection
 import numpy as np
 
-from atlas_analysis.planes.planes import _create_planes, _create_centerline, _smoothing
+from atlas_analysis.planes.planes import create_planes as _create_planes
+from atlas_analysis.planes.planes import create_centerline as _create_centerline
+from atlas_analysis.planes.planes import _smoothing
 from brainbuilder.app.cells import _place as place
 
 LEFT = 0

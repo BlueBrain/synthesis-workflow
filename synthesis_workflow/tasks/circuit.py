@@ -20,6 +20,7 @@ from ..tools import ensure_dir
 from .config import CircuitConfig
 from .config import PathConfig
 from .config import SynthesisConfig
+from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
 from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
@@ -37,14 +38,14 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
     """
 
     layer_annotations_path = luigi.Parameter(default="layer_annotation.nrrd")
-    use_half = luigi.BoolParameter(default=False)
+    use_half = BoolParameter(default=False)
     half_axis = luigi.IntParameter(default=0)
     half_side = luigi.IntParameter(default=0)
 
     def run(self):
         """"""
         atlas = LocalAtlas(CircuitConfig().atlas_path)
-        ids, names = atlas.get_layer_ids()  # pylint: disable=no-member
+        ids, names = atlas.get_layers()  # pylint: disable=no-member
         annotation = VoxelData.load_nrrd(
             Path(CircuitConfig().atlas_path) / "brain_regions.nrrd"
         )
@@ -60,19 +61,31 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
                 annotation.raw, axis=self.half_axis, side=self.half_side
             )
 
-        ensure_dir(self.output().path)
-        annotation.save_nrrd(self.output().path)
+        annotation_path = self.output()["annotations"].path
+        ensure_dir(annotation_path)
+        annotation.save_nrrd(annotation_path)
+
+        layer_mapping_path = self.output()["layer_mapping"].path
+        ensure_dir(layer_mapping_path)
         yaml.dump(
             layer_mapping,
             open(
-                str(Path(self.output().path).with_suffix("")) + "_layer_mapping.yaml",
+                layer_mapping_path,
                 "w",
             ),
         )
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.layer_annotations_path)
+        annotation_path = Path(self.layer_annotations_path)
+        annotation_base_name = annotation_path.with_suffix("").name
+        layer_mapping_path = annotation_path.with_name(
+            annotation_base_name + "_layer_mapping"
+        ).with_suffix(".yaml")
+        return {
+            "annotations": OutputLocalTarget(annotation_path),
+            "layer_mapping": OutputLocalTarget(layer_mapping_path),
+        }
 
 
 class CreateAtlasPlanes(WorkflowTask):
@@ -111,7 +124,7 @@ class CreateAtlasPlanes(WorkflowTask):
 
     def run(self):
         """"""
-        layer_annotation = VoxelData.load_nrrd(self.input().path)
+        layer_annotation = VoxelData.load_nrrd(self.input()["annotations"].path)
         planes, centerline = create_planes(
             layer_annotation,
             self.plane_type,
@@ -150,6 +163,8 @@ class BuildCircuit(WorkflowTask):
         var_type=float,
         min_value=0,
         max_value=1,
+        left_op=luigi.parameter.operator.lt,
+        right_op=luigi.parameter.operator.le,
         description="The density of positions generated from the atlas",
     )
     seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")
