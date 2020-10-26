@@ -10,7 +10,6 @@ from functools import partial
 from pathlib import Path
 
 import pandas as pd
-import yaml
 from joblib import delayed
 from joblib import Parallel
 
@@ -19,13 +18,17 @@ from placement_algorithm.exceptions import SkipSynthesisError
 from morph_tool.utils import neurondb_dataframe, find_morph
 
 
-def add_taxonomy(morphs_df, pc_in_types):
+def add_mtype_taxonomy(morphs_df, mtype_taxonomy):
     """From a dict with mtype to morph_class, fill in the morphs_df dataframe.
 
     Args:
-        pc_in_types (dict): dict of the form  [mtype]: [IN|PC]
+        mtype_taxonomy (pandas.DataFrame): with columns mtype and mClass
     """
-    morphs_df["morph_class"] = morphs_df["mtype"].map(pc_in_types)
+    morphs_df["morph_class"] = morphs_df["mtype"].map(
+        lambda mtype: mtype_taxonomy.loc[
+            mtype_taxonomy.mtype == mtype, "mClass"
+        ].to_list()[0]
+    )
     return morphs_df
 
 
@@ -65,7 +68,7 @@ def load_neurondb_to_dataframe(
         neurondb_path (str): path to a neurondb.xml file
         morphology_dirs: (dict) If passed, a column with the path to each morphology file
             will be added for each entry of the dict, where the column name is the dict key
-        pc_in_types (dict): dict of the form  [mtype]: [IN|PC]
+        mtype_taxonomy_path (str): path to mtype_taxonomy.tsv file
         apical_points (dict): name of cell as key and apical point isec as value
     """
     morphs_df = neurondb_dataframe(Path(neurondb_path))
@@ -79,9 +82,8 @@ def load_neurondb_to_dataframe(
         morphs_df = add_apical_points(morphs_df, apical_points)
 
     if pc_in_types_path is not None:
-        with open(pc_in_types_path, "r") as f:
-            pc_in_types = yaml.full_load(f)
-        morphs_df = add_taxonomy(morphs_df, pc_in_types)
+        mtype_taxonomy = pd.read_csv(pc_in_types_path, sep="\t")
+        morphs_df = add_mtype_taxonomy(morphs_df, mtype_taxonomy)
 
     return morphs_df
 

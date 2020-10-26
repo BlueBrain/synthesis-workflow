@@ -27,6 +27,7 @@ from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
 from .luigi_tools import WorkflowError
+from .synthesis import BuildMorphsDF
 from .synthesis import AddScalingRulesToParameters
 from .synthesis import BuildSynthesisDistributions
 from .synthesis import ApplySubstitutionRules
@@ -89,27 +90,19 @@ class PlotMorphometrics(WorkflowTask):
     def requires(self):
         """"""
         if self.morph_type == "in_vacuum":
-            return [VacuumSynthesize(), ApplySubstitutionRules()]
+            return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
         elif self.morph_type == "in_circuit":
-            return ConvertMvd3()
+            return {"morphs": BuildMorphsDF(), "mvd3": ConvertMvd3()}
         else:
             return self._wrong_morph_type()
 
     def run(self):
         """"""
+        morphs_df = pd.read_csv(self.input()["morphs"].path)
         if self.morph_type == "in_vacuum":
-            synthesize_task = self.input()[0]
-            synth_morphs_df = pd.read_csv(synthesize_task["out_morphs_df"].path)
-
-            rescalemorphologies_task = self.input()[1]
-            morphs_df = pd.read_csv(rescalemorphologies_task.path)
-
+            synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)
         elif self.morph_type == "in_circuit":
-            convertmvd3_task = self.input()
-            synth_morphs_df = pd.read_csv(convertmvd3_task.path)
-
-            morphs_df = pd.read_csv(PathConfig().morphs_df_path)
-
+            synth_morphs_df = pd.read_csv(self.input()["mvd3"].path)
         else:
             self._wrong_morph_type()
 

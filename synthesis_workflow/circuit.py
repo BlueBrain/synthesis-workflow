@@ -5,6 +5,7 @@ from voxcell import CellCollection
 import numpy as np
 
 from atlas_analysis.planes.planes import _create_planes, _create_centerline, _smoothing
+from brainbuilder.app.cells import _place as place
 
 LEFT = 0
 RIGHT = 1
@@ -46,6 +47,37 @@ def halve_atlas(annotated_volume, axis=0, side=LEFT):
             slices_[coord] = slice(0, annotated_volume.shape[coord])
     annotated_volume[slices_[0], slices_[1], slices_[2]] = 0
     return annotated_volume
+
+
+def build_circuit(
+    cell_composition_path,
+    mtype_taxonomy_path,
+    atlas_path,
+    density_factor=0.01,
+    seed=None,
+):
+    """Based on YAML cell composition recipe, build a circuit as MVD3 file with:
+    - cell positions
+    - required cell properties: 'layer', 'mtype', 'etype'
+    - additional cell properties prescribed by the recipe and / or atlas
+    """
+    if seed is not None:
+        np.random.seed(seed)
+    return place(
+        composition_path=cell_composition_path,
+        mtype_taxonomy_path=mtype_taxonomy_path,
+        atlas_url=atlas_path,
+        mini_frequencies_path=None,
+        atlas_cache=None,
+        region=None,
+        mask_dset=None,
+        density_factor=density_factor,
+        soma_placement="basic",
+        atlas_properties=None,
+        sort_by=None,
+        append_hemisphere=False,
+        input_path=None,
+    )
 
 
 def slice_per_mtype(cells, mtypes):

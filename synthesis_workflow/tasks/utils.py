@@ -6,11 +6,8 @@ from tempfile import TemporaryDirectory
 import luigi
 from git import Repo
 
-from .config import SynthesisConfig
-from .luigi_tools import copy_params
-from .luigi_tools import OutputLocalTarget
-from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
+from .luigi_tools import OutputLocalTarget
 
 
 class GitClone(WorkflowTask):
@@ -27,37 +24,38 @@ class GitClone(WorkflowTask):
         return OutputLocalTarget(self.dest)
 
 
-@copy_params(
-    tmd_parameters_path=ParamLink(SynthesisConfig),
-    tmd_distributions_path=ParamLink(SynthesisConfig),
-)
-class GetOfficialConfiguration(WorkflowTask):
-    """Task to get official parameters from the git repository"""
+class GetSynthesisInputs(WorkflowTask):
+    """Task to get synthesis input files from a folder on git it repository.
 
-    url = luigi.Parameter()
-    specie = luigi.ChoiceParameter(choices=["rat", "mouse", "human"])
+    If no url is provided, this task will copy an existing folder to the target location.
+
+    Args:
+        url (str): url of repository, if None, git_synthesis_input_path should be an existing folder
+        version (str): version of repo to checkout (optional)
+        git_synthesis_input_path (str): path to folder in git repo with synthesis files
+        local_synthesis_input_path (str): path to local folder to copy these files
+    """
+
+    url = luigi.Parameter(default=None)
     version = luigi.OptionalParameter(default=None)
+    git_synthesis_input_path = luigi.Parameter(default="synthesis_input")
+    local_synthesis_input_path = luigi.Parameter(default="synthesis_input")
 
     def run(self):
         """"""
-        with TemporaryDirectory() as tmpdir:
-            dest = Path(tmpdir) / "tmp_repo"
-            # Note: can not be called with yield here because of the TemporaryDirectory
-            GitClone(url=self.url, dest=dest).run()
-            if self.version is not None:
-                r = Repo(dest)
-                r.git.checkout(self.version)
-            shutil.copy(
-                dest / "entities" / "bionames" / self.specie / "tmd_parameters.json",
-                self.output()["tmd_parameters"].path,
-            )
-            shutil.copy(
-                dest / "entities" / "bionames" / self.specie / "tmd_distributions.json",
-                self.output()["tmd_distributions"].path,
-            )
+        if self.url is None:
+            shutil.copytree(self.git_synthesis_input_path, self.output().path)
+        else:
+            with TemporaryDirectory() as tmpdir:
+                dest = Path(tmpdir) / "tmp_repo"
+                # Note: can not be called with yield here because of the TemporaryDirectory
+                GitClone(url=self.url, dest=dest).run()
+                if self.version is not None:
+                    r = Repo(dest)
+                    r.git.checkout(self.version)
+                shutil.copytree(
+                    dest / self.git_synthesis_input_path, self.output().path
+                )
 
     def output(self):
-        return {
-            "tmd_parameters": OutputLocalTarget(self.tmd_parameters_path),
-            "tmd_distributions": OutputLocalTarget(self.tmd_distributions_path),
-        }
+        return luigi.LocalTarget(self.local_synthesis_input_path)

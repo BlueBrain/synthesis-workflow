@@ -24,6 +24,7 @@ def _grow_morphology(
     tmd_parameters,
     tmd_distributions,
     morphology_base_path,
+    vacuum_morphology_path="vacuum_morphology_path",
     external_diametrizer=None,
 ):
     """Grow single morphology for parallel computations."""
@@ -43,7 +44,7 @@ def _grow_morphology(
 
     vacuum_synth_morphs_df.loc[gid, "name"] = name
     vacuum_synth_morphs_df.loc[gid, "mtype"] = mtype
-    vacuum_synth_morphs_df.loc[gid, "vacuum_morphology_path"] = morphology_path
+    vacuum_synth_morphs_df.loc[gid, vacuum_morphology_path] = morphology_path
     # vacuum_synth_morphs_df.loc[gid, 'apical_point'] = grower.apical_points
 
     return vacuum_synth_morphs_df
@@ -55,6 +56,7 @@ def grow_vacuum_morphologies(
     tmd_parameters,
     tmd_distributions,
     morphology_base_path,
+    vacuum_morphology_path="vacuum_morphology_path",
     diametrizer="external",
     joblib_verbose=0,
     nb_jobs=1,
@@ -95,6 +97,7 @@ def grow_vacuum_morphologies(
                 tmd_parameters[mtype],
                 tmd_distributions["mtypes"][mtype],
                 morphology_base_path,
+                vacuum_morphology_path=vacuum_morphology_path,
                 external_diametrizer=external_diametrizer,
             )
             for gid in gids

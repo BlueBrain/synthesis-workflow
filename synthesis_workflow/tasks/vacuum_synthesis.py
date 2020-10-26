@@ -10,7 +10,6 @@ import pandas as pd
 from ..tools import ensure_dir
 from ..vacuum_synthesis import grow_vacuum_morphologies
 from ..vacuum_synthesis import plot_vacuum_morphologies
-from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
@@ -70,6 +69,7 @@ class VacuumSynthesize(WorkflowTask):
             tmd_parameters,
             tmd_distributions,
             morphology_base_path,
+            vacuum_morphology_path=self.vacuum_synth_morphology_path,
             diametrizer=self.diametrizer,
             joblib_verbose=self.joblib_verbose,
             nb_jobs=self.nb_jobs,
@@ -85,7 +85,7 @@ class VacuumSynthesize(WorkflowTask):
 
 
 @copy_params(
-    morphology_path=ParamLink(PathConfig),
+    vacuum_synth_morphology_path=ParamLink(VacuumSynthesize),
 )
 class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations."""
@@ -103,7 +103,7 @@ class PlotVacuumMorphologies(WorkflowTask):
         plot_vacuum_morphologies(
             vacuum_synth_morphs_df,
             self.output().path,
-            self.morphology_path,
+            self.vacuum_synth_morphology_path,
         )
 
     def output(self):

@@ -12,7 +12,6 @@ from joblib import delayed
 from joblib import Parallel
 from tqdm import tqdm
 
-from brainbuilder.app.cells import _place as place
 from morphio.mut import Morphology
 from neuroc.scale import scale_section
 from neuroc.scale import ScaleParameters
@@ -543,34 +542,3 @@ def add_scaling_rules_to_parameters(
             slope,
             intercept,
         )
-
-
-def build_circuit(
-    cell_composition_path,
-    mtype_taxonomy_path,
-    atlas_path,
-    density_factor=0.01,
-    seed=None,
-):
-    """Based on YAML cell composition recipe, build a circuit as MVD3 file with:
-    - cell positions
-    - required cell properties: 'layer', 'mtype', 'etype'
-    - additional cell properties prescribed by the recipe and / or atlas
-    """
-    if seed is not None:
-        np.random.seed(seed)
-    return place(
-        composition_path=cell_composition_path,
-        mtype_taxonomy_path=mtype_taxonomy_path,
-        atlas_url=atlas_path,
-        mini_frequencies_path=None,
-        atlas_cache=None,
-        region=None,
-        mask_dset=None,
-        density_factor=density_factor,
-        soma_placement="basic",
-        atlas_properties=None,
-        sort_by=None,
-        append_hemisphere=False,
-        input_path=None,
-    )

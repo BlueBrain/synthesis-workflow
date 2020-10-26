@@ -14,7 +14,6 @@ from tns import extract_input
 
 from ..synthesis import add_scaling_rules_to_parameters
 from ..synthesis import apply_substitutions
-from ..synthesis import build_circuit
 from ..synthesis import build_distributions
 from ..synthesis import create_axon_morphologies_tsv
 from ..synthesis import get_axon_base_dir
@@ -41,14 +40,14 @@ L = logging.getLogger(__name__)
 
 
 @copy_params(
-    pc_in_types_path=ParamLink(PathConfig),
+    mtype_taxonomy_path=ParamLink(PathConfig),
 )
 class BuildMorphsDF(WorkflowTask):
     """Generate the list of morphologies with their mtypes and paths.
 
     Args:
         neurondb_path (str): path to the neuronDB file (XML)
-        pc_in_types_path (str): path to the pc_in_types file (TSV)
+        mtype_taxonomy_path (str): path to the mtype_taxonomy.tsv file
         morphology_dirs (str): dict (JSON format) in which keys are column names and values
             are the paths to each morphology file
         apical_points_path (str): path to the apical points file (JSON)
@@ -70,9 +69,10 @@ class BuildMorphsDF(WorkflowTask):
         morphs_df = load_neurondb_to_dataframe(
             self.neurondb_path,
             self.morphology_dirs,
-            self.pc_in_types_path,
+            self.mtype_taxonomy_path,
             self.apical_points_path,
         )
+        ensure_dir(self.output().path)
         morphs_df.to_csv(self.output().path)
 
     def output(self):
@@ -89,13 +89,17 @@ class ApplySubstitutionRules(WorkflowTask):
 
     substitution_rules_path = luigi.Parameter(default="substitution_rules.yaml")
 
+    def requires(self):
+        """"""
+        return BuildMorphsDF()
+
     def run(self):
         """"""
         with open(self.substitution_rules_path, "rb") as sub_file:
             substitution_rules = yaml.full_load(sub_file)
 
         substituted_morphs_df = apply_substitutions(
-            pd.read_csv(PathConfig().morphs_df_path), substitution_rules
+            pd.read_csv(self.input().path), substitution_rules
         )
         ensure_dir(self.output().path)
         substituted_morphs_df.to_csv(self.output().path, index=False)
@@ -443,44 +447,3 @@ class RescaleMorphologies(WorkflowTask):
     def output(self):
         """"""
         return OutputLocalTarget(self.rescaled_morphs_df_path)
-
-
-@copy_params(
-    mtype_taxonomy_path=ParamLink(PathConfig),
-)
-class BuildCircuit(WorkflowTask):
-    """Generate cell positions and me-types from atlas, compositions and taxonomy.
-
-    Args:
-        cell_composition_path (str): path to the cell composition file (YAML)
-        mtype_taxonomy_path (str): path to the taxonomy file (TSV)
-        density_factor (float): density factor
-        seed (int): pseudo-random generator seed
-    """
-
-    cell_composition_path = luigi.Parameter(
-        description="path to the cell composition file (YAML)"
-    )
-    density_factor = luigi.NumericalParameter(
-        default=0.01,
-        var_type=float,
-        min_value=0,
-        max_value=1,
-        description="The density of positions generated from the atlas",
-    )
-    seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")
-
-    def run(self):
-        """"""
-        cells = build_circuit(
-            self.cell_composition_path,
-            self.mtype_taxonomy_path,
-            CircuitConfig().atlas_path,
-            self.density_factor,
-            self.seed,
-        )
-        cells.save(self.output().path)
-
-    def output(self):
-        """"""
-        return OutputLocalTarget(CircuitConfig().circuit_somata_path)

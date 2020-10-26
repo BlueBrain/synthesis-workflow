@@ -11,12 +11,14 @@ from voxcell.nexus.voxelbrain import LocalAtlas
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
 
+from ..circuit import build_circuit
 from ..circuit import circuit_slicer
+from ..circuit import create_planes
 from ..circuit import halve_atlas
 from ..circuit import slice_circuit
-from ..circuit import create_planes
 from ..tools import ensure_dir
 from .config import CircuitConfig
+from .config import PathConfig
 from .config import SynthesisConfig
 from .luigi_tools import copy_params
 from .luigi_tools import OutputLocalTarget
@@ -128,6 +130,48 @@ class CreateAtlasPlanes(WorkflowTask):
 
 
 @copy_params(
+    mtype_taxonomy_path=ParamLink(PathConfig),
+)
+class BuildCircuit(WorkflowTask):
+    """Generate cell positions and me-types from atlas, compositions and taxonomy.
+
+    Args:
+        cell_composition_path (str): path to the cell composition file (YAML)
+        mtype_taxonomy_path (str): path to the taxonomy file (TSV)
+        density_factor (float): density factor
+        seed (int): pseudo-random generator seed
+    """
+
+    cell_composition_path = luigi.Parameter(
+        description="path to the cell composition file (YAML)"
+    )
+    density_factor = luigi.NumericalParameter(
+        default=0.01,
+        var_type=float,
+        min_value=0,
+        max_value=1,
+        description="The density of positions generated from the atlas",
+    )
+    seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")
+
+    def run(self):
+        """"""
+        cells = build_circuit(
+            self.cell_composition_path,
+            self.mtype_taxonomy_path,
+            CircuitConfig().atlas_path,
+            self.density_factor,
+            self.seed,
+        )
+        ensure_dir(self.output().path)
+        cells.save(self.output().path)
+
+    def output(self):
+        """"""
+        return OutputLocalTarget(CircuitConfig().circuit_somata_path)
+
+
+@copy_params(
     mtypes=ParamLink(SynthesisConfig),
 )
 class SliceCircuit(WorkflowTask):
@@ -146,7 +190,10 @@ class SliceCircuit(WorkflowTask):
 
     def requires(self):
         """"""
-        return CreateAtlasPlanes()
+        return {
+            "atlas_planes": CreateAtlasPlanes(),
+            "circuit": BuildCircuit(),
+        }
 
     def run(self):
         """"""
@@ -158,7 +205,7 @@ class SliceCircuit(WorkflowTask):
         ):
             mtypes = None
 
-        planes = load_planes_centerline(self.input().path)["planes"]
+        planes = load_planes_centerline(self.input()["atlas_planes"].path)["planes"]
 
         _slicer = partial(
             circuit_slicer,
@@ -169,9 +216,7 @@ class SliceCircuit(WorkflowTask):
         )
 
         ensure_dir(self.output().path)
-        cells = slice_circuit(
-            CircuitConfig().circuit_somata_path, self.output().path, _slicer
-        )
+        cells = slice_circuit(self.input()["circuit"].path, self.output().path, _slicer)
 
         if len(cells.index) == 0:
             raise Exception("No cells will be synthtesized, better stop here.")

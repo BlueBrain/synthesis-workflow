@@ -113,7 +113,7 @@ def plot_morphometrics(
     """
     if config_features is None:
         config_features = get_feature_configs(config_types="synthesis")
-        config_features["neurite"].update({"y_distances": ["min", "max"]})
+        # config_features["neurite"].update({"y_distances": ["min", "max"]})
 
     base_features_df = _get_features_df_all_mtypes(
         base_morphs_df, config_features, base_key
