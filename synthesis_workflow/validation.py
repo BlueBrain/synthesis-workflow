@@ -247,7 +247,7 @@ def plot_density_profiles(
 
     WIP function, waiting on complete atlas to update.
     """
-    if region == "in_vacuum":
+    if not region or region == "in_vacuum":
         voxeldata = None
     else:
         voxeldata = relative_depth_volume(

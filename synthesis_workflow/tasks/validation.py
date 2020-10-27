@@ -105,15 +105,17 @@ class PlotMorphometrics(WorkflowTask):
         morphs_df = pd.read_csv(self.input()["morphs"].path)
         if self.in_atlas:
             synth_morphs_df = pd.read_csv(self.input()["mvd3"].path)
+            comp_key = self.comp_key
         else:
             synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)
+            comp_key = self.requires()["vacuum"].vacuum_synth_morphology_path
 
         plot_morphometrics(
             morphs_df,
             synth_morphs_df,
             self.output().path,
             base_key=self.base_key,
-            comp_key=self.comp_key,
+            comp_key=comp_key,
             base_label=self.base_label,
             comp_label=self.comp_label,
             normalize=self.normalize,

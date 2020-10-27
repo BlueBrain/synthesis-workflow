@@ -34,7 +34,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
         if self.with_morphometrics:
             tasks.append(PlotMorphometrics(in_atlas=True))
         if self.with_density_profiles:
-            tasks.append(PlotDensityProfiles())
+            tasks.append(PlotDensityProfiles(in_atlas=True))
         if self.with_path_distance_fits:
             tasks.append(PlotPathDistanceFits())
         if self.with_scale_statistics:
