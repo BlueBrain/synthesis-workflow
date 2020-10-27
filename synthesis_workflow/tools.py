@@ -1,7 +1,6 @@
 """utils functions."""
 import json
 import logging
-import random
 import sys
 import traceback
 import warnings
@@ -9,6 +8,7 @@ from collections import namedtuple
 from functools import partial
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from joblib import delayed
 from joblib import Parallel
@@ -257,12 +257,14 @@ def run_master(
         if logger_kwargs is not None:
             root.setLevel(logging.DEBUG)
 
+        # shuffle ids to speed up computation with uneven cell complexities
+        task_ids = np.random.permutation(master.task_ids)
+
         # Run the worker
-        random.shuffle(master.task_ids)
         results = Parallel(
             n_jobs=nb_jobs,
             verbose=verbose,
-        )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in master.task_ids)
+        )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in task_ids)
 
         # Gather the results
         master.finalize(dict(results))

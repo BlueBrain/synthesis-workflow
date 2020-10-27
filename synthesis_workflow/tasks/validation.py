@@ -216,7 +216,7 @@ class PlotCollage(WorkflowTask):
             self.mtypes is None
             or self.mtypes[0] == "all"
         ):
-            mtypes = pd.read_csv(PathConfig().synth_morphs_df_path).mtype.unique()
+            mtypes = pd.read_csv(self.input().path).mtype.unique()
         else:
             mtypes = self.mtypes
         for mtype in mtypes:
@@ -335,7 +335,7 @@ class PlotScales(WorkflowTask):
             self.mtypes is None
             or self.mtypes[0] == "all"  # pylint: disable=unsubscriptable-object
         ):
-            mtypes = pd.read_csv(PathConfig().synth_morphs_df_path).mtype.unique()
+            mtypes = pd.read_csv(self.input().path).mtype.unique()
         else:
             mtypes = self.mtypes
 
