@@ -77,9 +77,10 @@ def test_fit(soma_test, apical_test):
         neuron.append_tree(tree, td)
         pop.append_neuron(neuron)
 
-    slope, intercept = fit_utils.fit_extent_to_path_distance(pop)
-    assert_almost_equal(slope, 0.7135615663891389)
-    assert_almost_equal(intercept, -0.21849423165674628)
+    slope, intercept = fit_utils.fit_path_distance_to_extent(pop)
+
+    assert_almost_equal(slope, 1.4211942434528873)
+    assert_almost_equal(intercept, 0.0)
 
     assert_almost_equal(
         fit_utils.get_path_distance_from_extent(slope, intercept, 0), intercept
@@ -87,7 +88,3 @@ def test_fit(soma_test, apical_test):
     assert_almost_equal(
         fit_utils.get_path_distance_from_extent(slope, intercept, 1), intercept + slope
     )
-
-    inverse_slope, inverse_intercept = fit_utils.fit_path_distance_to_extent(pop)
-    assert_almost_equal(inverse_slope, 1.0 / slope)
-    assert_almost_equal(inverse_intercept, -intercept / slope)

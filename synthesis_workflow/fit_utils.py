@@ -3,6 +3,7 @@
 from typing import Tuple, Sequence
 
 import numpy as np
+from scipy.optimize import curve_fit
 import tmd
 from tmd.Population.Population import Population
 
@@ -37,6 +38,11 @@ def get_projections(input_population: Population) -> np.array:
     return _get_tmd_feature(input_population, "projection")
 
 
+def fit_function(x: float, slope: float) -> float:
+    """The function used to fit data"""
+    return slope * x
+
+
 def clean_outliers(
     x: Sequence[float], y: Sequence[float], outlier_percentage: int = 90
 ) -> Tuple[np.array, np.array]:
@@ -49,9 +55,9 @@ def clean_outliers(
 
     Returns: cleaned X and Y coordinates"""
 
-    # Fit a linear function to the data
-    z = np.polyfit(x, y, 1)
-    p = np.poly1d(z)
+    # Fit a linear function passing by 0 to the data
+    popt = curve_fit(fit_function, x, y)[0]
+    p = np.poly1d([popt[0], 0])
 
     # Detect outliers
     errs = np.array([np.abs(p(ix) - y[i]) for i, ix in enumerate(x)])
@@ -63,33 +69,6 @@ def clean_outliers(
     )
 
     return x_clean, y_clean
-
-
-def fit_extent_to_path_distance(
-    input_population: Population, outlier_percentage: int = 90
-) -> Tuple[float, float]:
-    """Returns two parameters (slope, intercept) for the linear fit of
-    path length (X-variable) to total extents (Y-variable).
-    Removes outliers up to outlier_percentage for a better fit.
-
-    Args:
-        input_population: the population of neurons
-        outlier_percentage: the percentage used to find and remove outliers
-
-    Returns: slope and intercept of the fit
-    """
-
-    # Compute path distances, projections using tmd
-    x = get_path_distances(input_population)
-    y = get_projections(input_population)
-
-    # Clean data
-    x_clean, y_clean = clean_outliers(x, y, outlier_percentage)
-
-    # Get the relation between extents / path
-    slope, intercept = np.polyfit(x_clean, y_clean, 1)
-
-    return slope, intercept
 
 
 def fit_path_distance_to_extent(
@@ -105,13 +84,18 @@ def fit_path_distance_to_extent(
 
     Returns: slope and intercept of the fit
     """
-    slope, intercept = fit_extent_to_path_distance(input_population, outlier_percentage)
+    # Compute path distances, projections using tmd
+    x = get_projections(input_population)
+    y = get_path_distances(input_population)
 
-    # Get the inverse to fit path to extents
-    inverse_slope = 1.0 / slope
-    inverse_intercept = -intercept / slope
+    # Clean data
+    x_clean, y_clean = clean_outliers(x, y, outlier_percentage)
 
-    return inverse_slope, inverse_intercept
+    # Get the relation between extents / path
+    popt = curve_fit(fit_function, x_clean, y_clean)[0]
+
+    # Returns the fit slope and intercept
+    return popt[0], 0
 
 
 def get_path_distance_from_extent(
