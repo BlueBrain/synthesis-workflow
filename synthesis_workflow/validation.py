@@ -646,7 +646,7 @@ def plot_path_distance_fits(
     # Read morphology DataFrame
     morphs_df = pd.read_csv(morphs_df_path)
 
-    if mtypes is None:
+    if mtypes is None or mtypes[0] == "all":
         mtypes = sorted(
             [
                 mtype

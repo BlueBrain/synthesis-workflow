@@ -6,8 +6,9 @@ from tempfile import TemporaryDirectory
 import luigi
 from git import Repo
 
-from .luigi_tools import WorkflowTask
+from .config import PathConfig
 from .luigi_tools import OutputLocalTarget
+from .luigi_tools import WorkflowTask
 
 
 class GitClone(WorkflowTask):
@@ -39,7 +40,6 @@ class GetSynthesisInputs(WorkflowTask):
     url = luigi.Parameter(default=None)
     version = luigi.OptionalParameter(default=None)
     git_synthesis_input_path = luigi.Parameter(default="synthesis_input")
-    local_synthesis_input_path = luigi.Parameter(default="synthesis_input")
 
     def run(self):
         """"""
@@ -58,4 +58,5 @@ class GetSynthesisInputs(WorkflowTask):
                 )
 
     def output(self):
-        return luigi.LocalTarget(self.local_synthesis_input_path)
+        # TODO: it would probably be better to have a specific target for each file
+        return OutputLocalTarget(PathConfig().local_synthesis_input_path)

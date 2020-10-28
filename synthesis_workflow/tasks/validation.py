@@ -16,9 +16,10 @@ from ..validation import plot_morphometrics
 from ..validation import plot_path_distance_fits
 from ..validation import plot_scale_statistics
 from ..validation import VacuumCircuit
-from .circuit import CreateAtlasPlanes
 from .circuit import CreateAtlasLayerAnnotations
+from .circuit import CreateAtlasPlanes
 from .config import CircuitConfig
+from .config import MorphsDfLocalTarget
 from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
@@ -26,14 +27,13 @@ from .config import ValidationConfig
 from .config import ValidationLocalTarget
 from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
-from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
-from .luigi_tools import WorkflowTask
 from .luigi_tools import WorkflowError
-from .synthesis import BuildMorphsDF
+from .luigi_tools import WorkflowTask
 from .synthesis import AddScalingRulesToParameters
-from .synthesis import BuildSynthesisDistributions
 from .synthesis import ApplySubstitutionRules
+from .synthesis import BuildMorphsDF
+from .synthesis import BuildSynthesisDistributions
 from .synthesis import Synthesize
 from .vacuum_synthesis import VacuumSynthesize
 
@@ -67,7 +67,7 @@ class ConvertMvd3(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(PathConfig().synth_morphs_df_path)
+        return MorphsDfLocalTarget(PathConfig().synth_morphs_df_path)
 
 
 class PlotMorphometrics(WorkflowTask):

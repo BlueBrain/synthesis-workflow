@@ -17,14 +17,16 @@ from ..circuit import create_planes
 from ..circuit import halve_atlas
 from ..circuit import slice_circuit
 from ..tools import ensure_dir
+from .config import AtlasLocalTarget
 from .config import CircuitConfig
+from .config import CircuitLocalTarget
 from .config import PathConfig
 from .config import SynthesisConfig
 from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
-from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
+from .utils import GetSynthesisInputs
 
 
 class CreateAtlasLayerAnnotations(WorkflowTask):
@@ -83,8 +85,8 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
             annotation_base_name + "_layer_mapping"
         ).with_suffix(".yaml")
         return {
-            "annotations": OutputLocalTarget(annotation_path),
-            "layer_mapping": OutputLocalTarget(layer_mapping_path),
+            "annotations": AtlasLocalTarget(annotation_path),
+            "layer_mapping": AtlasLocalTarget(layer_mapping_path),
         }
 
 
@@ -139,7 +141,7 @@ class CreateAtlasPlanes(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.atlas_planes_path + ".npz")
+        return AtlasLocalTarget(self.atlas_planes_path + ".npz")
 
 
 @copy_params(
@@ -156,7 +158,8 @@ class BuildCircuit(WorkflowTask):
     """
 
     cell_composition_path = luigi.Parameter(
-        description="path to the cell composition file (YAML)"
+        default="cell_composition.yaml",
+        description="path to the cell composition file (YAML)",
     )
     density_factor = luigi.NumericalParameter(
         default=0.01,
@@ -169,11 +172,17 @@ class BuildCircuit(WorkflowTask):
     )
     seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")
 
+    def requires(self):
+        """"""
+        return GetSynthesisInputs()
+
     def run(self):
         """"""
+        cell_composition_path = self.input().ppath / self.cell_composition_path
+        mtype_taxonomy_path = self.input().ppath / self.mtype_taxonomy_path
         cells = build_circuit(
-            self.cell_composition_path,
-            self.mtype_taxonomy_path,
+            cell_composition_path,
+            mtype_taxonomy_path,
             CircuitConfig().atlas_path,
             self.density_factor,
             self.seed,
@@ -183,7 +192,7 @@ class BuildCircuit(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(CircuitConfig().circuit_somata_path)
+        return CircuitLocalTarget(CircuitConfig().circuit_somata_path)
 
 
 @copy_params(
@@ -238,4 +247,4 @@ class SliceCircuit(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.sliced_circuit_path)
+        return CircuitLocalTarget(self.sliced_circuit_path)

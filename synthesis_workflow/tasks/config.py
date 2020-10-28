@@ -76,10 +76,11 @@ class SynthesisConfig(luigi.Config):
     """Synthesis global configuration."""
 
     tmd_parameters_path = luigi.Parameter(
-        default="tmd_parameters.json", description="The path to the TMD parameters"
+        default="tns_input/tmd_parameters.json",
+        description="The path to the TMD parameters",
     )
     tmd_distributions_path = luigi.Parameter(
-        default="tmd_distributions.json",
+        default="tns_input/tmd_distributions.json",
         description="The path to the TMD distributions",
     )
     cortical_thickness = luigi.ListParameter(
@@ -101,14 +102,25 @@ class CircuitConfig(luigi.Config):
 class PathConfig(luigi.Config):
     """Morphology path configuration."""
 
-    ext = ExtParameter(default="asc")
+    mtype_taxonomy_path = luigi.Parameter(
+        default="mtype_taxonomy.tsv", description="path to the taxonomy file (TSV)"
+    )
+    local_synthesis_input_path = luigi.Parameter(default="synthesis_input")
+
     result_path = luigi.Parameter(default="out")
-    morphs_df_path = luigi.Parameter(default="morphs_df.csv")
+    atlas_subpath = luigi.Parameter(default="atlas")
+    circuit_subpath = luigi.Parameter(default="circuit")
+    morphs_df_subpath = luigi.Parameter(default="morphs_df")
+    synthesis_subpath = luigi.Parameter(default="synthesis")
+    validation_subpath = luigi.Parameter(default="validation")
+
+    ext = ExtParameter(default="asc")
     morphology_path = luigi.Parameter(default="repaired_morphology_path")
-    mtype_taxonomy_path = luigi.Parameter(description="path to the taxonomy file (TSV)")
+    morphs_df_path = luigi.Parameter(default="morphs_df.csv")
+    substituted_morphs_df_path = luigi.Parameter(default="substituted_morphs_df.csv")
     synth_morphs_df_path = luigi.Parameter(default="synth_morphs_df.csv")
     synth_output_path = luigi.Parameter(default="synthesized_morphologies")
-    substituted_morphs_df_path = luigi.Parameter(default="substituted_morphs_df.csv")
+
     debug_region_grower_scales_path = luigi.Parameter(
         default="region_grower_scales_logs"
     )
@@ -117,17 +129,53 @@ class PathConfig(luigi.Config):
 class ValidationConfig(luigi.Config):
     """Validation configuration."""
 
-    validation_subpath = luigi.Parameter(default="validation")
     sample = OptionalIntParameter(default=None)
 
 
+class AtlasLocalTarget(OutputLocalTarget):
+    """Specific target for atlas targets"""
+
+
+class CircuitLocalTarget(OutputLocalTarget):
+    """Specific target for circuit targets"""
+
+
+class MorphsDfLocalTarget(OutputLocalTarget):
+    """Specific target for morphology dataframe targets"""
+
+
+class SynthesisLocalTarget(OutputLocalTarget):
+    """Specific target for synthesis targets"""
+
+
 class ValidationLocalTarget(OutputLocalTarget):
-    """Specific target for validation tasks"""
+    """Specific target for validation targets"""
 
 
+# Set default output paths
 OutputLocalTarget.set_default_prefix(PathConfig().result_path)
+AtlasLocalTarget.set_default_prefix(
+    # pylint: disable=protected-access
+    OutputLocalTarget._prefix
+    / PathConfig().atlas_subpath
+)
+CircuitLocalTarget.set_default_prefix(
+    # pylint: disable=protected-access
+    OutputLocalTarget._prefix
+    / PathConfig().circuit_subpath
+)
+MorphsDfLocalTarget.set_default_prefix(
+    # pylint: disable=protected-access
+    OutputLocalTarget._prefix
+    / PathConfig().morphs_df_subpath
+)
+SynthesisLocalTarget.set_default_prefix(
+    # pylint: disable=protected-access
+    OutputLocalTarget._prefix
+    / PathConfig().synthesis_subpath
+)
 ValidationLocalTarget.set_default_prefix(
     # pylint: disable=protected-access
     OutputLocalTarget._prefix
-    / ValidationConfig().validation_subpath
+    / PathConfig().validation_subpath
 )

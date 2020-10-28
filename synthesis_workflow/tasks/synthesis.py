@@ -25,14 +25,16 @@ from ..tools import load_neurondb_to_dataframe
 from .circuit import SliceCircuit
 from .config import CircuitConfig
 from .config import DiametrizerConfig
-from .config import OutputLocalTarget
+from .config import MorphsDfLocalTarget
 from .config import PathConfig
 from .config import RunnerConfig
 from .config import SynthesisConfig
+from .config import SynthesisLocalTarget
 from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
+from .utils import GetSynthesisInputs
 
 
 morphio.set_maximum_warnings(0)
@@ -65,20 +67,29 @@ class BuildMorphsDF(WorkflowTask):
         default=None, description="path to the apical points file (YAML)"
     )
 
+    def requires(self):
+        """"""
+        return GetSynthesisInputs()
+
     def run(self):
         """"""
+        mtype_taxonomy_path = self.input().ppath / self.mtype_taxonomy_path
         morphs_df = load_neurondb_to_dataframe(
             self.neurondb_path,
             self.morphology_dirs,
-            self.mtype_taxonomy_path,
+            mtype_taxonomy_path,
             self.apical_points_path,
         )
+
+        # Remove duplicated morphologies in L23
+        morphs_df.drop_duplicates(subset=["name"], inplace=True)
+
         ensure_dir(self.output().path)
         morphs_df.to_csv(self.output().path)
 
     def output(self):
         """"""
-        return OutputLocalTarget(PathConfig().morphs_df_path)
+        return MorphsDfLocalTarget(PathConfig().morphs_df_path)
 
 
 class ApplySubstitutionRules(WorkflowTask):
@@ -92,22 +103,28 @@ class ApplySubstitutionRules(WorkflowTask):
 
     def requires(self):
         """"""
-        return BuildMorphsDF()
+        return {
+            "synthesis_input": GetSynthesisInputs(),
+            "morphs_df": BuildMorphsDF(),
+        }
 
     def run(self):
         """"""
-        with open(self.substitution_rules_path, "rb") as sub_file:
+        substitution_rules_path = (
+            self.input()["synthesis_input"].ppath / self.substitution_rules_path
+        )
+        with open(substitution_rules_path, "rb") as sub_file:
             substitution_rules = yaml.full_load(sub_file)
 
         substituted_morphs_df = apply_substitutions(
-            pd.read_csv(self.input().path), substitution_rules
+            pd.read_csv(self.input()["morphs_df"].path), substitution_rules
         )
         ensure_dir(self.output().path)
         substituted_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
         """"""
-        return OutputLocalTarget(PathConfig().substituted_morphs_df_path)
+        return MorphsDfLocalTarget(PathConfig().substituted_morphs_df_path)
 
 
 @copy_params(
@@ -125,17 +142,23 @@ class BuildSynthesisParameters(WorkflowTask):
 
     def requires(self):
         """"""
-        return ApplySubstitutionRules()
+        return {
+            "synthesis_input": GetSynthesisInputs(),
+            "morphologies": ApplySubstitutionRules(),
+        }
 
     def run(self):
         """"""
-        morphs_df = pd.read_csv(self.input().path)
+        morphs_df = pd.read_csv(self.input()["morphologies"].path)
         mtypes = morphs_df.mtype.unique()
         neurite_types = get_neurite_types(morphs_df, mtypes)
 
         if self.input_tmd_parameters_path is not None:
             L.info("Using custom tmd parameters")
-            with open(self.input_tmd_parameters_path, "r") as f:
+            input_tmd_parameters_path = (
+                self.input()["synthesis_input"].ppath / self.input_tmd_parameters_path
+            )
+            with open(input_tmd_parameters_path, "r") as f:
                 custom_tmd_parameters = json.load(f)
 
         tmd_parameters = {}
@@ -157,11 +180,11 @@ class BuildSynthesisParameters(WorkflowTask):
                 tmd_parameters[mtype]["diameter_params"]["method"] = "external"
 
         with self.output().open("w") as f:
-            json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4)
+            json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.tmd_parameters_path)
+        return SynthesisLocalTarget(self.tmd_parameters_path)
 
 
 @copy_params(
@@ -198,11 +221,11 @@ class BuildSynthesisDistributions(WorkflowTask):
         )
 
         with self.output().open("w") as f:
-            json.dump(tmd_distributions, f, cls=NumpyEncoder, indent=4)
+            json.dump(tmd_distributions, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
         """"""
-        return OutputLocalTarget(SynthesisConfig().tmd_distributions_path)
+        return SynthesisLocalTarget(SynthesisConfig().tmd_distributions_path)
 
 
 class BuildSynthesisModels(luigi.WrapperTask):
@@ -272,7 +295,7 @@ class BuildAxonMorphologies(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.axon_morphs_path)
+        return MorphsDfLocalTarget(self.axon_morphs_path)
 
 
 @copy_params(
@@ -362,12 +385,12 @@ class Synthesize(WorkflowTask):
     def output(self):
         """"""
         outputs = {
-            "out_mvd3": OutputLocalTarget(self.out_circuit_path),
-            "out_morphologies": OutputLocalTarget(PathConfig().synth_output_path),
-            "apical_points": OutputLocalTarget(self.apical_points_path),
+            "out_mvd3": SynthesisLocalTarget(self.out_circuit_path),
+            "out_morphologies": SynthesisLocalTarget(PathConfig().synth_output_path),
+            "apical_points": SynthesisLocalTarget(self.apical_points_path),
         }
         if self.debug_region_grower_scales:
-            outputs["debug_scales"] = OutputLocalTarget(
+            outputs["debug_scales"] = SynthesisLocalTarget(
                 PathConfig().debug_region_grower_scales_path
             )
         return outputs
@@ -386,6 +409,7 @@ class AddScalingRulesToParameters(WorkflowTask):
     def requires(self):
         """"""
         return {
+            "synthesis_input": GetSynthesisInputs(),
             "morphologies": ApplySubstitutionRules(),
             "tmd_parameters": BuildSynthesisParameters(),
         }
@@ -395,8 +419,11 @@ class AddScalingRulesToParameters(WorkflowTask):
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
 
         if self.scaling_rules_path is not None:
-            L.debug("Load scaling rules from %s", self.scaling_rules_path)
-            scaling_rules = yaml.full_load(open(self.scaling_rules_path, "r"))
+            scaling_rules_path = (
+                self.input()["synthesis_input"].ppath / self.scaling_rules_path
+            )
+            L.debug("Load scaling rules from %s", scaling_rules_path)
+            scaling_rules = yaml.full_load(open(scaling_rules_path, "r"))
         else:
             scaling_rules = {}
 
@@ -409,11 +436,11 @@ class AddScalingRulesToParameters(WorkflowTask):
         )
 
         with self.output().open("w") as f:
-            json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4)
+            json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.tmd_parameters_path)
+        return SynthesisLocalTarget(self.tmd_parameters_path)
 
 
 @copy_params(
@@ -453,4 +480,4 @@ class RescaleMorphologies(WorkflowTask):
 
     def output(self):
         """"""
-        return OutputLocalTarget(self.rescaled_morphs_df_path)
+        return MorphsDfLocalTarget(self.rescaled_morphs_df_path)

@@ -10,11 +10,12 @@ import pandas as pd
 from ..tools import ensure_dir
 from ..vacuum_synthesis import grow_vacuum_morphologies
 from ..vacuum_synthesis import plot_vacuum_morphologies
+from .config import MorphsDfLocalTarget
 from .config import RunnerConfig
 from .config import SynthesisConfig
+from .config import SynthesisLocalTarget
 from .config import ValidationLocalTarget
 from .luigi_tools import copy_params
-from .luigi_tools import OutputLocalTarget
 from .luigi_tools import ParamLink
 from .luigi_tools import WorkflowTask
 from .synthesis import BuildSynthesisDistributions
@@ -80,8 +81,8 @@ class VacuumSynthesize(WorkflowTask):
     def output(self):
         """"""
         return {
-            "out_morphs_df": OutputLocalTarget(self.vacuum_synth_morphs_df_path),
-            "out_morphologies": OutputLocalTarget(self.vacuum_synth_morphology_path),
+            "out_morphs_df": MorphsDfLocalTarget(self.vacuum_synth_morphs_df_path),
+            "out_morphologies": SynthesisLocalTarget(self.vacuum_synth_morphology_path),
         }
 
 

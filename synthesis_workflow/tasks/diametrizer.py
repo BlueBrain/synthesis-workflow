@@ -79,7 +79,9 @@ class BuildDiameterModels(WorkflowTask):
     plot_models = BoolParameter()
 
     def run(self):
-        """Run."""
+        """Run"""
+        raise DeprecationWarning("This task must be updated to be used")
+        # pylint: disable=unreachable
 
         config_model = DiametrizerConfig().config_model
         morphs_df = pd.read_csv(self.morphs_df_path)
@@ -156,11 +158,13 @@ class Diametrize(WorkflowTask):
     new_morphs_df_path = luigi.Parameter(default="diametrized_morphs_df.csv")
 
     def requires(self):
-        """Requres."""
+        """Requires"""
         return BuildDiameterModels()
 
     def run(self):
-        """Run."""
+        """Run"""
+        raise DeprecationWarning("This task must be updated to be used")
+        # pylint: disable=unreachable
 
         config = DiametrizerConfig().config_diametrizer
 
