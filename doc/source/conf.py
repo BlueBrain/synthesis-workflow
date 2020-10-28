@@ -34,6 +34,9 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.autosummary',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -58,10 +61,17 @@ html_theme = 'sphinx-bluebrain-theme'
 # html_static_path = ['_static']
 
 html_theme_options = {
-    'metadata_distribution': 'synthesis_workflow',
+    'metadata_distribution': 'synthesis-workflow',
 }
 
 html_title = u'synthesis-workflow'
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False
+
+# autosummary settings
+autosummary_generate=True
+
+# autodoc settings
+autodoc_typehints='signature'
+autodoc_default_options = {'members': True}

@@ -22,6 +22,7 @@ class GitClone(WorkflowTask):
         Repo.clone_from(self.url, self.output().path)
 
     def output(self):
+        """"""
         return OutputLocalTarget(self.dest)
 
 
@@ -58,5 +59,6 @@ class GetSynthesisInputs(WorkflowTask):
                 )
 
     def output(self):
+        """"""
         # TODO: it would probably be better to have a specific target for each file
         return OutputLocalTarget(PathConfig().local_synthesis_input_path)

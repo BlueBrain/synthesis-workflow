@@ -62,6 +62,10 @@ setup(
     long_description=README,
     long_description_content_type="text/x-rst",
     url="https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow",
+    project_urls={
+        "Tracker": "https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues",
+        "Source": "ssh://bbpcode.epfl.ch/cells/synthesis-workflow",
+    },
     license="BBP-internal-confidential",
     packages=find_packages(),
     python_requires=">=3.6",

@@ -95,9 +95,11 @@ class CreateAtlasPlanes(WorkflowTask):
 
     Args:
         plane_type (str): type of planes creation algorithm, two choices:
-            - centerline: centerline is computed between _first_bound and _last_bound with
-                internal algorithm (from atlas-analysis package), (warning: experimental)
-            - aligned: centerline is a straight line, along the centerline_axis
+
+            * centerline: centerline is computed between first_bound and last_bound with
+              internal algorithm (from atlas-analysis package), (warning: experimental)
+            * aligned: centerline is a straight line, along the centerline_axis
+
         plane_count (int): number of planes to create slices of atlas,
         slice_thickness (float): thickness of slices (in micrometer)
         centerline_first_bound (list): (for plane_type == centerline) location of first bound

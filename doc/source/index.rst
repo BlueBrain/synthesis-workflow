@@ -7,3 +7,4 @@
 
    Home <self>
    changelog
+   api
