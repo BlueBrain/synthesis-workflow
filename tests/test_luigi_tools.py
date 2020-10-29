@@ -49,11 +49,7 @@ def test_copy_params(tmpdir):
     assert res == ("z", "new_default", "bb")
 
 
-@pytest.mark.skipif(
-    "LUIGI_CONFIG_PATH" not in os.environ,
-    reason="The 'LUIGI_CONFIG_PATH' environment variable must be set",
-)
-def test_copy_params_with_globals():
+def test_copy_params_with_globals(luigi_tools_working_directory):
     class TaskA(luigi_tools.GlobalParamTask):
         """"""
 
@@ -61,8 +57,6 @@ def test_copy_params_with_globals():
         a_cfg = luigi.Parameter(default="a_cfg")
 
         def run(self):
-            print(os.environ["LUIGI_CONFIG_PATH"])
-            print(self.a)
             assert self.a == "a"
             assert self.a_cfg == "default_value_in_cfg"
 
@@ -80,8 +74,6 @@ def test_copy_params_with_globals():
         mode = luigi.Parameter(default="default")
 
         def run(self):
-            print(os.environ["LUIGI_CONFIG_PATH"])
-            print(self.mode, self.aa, self.a_default, self.b)
             if self.mode == "default":
                 assert self.aa == "default_value_in_cfg"
                 assert self.a_default == "given_default_value"

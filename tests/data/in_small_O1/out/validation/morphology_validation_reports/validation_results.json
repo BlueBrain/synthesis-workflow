@@ -1,0 +1,822 @@
+{
+  "L1_DAC": {
+    "basal_dendrite": {
+      "local_bifurcation_angles": {
+        "ref_summary_statistics": {
+          "mean": 1.3730488483703718,
+          "median": 1.3334056421878058,
+          "sample_size": 51,
+          "std": 0.5085789934971152
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.9509158926728586,
+              5.0399875934707776e-58
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 0.18496451960163865,
+          "median": 0.18658731573902204,
+          "sample_size": 304,
+          "std": 0.08676391661020444
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.9509158926728586
+        }
+      },
+      "number_of_bifurcations": {
+        "ref_summary_statistics": {
+          "mean": 25.5,
+          "median": 25.5,
+          "sample_size": 2,
+          "std": 3.5
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.4,
+              0.9393939393939394
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 30.4,
+          "median": 24.0,
+          "sample_size": 10,
+          "std": 17.9510445378535
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.4
+        }
+      },
+      "number_of_neurites": {
+        "ref_summary_statistics": {
+          "mean": 5.0,
+          "median": 5.0,
+          "sample_size": 2,
+          "std": 2.0
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.0,
+              1.0
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 5.0,
+          "median": 5.0,
+          "sample_size": 10,
+          "std": 2.0
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "PASS",
+          "threshold": 0.1,
+          "value": 0.0
+        }
+      },
+      "number_of_sections_per_neurite": {
+        "ref_summary_statistics": {
+          "mean": 11.8,
+          "median": 8.5,
+          "sample_size": 10,
+          "std": 9.99799979995999
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.2,
+              0.8581658551847632
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 13.16,
+          "median": 9.0,
+          "sample_size": 50,
+          "std": 8.834840123058255
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.2
+        }
+      },
+      "partition": {
+        "ref_summary_statistics": {
+          "mean": 2.5571739807033924,
+          "median": 1.6666666666666667,
+          "sample_size": 51,
+          "std": 2.0390274104432704
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.18182404540763675,
+              0.09673073998108694
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 4.419457735247209,
+          "median": 3.0,
+          "sample_size": 304,
+          "std": 4.872566566891459
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.18182404540763675
+        }
+      },
+      "principal_direction_extents": {
+        "ref_summary_statistics": {
+          "mean": 304.43736292410887,
+          "median": 255.87916414890168,
+          "sample_size": 10,
+          "std": 229.0973399066166
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.18,
+              0.9279035888188671
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 314.29234919201605,
+          "median": 280.31317465119,
+          "sample_size": 50,
+          "std": 215.61433844001905
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.18
+        }
+      },
+      "remote_bifurcation_angles": {
+        "ref_summary_statistics": {
+          "mean": 1.3540538730756315,
+          "median": 1.3469781938811527,
+          "sample_size": 51,
+          "std": 0.4891080520190678
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.4199561403508772,
+              1.7174220756643876e-07
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 0.8995288875521622,
+          "median": 0.8203357211504545,
+          "sample_size": 304,
+          "std": 0.5181137795943569
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.4199561403508772
+        }
+      },
+      "section_branch_orders": {
+        "ref_summary_statistics": {
+          "mean": 2.8135593220338984,
+          "median": 3.0,
+          "sample_size": 118,
+          "std": 1.7121161083626295
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.133455257328319,
+              0.05098296516693179
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 3.440729483282675,
+          "median": 3.0,
+          "sample_size": 658,
+          "std": 2.5427017109072176
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.133455257328319
+        }
+      },
+      "section_lengths": {
+        "ref_summary_statistics": {
+          "mean": 52.6704512515463,
+          "median": 30.265891389630777,
+          "sample_size": 118,
+          "std": 61.4787723795821
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.10136005357786822,
+              0.2368064053035478
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 51.32292682515325,
+          "median": 23.934462591973784,
+          "sample_size": 658,
+          "std": 70.2311024830656
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.10136005357786822
+        }
+      },
+      "section_path_distances": {
+        "ref_summary_statistics": {
+          "mean": 126.87977465259459,
+          "median": 109.46813873410767,
+          "sample_size": 118,
+          "std": 98.12285799962557
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.07797125341301324,
+              0.5471611004763113
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 129.03601050191224,
+          "median": 96.18889954835299,
+          "sample_size": 658,
+          "std": 109.51550228392655
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "PASS",
+          "threshold": 0.1,
+          "value": 0.07797125341301324
+        }
+      },
+      "section_radial_distances": {
+        "ref_summary_statistics": {
+          "mean": 103.84144279062889,
+          "median": 87.16923823642546,
+          "sample_size": 118,
+          "std": 80.7402802642098
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.08299417855854928,
+              0.4676688548581155
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 103.28231673567055,
+          "median": 74.66841809295963,
+          "sample_size": 658,
+          "std": 88.7593941935768
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "PASS",
+          "threshold": 0.1,
+          "value": 0.08299417855854928
+        }
+      },
+      "section_tortuosity": {
+        "ref_summary_statistics": {
+          "mean": 1.0387425846940774,
+          "median": 1.0138186437274346,
+          "sample_size": 118,
+          "std": 0.06635974876935244
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.5192159085054866,
+              1.1102230246251565e-16
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 1.0660266280023758,
+          "median": 1.0615351188321296,
+          "sample_size": 658,
+          "std": 0.04427678727254404
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.5192159085054866
+        }
+      },
+      "total_length": {
+        "ref_summary_statistics": {
+          "mean": 3107.556623841233,
+          "median": 3107.556623841233,
+          "sample_size": 2,
+          "std": 248.52154110995548
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.5,
+              0.7575757575757576
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 3377.0485850950836,
+          "median": 2825.0983240193254,
+          "sample_size": 10,
+          "std": 1927.113812663493
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.5
+        }
+      },
+      "total_length_per_neurite": {
+        "ref_summary_statistics": {
+          "mean": 621.5113247682464,
+          "median": 399.546938488466,
+          "sample_size": 10,
+          "std": 570.6574960802358
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.28,
+              0.48153981380313415
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 675.4097170190166,
+          "median": 622.1031003352778,
+          "sample_size": 50,
+          "std": 534.4479044248726
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.28
+        }
+      }
+    }
+  },
+  "L3_TPC:A": {
+    "basal_dendrite": {
+      "local_bifurcation_angles": {
+        "ref_summary_statistics": {
+          "mean": 1.0780959614448404,
+          "median": 1.075610284920847,
+          "sample_size": 32,
+          "std": 0.38898292724548283
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              1.0,
+              0.0
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 0.14493869937996415,
+          "median": 0.12431417902337326,
+          "sample_size": 177,
+          "std": 0.08199198574377978
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 1.0
+        }
+      },
+      "number_of_bifurcations": {
+        "ref_summary_statistics": {
+          "mean": 16.0,
+          "median": 16.0,
+          "sample_size": 2,
+          "std": 1.0
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.6,
+              0.4545454545454545
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 17.7,
+          "median": 19.5,
+          "sample_size": 10,
+          "std": 4.243819034784589
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.6
+        }
+      },
+      "number_of_neurites": {
+        "ref_summary_statistics": {
+          "mean": 3.5,
+          "median": 3.5,
+          "sample_size": 2,
+          "std": 0.5
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.0,
+              1.0
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 3.5,
+          "median": 3.5,
+          "sample_size": 10,
+          "std": 0.5
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "PASS",
+          "threshold": 0.1,
+          "value": 0.0
+        }
+      },
+      "number_of_sections_per_neurite": {
+        "ref_summary_statistics": {
+          "mean": 10.142857142857142,
+          "median": 9.0,
+          "sample_size": 7,
+          "std": 3.3563828927059234
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.17142857142857143,
+              0.9896236712668035
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 11.114285714285714,
+          "median": 9.0,
+          "sample_size": 35,
+          "std": 3.445671641527162
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.17142857142857143
+        }
+      },
+      "partition": {
+        "ref_summary_statistics": {
+          "mean": 2.3755952380952383,
+          "median": 1.342857142857143,
+          "sample_size": 32,
+          "std": 1.8077794497990198
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.1571327683615819,
+              0.4633396572547589
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 3.8180790960451976,
+          "median": 3.0,
+          "sample_size": 177,
+          "std": 3.6186688394370665
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.1571327683615819
+        }
+      },
+      "principal_direction_extents": {
+        "ref_summary_statistics": {
+          "mean": 253.2175542138902,
+          "median": 281.8604519251691,
+          "sample_size": 7,
+          "std": 66.44416337505362
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.7142857142857143,
+              0.002331352780646667
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 148.95741470308414,
+          "median": 157.51900144527426,
+          "sample_size": 35,
+          "std": 38.79487869856409
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.7142857142857143
+        }
+      },
+      "remote_bifurcation_angles": {
+        "ref_summary_statistics": {
+          "mean": 0.9755464490473402,
+          "median": 0.9454921502257028,
+          "sample_size": 32,
+          "std": 0.45801760478653225
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.3421610169491525,
+              0.0024793392101942757
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 0.6635282472372146,
+          "median": 0.5729979465621247,
+          "sample_size": 177,
+          "std": 0.4099248395505485
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.3421610169491525
+        }
+      },
+      "section_branch_orders": {
+        "ref_summary_statistics": {
+          "mean": 2.112676056338028,
+          "median": 2.0,
+          "sample_size": 71,
+          "std": 1.1450972746015688
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.13925196422752453,
+              0.17515231232793915
+            ],
+            "status": "PASS"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 2.632390745501285,
+          "median": 2.0,
+          "sample_size": 389,
+          "std": 1.7241904151449894
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.13925196422752453
+        }
+      },
+      "section_lengths": {
+        "ref_summary_statistics": {
+          "mean": 55.41016397870401,
+          "median": 40.412881023061026,
+          "sample_size": 71,
+          "std": 43.529427298281405
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.22904522249176293,
+              0.0029595273615408146
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 33.11021315982164,
+          "median": 23.143700554922656,
+          "sample_size": 389,
+          "std": 28.406104046913615
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.22904522249176293
+        }
+      },
+      "section_path_distances": {
+        "ref_summary_statistics": {
+          "mean": 96.63562539404855,
+          "median": 95.21088801777034,
+          "sample_size": 71,
+          "std": 57.267282594234004
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.4416524856077338,
+              4.011480037036108e-11
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 57.48862622010042,
+          "median": 61.95485319302097,
+          "sample_size": 389,
+          "std": 33.79678106648739
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.4416524856077338
+        }
+      },
+      "section_radial_distances": {
+        "ref_summary_statistics": {
+          "mean": 86.05349280542663,
+          "median": 89.79406891290454,
+          "sample_size": 71,
+          "std": 51.49331449235975
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.4390817915203302,
+              5.397360336445445e-11
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 51.103121269419475,
+          "median": 52.66233000227883,
+          "sample_size": 389,
+          "std": 30.199510351400146
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.4390817915203302
+        }
+      },
+      "section_tortuosity": {
+        "ref_summary_statistics": {
+          "mean": 1.0250878423658523,
+          "median": 1.0106230636622933,
+          "sample_size": 71,
+          "std": 0.030512394049629913
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.5081646692494297,
+              9.547918011776346e-15
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 1.0518309180702397,
+          "median": 1.0482083882294373,
+          "sample_size": 389,
+          "std": 0.02998504056807634
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.5081646692494297
+        }
+      },
+      "total_length": {
+        "ref_summary_statistics": {
+          "mean": 1967.060821243992,
+          "median": 1967.060821243992,
+          "sample_size": 2,
+          "std": 307.9745816645328
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.9,
+              0.09090909090909094
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 1287.9872919170618,
+          "median": 1388.0820321663969,
+          "sample_size": 10,
+          "std": 367.88666917991867
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.9
+        }
+      },
+      "total_length_per_neurite": {
+        "ref_summary_statistics": {
+          "mean": 562.0173774982834,
+          "median": 597.9754835872384,
+          "sample_size": 7,
+          "std": 239.10427471175853
+        },
+        "statistical_tests": {
+          "StatTests.ks": {
+            "results": [
+              0.5428571428571428,
+              0.04684656513924812
+            ],
+            "status": "FAIL"
+          }
+        },
+        "test_summary_statistics": {
+          "mean": 367.9963691191605,
+          "median": 364.49764550913545,
+          "sample_size": 35,
+          "std": 139.14166199385028
+        },
+        "validation_criterion": {
+          "criterion": "dist",
+          "status": "FAIL",
+          "threshold": 0.1,
+          "value": 0.5428571428571428
+        }
+      }
+    }
+  }
+}

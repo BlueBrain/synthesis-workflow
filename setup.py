@@ -13,30 +13,30 @@ with open("README.rst", encoding="utf-8") as f:
     README = f.read()
 
 reqs = [
-    "atlas_analysis",
-    "brainbuilder",
+    "atlas_analysis>0.0.1",
+    "brainbuilder>=0.14",
     "bluepyefe",
     "bluepyopt",
     "bluepymm",
-    "diameter_synthesis",
+    "diameter_synthesis>=0.1.7",
     "gitpython",
-    "h5py",
+    "h5py<3",
     "joblib",
     "luigi",
     "matplotlib",
     "morph_validator",
     "morphio",
     "neuroc",
-    "neurom",
+    "neurom!=2.0.1.dev4",
     "pandas",
-    "placement_algorithm",
-    "region_grower",
+    "placement_algorithm>=2.1.1",
+    "region_grower>=0.1.10",
     "scipy",
     "seaborn",
-    "tns",
+    "tns>=2.2.7",
     "tmd",
     "tqdm",
-    "voxcell",
+    "voxcell>=2.7.3",
 ]
 
 doc_reqs = [
@@ -45,13 +45,14 @@ doc_reqs = [
 ]
 
 test_reqs = [
+    "diff_pdf_visually",
     "pytest",
     "pytest-cov",
     "pytest-html",
     "pytest-mpl",
 ]
 
-VERSION = imp.load_source("", "synthesis_workflow/version.py").__version__
+VERSION = imp.load_source("", "src/version.py").VERSION
 
 setup(
     name="synthesis-workflow",
@@ -67,7 +68,8 @@ setup(
         "Source": "ssh://bbpcode.epfl.ch/cells/synthesis-workflow",
     },
     license="BBP-internal-confidential",
-    packages=find_packages(),
+    packages=find_packages("src", exclude=["tests"]),
+    package_dir={"": "src"},
     python_requires=">=3.6",
     install_requires=reqs,
     extras_require={"docs": doc_reqs, "test": test_reqs},

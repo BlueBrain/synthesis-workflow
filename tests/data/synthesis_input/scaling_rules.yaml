@@ -1,0 +1,21 @@
+default:  # this will be applied on all mtypes if corresponding key is not present below
+    apical:
+        hard_limit_max:
+            layer: L1
+            fraction: 0.99
+    basal:
+        hard_limit_max:
+            layer: L1
+            fraction: 0.99
+
+L3_TPC:A:
+    apical:
+        hard_limit_min:
+            layer: L1
+            fraction: 0.1
+        extent_to_target:
+            layer: L1
+            fraction: 0.8
+        hard_limit_max:
+            layer: L1
+            fraction: 0.99

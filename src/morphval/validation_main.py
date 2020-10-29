@@ -8,6 +8,7 @@ import jinja2
 import neurom
 import numpy as np
 import pandas as pd
+import pkg_resources
 from joblib import delayed
 from joblib import Parallel
 from joblib import cpu_count
@@ -16,11 +17,12 @@ from morphval import common
 from morphval import validation
 
 
-BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE_FILE = os.path.join(BASE_PATH, "templates/report_template.jinja2")
-SUMMARY_TEMPLATE_FILE = os.path.join(
-    BASE_PATH, "templates/report_summary_template.jinja2"
+_distribution = pkg_resources.get_distribution("synthesis-workflow")
+TEMPLATES = (
+    Path(_distribution.get_resource_filename("morphval", "morphval")) / "templates"
 )
+TEMPLATE_FILE = (TEMPLATES / "report_template.jinja2").as_posix()
+SUMMARY_TEMPLATE_FILE = (TEMPLATES / "report_summary_template.jinja2").as_posix()
 
 
 def save_csv(dir_name, feature, data):

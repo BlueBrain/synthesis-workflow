@@ -1,0 +1,178 @@
+{
+  "L1_DAC": {
+    "basal_dendrite": {
+      "local_bifurcation_angles": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "number_of_bifurcations": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "number_of_neurites": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "number_of_sections_per_neurite": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "partition": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "principal_direction_extents": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "remote_bifurcation_angles": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_branch_orders": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_lengths": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_path_distances": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_radial_distances": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_tortuosity": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "total_length": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "total_length_per_neurite": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      }
+    }
+  },
+  "L3_TPC:A": {
+    "basal_dendrite": {
+      "local_bifurcation_angles": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "number_of_bifurcations": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "number_of_neurites": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "number_of_sections_per_neurite": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "partition": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "principal_direction_extents": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "remote_bifurcation_angles": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_branch_orders": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_lengths": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_path_distances": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_radial_distances": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "section_tortuosity": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "total_length": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
+      "total_length_per_neurite": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      }
+    }
+  }
+}

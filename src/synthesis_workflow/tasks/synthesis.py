@@ -210,9 +210,14 @@ class BuildSynthesisDistributions(WorkflowTask):
 
     def run(self):
         """"""
+        L.debug("reading morphs df from: %s", self.input().path)
         morphs_df = pd.read_csv(self.input().path)
-        mtypes = morphs_df.mtype.unique()
+
+        mtypes = sorted(morphs_df.mtype.unique())
+        L.debug("mtypes found: %s", mtypes)
+
         neurite_types = get_neurite_types(morphs_df, mtypes)
+        L.debug("neurite_types found: %s", neurite_types)
 
         diameter_model_function = partial(
             build_diameter_models, config=DiametrizerConfig().config_model

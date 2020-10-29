@@ -157,30 +157,34 @@ class ValidationLocalTarget(OutputLocalTarget):
     """Specific target for validation targets"""
 
 
-# Set default output paths
-OutputLocalTarget.set_default_prefix(PathConfig().result_path)
-AtlasLocalTarget.set_default_prefix(
-    # pylint: disable=protected-access
-    OutputLocalTarget._prefix
-    / PathConfig().atlas_subpath
-)
-CircuitLocalTarget.set_default_prefix(
-    # pylint: disable=protected-access
-    OutputLocalTarget._prefix
-    / PathConfig().circuit_subpath
-)
-MorphsDfLocalTarget.set_default_prefix(
-    # pylint: disable=protected-access
-    OutputLocalTarget._prefix
-    / PathConfig().morphs_df_subpath
-)
-SynthesisLocalTarget.set_default_prefix(
-    # pylint: disable=protected-access
-    OutputLocalTarget._prefix
-    / PathConfig().synthesis_subpath
-)
-ValidationLocalTarget.set_default_prefix(
-    # pylint: disable=protected-access
-    OutputLocalTarget._prefix
-    / PathConfig().validation_subpath
-)
+def reset_default_prefixes():
+    """Set default output paths for targets"""
+    OutputLocalTarget.set_default_prefix(PathConfig().result_path)
+    AtlasLocalTarget.set_default_prefix(
+        # pylint: disable=protected-access
+        OutputLocalTarget._prefix
+        / PathConfig().atlas_subpath
+    )
+    CircuitLocalTarget.set_default_prefix(
+        # pylint: disable=protected-access
+        OutputLocalTarget._prefix
+        / PathConfig().circuit_subpath
+    )
+    MorphsDfLocalTarget.set_default_prefix(
+        # pylint: disable=protected-access
+        OutputLocalTarget._prefix
+        / PathConfig().morphs_df_subpath
+    )
+    SynthesisLocalTarget.set_default_prefix(
+        # pylint: disable=protected-access
+        OutputLocalTarget._prefix
+        / PathConfig().synthesis_subpath
+    )
+    ValidationLocalTarget.set_default_prefix(
+        # pylint: disable=protected-access
+        OutputLocalTarget._prefix
+        / PathConfig().validation_subpath
+    )
+
+
+reset_default_prefixes()

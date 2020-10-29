@@ -17,6 +17,8 @@ from joblib import cpu_count
 from bluepy.v2 import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
 from morph_tool.utils import neurondb_dataframe, find_morph
+from voxcell import VoxelData
+from voxcell.nexus.voxelbrain import LocalAtlas
 
 
 def add_mtype_taxonomy(morphs_df, mtype_taxonomy):
@@ -118,6 +120,21 @@ def ensure_dir(file_path):
 def update_morphs_df(morphs_df_path, new_morphs_df):
     """Update a morphs_df with new entries to preserve duplicates."""
     return pd.read_csv(morphs_df_path).merge(new_morphs_df, how="left")
+
+
+def get_layer_tags(atlas_dir):
+    """Create a VoxelData with layer tags"""
+    atlas = LocalAtlas(atlas_dir)
+
+    names, ids = atlas.get_layers()  # pylint: disable=no-member
+    br = VoxelData.load_nrrd(Path(atlas_dir) / "brain_regions.nrrd")
+    layers = np.zeros_like(br.raw, dtype="uint8")
+    layer_mapping = {}
+    for layer_id, (ids_set, layer) in enumerate(zip(ids, names)):
+        layer_mapping[layer_id] = layer
+        layers[np.isin(br.raw, list(ids_set))] = layer_id + 1
+    br.raw = layers
+    return br, layer_mapping
 
 
 class IdProcessingFormatter(logging.Formatter):

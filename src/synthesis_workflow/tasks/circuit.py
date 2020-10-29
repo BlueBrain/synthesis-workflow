@@ -4,10 +4,8 @@ from pathlib import Path
 import yaml
 
 import luigi
-import numpy as np
 
 from voxcell import VoxelData
-from voxcell.nexus.voxelbrain import LocalAtlas
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
 
@@ -17,6 +15,7 @@ from ..circuit import create_planes
 from ..circuit import halve_atlas
 from ..circuit import slice_circuit
 from ..tools import ensure_dir
+from ..tools import get_layer_tags
 from .config import AtlasLocalTarget
 from .config import CircuitConfig
 from .config import CircuitLocalTarget
@@ -47,17 +46,7 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
 
     def run(self):
         """"""
-        atlas = LocalAtlas(CircuitConfig().atlas_path)
-        names, ids = atlas.get_layers()  # pylint: disable=no-member
-        annotation = VoxelData.load_nrrd(
-            Path(CircuitConfig().atlas_path) / "brain_regions.nrrd"
-        )
-        layers = np.zeros_like(annotation.raw, dtype="uint8")
-        layer_mapping = {}
-        for layer_id, (ids_set, layer) in enumerate(zip(ids, names)):
-            layer_mapping[layer_id] = layer
-            layers[np.isin(annotation.raw, list(ids_set))] = layer_id + 1
-        annotation.raw = layers
+        annotation, layer_mapping = get_layer_tags(CircuitConfig().atlas_path)
 
         if self.use_half:
             annotation.raw = halve_atlas(

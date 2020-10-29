@@ -1,0 +1,14 @@
+neurons:
+- density: '{[cell_density]L1_DAC}'
+  region: '@.*;1$'
+  traits:
+    etype: {bNAC: 0.3333, cNAC: 0.6667}
+    layer: 1
+    mtype: L1_DAC
+- density: '{[cell_density]L3_TPC:A}'
+  region: '@.*;3$'
+  traits:
+    etype: {cADpyr: 1.0}
+    layer: 3
+    mtype: L3_TPC:A
+version: v2.0
