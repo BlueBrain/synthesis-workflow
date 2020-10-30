@@ -334,24 +334,19 @@ def get_layer_info(
 
     layers = np.empty([n_pixels, n_pixels])
 
-    X = np.empty([n_pixels, n_pixels])
-    Y = np.empty([n_pixels, n_pixels])
+    X = np.repeat(xs_plane.reshape((1, -1)), n_pixels, axis=0).T
+    Y = np.repeat(ys_plane.reshape((1, -1)), n_pixels, axis=0)
+    rot_T = rotation_matrix.T
+    points = np.zeros([n_pixels, n_pixels, 3])
+
     for i, x_plane in enumerate(xs_plane):
         for j, y_plane in enumerate(ys_plane):
-            X[i, j] = x_plane
-            Y[i, j] = y_plane
-
             # transform plane coordinates into real coordinates (coordinates of VoxelData)
-            point = (
-                rotation_matrix.T.dot([x_plane, 0, 0])
-                + rotation_matrix.T.dot([0, y_plane, 0])
-                + plane_origin
+            points[i, j] = (
+                rot_T.dot([x_plane, 0, 0]) + rot_T.dot([0, y_plane, 0]) + plane_origin
             )
 
-            layers[i, j] = int(
-                layer_annotation.lookup(np.array([point]), outer_value=-1)
-            )
-
+    layers = layer_annotation.lookup(points, outer_value=-1).astype(float)
     layers[layers < 1] = np.nan
     return X, Y, layers
 
@@ -366,18 +361,15 @@ def get_y_info(atlas, plane_origin, rotation_matrix, n_pixels=64):
 
     orientation_u = np.zeros([n_pixels, n_pixels])
     orientation_v = np.zeros([n_pixels, n_pixels])
-    X = np.empty([n_pixels, n_pixels])
-    Y = np.empty([n_pixels, n_pixels])
+
+    X = np.repeat(xs_plane.reshape((1, -1)), n_pixels, axis=0).T
+    Y = np.repeat(ys_plane.reshape((1, -1)), n_pixels, axis=0)
+    rot_T = rotation_matrix.T
     for i, x_plane in enumerate(xs_plane):
         for j, y_plane in enumerate(ys_plane):
-            X[i, j] = x_plane
-            Y[i, j] = y_plane
-
             # transform plane coordinates into real coordinates (coordinates of VoxelData)
             point = (
-                rotation_matrix.T.dot([x_plane, 0, 0])
-                + rotation_matrix.T.dot([0, y_plane, 0])
-                + plane_origin
+                rot_T.dot([x_plane, 0, 0]) + rot_T.dot([0, y_plane, 0]) + plane_origin
             )
             try:
                 orientation = atlas.lookup_orientation(point)
