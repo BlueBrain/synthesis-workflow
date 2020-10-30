@@ -56,6 +56,7 @@ def clean_outliers(
     Returns: cleaned X and Y coordinates"""
 
     # Fit a linear function passing by 0 to the data
+    np.random.seed(42)  # ensure stability of fit values
     popt = curve_fit(fit_function, x, y)[0]
     p = np.poly1d([popt[0], 0])
 
@@ -92,6 +93,7 @@ def fit_path_distance_to_extent(
     x_clean, y_clean = clean_outliers(x, y, outlier_percentage)
 
     # Get the relation between extents / path
+    np.random.seed(42)  # ensure stability of fit values
     popt = curve_fit(fit_function, x_clean, y_clean)[0]
 
     # Returns the fit slope and intercept

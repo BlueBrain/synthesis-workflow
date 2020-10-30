@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from joblib import delayed
 from joblib import Parallel
+from joblib import cpu_count
 from tqdm import tqdm
 
 from morphio.mut import Morphology
@@ -158,6 +159,7 @@ def get_axon_base_dir(morphs_df, col_name="morphology_path"):
     return axon_morphs_base_dir
 
 
+# pylint: disable=too-many-arguments, too-many-locals
 def create_axon_morphologies_tsv(
     circuit_path,
     morphs_df_path,
@@ -169,6 +171,8 @@ def create_axon_morphologies_tsv(
     scales=None,
     seed=0,
     axon_morphs_path="axon_morphs.tsv",
+    nb_jobs=-1,
+    joblib_verbose=10,
 ):
     """Create required axon_morphology tsv file for placement-algorithm to graft axons.
 
@@ -180,13 +184,10 @@ def create_axon_morphologies_tsv(
     Returns:
         str: path to base directory of morphologies for axon grafting
     """
-    morphs_df = pd.read_csv(morphs_df_path)
-
     check_placement_params = [
         atlas_path is not None,
         annotations_path is not None,
         rules_path is not None,
-        morphdb_path is not None,
     ]
     if any(check_placement_params) and not all(check_placement_params):
         raise ValueError(
@@ -195,18 +196,12 @@ def create_axon_morphologies_tsv(
                 "atlas_path",
                 "annotations_path",
                 "rules_path",
-                "morphdb_path",
             ]
         )
 
     if all(check_placement_params):
-        use_placement = True
         L.info("Use placement algorithm for axons")
-    else:
-        use_placement = False
-        L.info("Do not use placement algorithm for axons (use random choice instead)")
 
-    if use_placement:
         atlas = Atlas.open(atlas_path)
         segment_type = "axon"
 
@@ -231,30 +226,41 @@ def create_axon_morphologies_tsv(
             worker.atlas, worker.layer_names, memcache=True
         )
         cells_df = worker.cells.properties
+        axon_morphs = pd.DataFrame()
+
+        batch_size = int(
+            len(cells_df.index) / (nb_jobs if nb_jobs > 0 else cpu_count())
+        )
+        L.info("Using batch_size of %s", batch_size)
+
+        for gid, name in zip(
+            cells_df.index,
+            Parallel(
+                nb_jobs,
+                verbose=joblib_verbose,
+                backend="multiprocessing",
+                batch_size=batch_size,
+            )(delayed(worker)(gid) for gid in cells_df.index),
+        ):
+            axon_morphs.loc[gid, "morphology"] = name
     else:
+        L.info("Do not use placement algorithm for axons (use random choice instead)")
+
         cells_df = CellCollection.load_mvd3(circuit_path).properties
+        axon_morphs = pd.DataFrame(index=cells_df.index, columns=["morphology"])
 
-    axon_morphs = pd.DataFrame()
-    for gid in cells_df.index:
-        all_cells = morphs_df[
-            (morphs_df.mtype == cells_df.loc[gid, "mtype"]) & morphs_df.use_axon
-        ]
-        if len(all_cells) > 0:
-            cell = None
-            if use_placement:
-                try:
-                    cell = all_cells.loc[all_cells["name"] == worker(gid)].iloc[0]
-                except KeyError:
-                    L.warning(
-                        "Could not find annotations for GID=%s. Picking a random cell instead.",
-                        gid,
-                    )
-            if cell is None:
-                cell = all_cells.sample().iloc[0]
+        morphs_df = pd.read_csv(morphs_df_path)
+        if "use_axon" in morphs_df.columns:
+            morphs_df = morphs_df.loc[morphs_df.use_axon]
 
-            axon_morphs.loc[gid, "morphology"] = cell["name"]
-        else:
-            L.info("Axon grafting: no cells for %s", cells_df.loc[gid, "mtype"])
+        for mtype in tqdm(cells_df.mtype.unique()):
+            all_cells = morphs_df[morphs_df.mtype == mtype]
+            gids = cells_df[cells_df.mtype == mtype].index
+            axon_morphs.loc[gids, "morphology"] = all_cells.sample(
+                n=len(gids),
+                replace=True,
+                random_state=42,
+            )["name"].to_list()
 
     axon_morphs.to_csv(axon_morphs_path, sep="\t", index=True)
 

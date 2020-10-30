@@ -2,6 +2,7 @@
 import json
 import logging
 from functools import partial
+from pathlib import Path
 
 import luigi
 import pandas as pd
@@ -58,10 +59,11 @@ class BuildMorphsDF(WorkflowTask):
 
     neurondb_path = luigi.Parameter(description="path to the neuronDB file (XML)")
     morphology_dirs = luigi.DictParameter(
+        default=None,
         description=(
             "dict (JSON format) in which keys are column names and values are the paths to each "
             "morphology file"
-        )
+        ),
     )
     apical_points_path = luigi.OptionalParameter(
         default=None, description="path to the apical points file (YAML)"
@@ -189,6 +191,7 @@ class BuildSynthesisParameters(WorkflowTask):
 
 @copy_params(
     morphology_path=ParamLink(PathConfig),
+    nb_jobs=ParamLink(RunnerConfig),
 )
 class BuildSynthesisDistributions(WorkflowTask):
     """Build the tmd_distribution.json for synthesis.
@@ -218,6 +221,7 @@ class BuildSynthesisDistributions(WorkflowTask):
             diameter_model_function,
             self.morphology_path,
             SynthesisConfig().cortical_thickness,
+            nb_jobs=self.nb_jobs,
         )
 
         with self.output().open("w") as f:
@@ -228,42 +232,55 @@ class BuildSynthesisDistributions(WorkflowTask):
         return SynthesisLocalTarget(SynthesisConfig().tmd_distributions_path)
 
 
-class BuildSynthesisModels(luigi.WrapperTask):
-    """Only build both json files for synthesis."""
+class BuildAxonMorphsDF(BuildMorphsDF):
+    """Generate the list of axon morphologies with their mtypes and paths."""
 
-    def requires(self):
+    axon_morphs_df_path = luigi.Parameter(default="axon_morphs_df.csv")
+
+    def output(self):
         """"""
-        return [BuildSynthesisParameters(), BuildSynthesisDistributions()]
+        return MorphsDfLocalTarget(self.axon_morphs_df_path)
 
 
-@copy_params(
-    nb_jobs=ParamLink(RunnerConfig),
-)
 class BuildAxonMorphologies(WorkflowTask):
     """Run choose-morphologies to synthesize axon morphologies.
 
+    If no annotation file is given, axons will be randomly chosen from
+
     Args:
-        out_circuit_path (str): path to circuit mvd3 with morphology data
-        ext (str): extension for morphology files
-        axon_morphs_path (str): path to .tsv file for axon grafting
-        apical_points_path (str): path to .yaml file for recording apical points
+        axon_morphs_path (str): path to save .tsv file with list of morphologies for axon grafting
+        annotations_path (str): path to annotations file used by
+            ``placementAlgorithm.choose_morphologies``, if None, random axons will be choosen
+        neurondb_dat_path (str): path to neurondb.dat file for
+            ``placementAlgorithm.choose_morphologies``
+        placement_rules_path (str): see ``placementAlgorithm.choose_morphologies``
+        placement_alpha (float): see ``placementAlgorithm.choose_morphologies``
+        placement_scales (list): see ``placementAlgorithm.choose_morphologies``
+        placement_seed (int): see ``placementAlgorithm.choose_morphologies``
     """
 
     axon_morphs_path = luigi.Parameter(default="axon_morphs.tsv")
     annotations_path = luigi.Parameter(default=None)
-    rules_path = luigi.Parameter(default=None)
-    morphdb_path = luigi.Parameter(default=None)
+    neurondb_dat_path = luigi.Parameter(description="path to the neurondb.dat file")
+    placement_rules_path = luigi.Parameter(default=None)
     placement_alpha = luigi.FloatParameter(default=1.0)
     placement_scales = luigi.ListParameter(default=None)
     placement_seed = luigi.IntParameter(default=0)
+    nb_jobs = luigi.IntParameter(default=20)
 
     def requires(self):
         """"""
-
-        return {
-            "substituted_cells": ApplySubstitutionRules(),
-            "circuit": SliceCircuit(),
-        }
+        tasks = {"circuit": SliceCircuit()}
+        if self.annotations_path is None:
+            tasks.update(
+                {
+                    "axon_cells": BuildAxonMorphsDF(
+                        neurondb_path=Path(self.neurondb_dat_path).parent
+                        / "neuronDB.xml"
+                    )
+                }
+            )
+        return tasks
 
     def run(self):
         """"""
@@ -274,23 +291,24 @@ class BuildAxonMorphologies(WorkflowTask):
         if any(
             [
                 self.annotations_path is None,
-                self.rules_path is None,
-                self.morphdb_path is None,
+                self.placement_rules_path is None,
+                self.neurondb_dat_path is None,
             ]
         ):
             atlas_path = None
 
         create_axon_morphologies_tsv(
             self.input()["circuit"].path,
-            self.input()["substituted_cells"].path,
+            self.input()["axon_cells"].path if "axon_cells" in self.input() else None,
             atlas_path=atlas_path,
             annotations_path=self.annotations_path,
-            rules_path=self.rules_path,
-            morphdb_path=self.morphdb_path,
+            rules_path=self.placement_rules_path,
+            morphdb_path=self.neurondb_dat_path,
             alpha=self.placement_alpha,
             scales=self.placement_scales,
             seed=self.placement_seed,
             axon_morphs_path=self.output().path,
+            nb_jobs=self.nb_jobs,
         )
 
     def output(self):
