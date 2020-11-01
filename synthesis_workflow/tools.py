@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from joblib import delayed
 from joblib import Parallel
+from joblib import cpu_count
 
 from bluepy.v2 import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
@@ -152,15 +153,31 @@ class DebugingFileHandler(logging.FileHandler):
 def _wrap_worker(_id, worker, logger_kwargs=None):
     """Wrap the worker job and catch exceptions that must be caught"""
     try:
-        file_handler = None
-        root = logging.getLogger()
         if logger_kwargs is not None:
+            logger_name = logger_kwargs.get("name")
+            logger = logging.getLogger(logger_name)
+
+            # Save current logger state
+            old_level = (
+                logger.level
+                if logger.level != logging.NOTSET
+                else logging.getLogger().level
+            )
+            old_propagate = logger.propagate
+
+            # Set new logger state
+            logger.setLevel(logger_kwargs.get("propagate", logging.DEBUG))
+            logger.propagate = logger_kwargs.get("propagate", False)
 
             # Search old handlers
-            for i in root.handlers:
+            handler_levels = {}
+            file_handler = None
+            for i in logger.handlers:
                 if isinstance(i, DebugingFileHandler):
                     file_handler = i
-                    break
+                else:
+                    handler_levels[i] = i.level
+                    i.setLevel(old_level)
 
             # If no DebugingFileHandler was found
             if file_handler is None:
@@ -180,7 +197,7 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
                 file_handler = DebugingFileHandler(log_file)
                 file_handler.setFormatter(formatter)
                 file_handler.setLevel(logging.DEBUG)
-                root.addHandler(file_handler)
+                logger.addHandler(file_handler)
             else:
                 file_handler.formatter.set_id(_id)
 
@@ -188,12 +205,18 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
             # Ignore all warnings in workers
             warnings.simplefilter("ignore")
             try:
-                old_level = root.level
                 if logger_kwargs is not None:
-                    root.setLevel(logger_kwargs.get("log_level", logging.DEBUG))
+                    logger.setLevel(logger_kwargs.get("log_level", logging.DEBUG))
                 res = _id, worker(_id)
             finally:
-                root.setLevel(old_level)
+                # Reset logger state
+                logger.setLevel(old_level)
+                logger.propagate = old_propagate
+
+                # Reset old handler levels
+                for i in logger.handlers:
+                    if i in handler_levels:
+                        i.setLevel(handler_levels[i])
 
         return res
     except SkipSynthesisError:
@@ -251,19 +274,24 @@ def run_master(
     L.info("Running %d iterations.", len(master.task_ids))
 
     try:
-        # Keep current log level to reset afterwards
-        root = logging.getLogger()
-        old_level = root.level
+        # Keep current log state to reset afterwards
         if logger_kwargs is not None:
-            root.setLevel(logging.DEBUG)
+            logger_name = logger_kwargs.get("name")
+            logger = logging.getLogger(logger_name)
+            handlers = set()
+            for i in logger.handlers:
+                handlers.add(i)
 
         # shuffle ids to speed up computation with uneven cell complexities
         task_ids = np.random.permutation(master.task_ids)
 
         # Run the worker
+        L.info("Using batch size of %d tasks", int(len(task_ids) / cpu_count()))
         results = Parallel(
             n_jobs=nb_jobs,
             verbose=verbose,
+            backend="multiprocessing",
+            batch_size=int(len(task_ids) / (cpu_count() if nb_jobs == 1 else nb_jobs)),
         )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in task_ids)
 
         # Gather the results
@@ -271,7 +299,7 @@ def run_master(
 
     finally:
         # This is usefull only when using joblib with 1 process
-        root.setLevel(old_level)
-        for i in root.handlers:
-            if isinstance(i, DebugingFileHandler):
-                root.removeHandler(i)
+        if logger_kwargs is not None:
+            for i in logger.handlers:
+                if i not in handlers:
+                    logger.removeHandler(i)
