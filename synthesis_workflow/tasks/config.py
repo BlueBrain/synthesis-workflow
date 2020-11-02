@@ -1,4 +1,5 @@
 """config functions for luigi tasks."""
+import logging
 import warnings
 
 import luigi
@@ -15,6 +16,10 @@ warnings.filterwarnings("ignore", module="luigi.parameter")
 warnings.filterwarnings("ignore", module="neurom.io")
 warnings.filterwarnings("ignore", module="neurom.features")
 warnings.filterwarnings("ignore", module="scipy")
+
+# Disable matplotlib logger
+mpl_logger = logging.getLogger("matplotlib")
+mpl_logger.propagate = False
 
 
 class DiametrizerConfig(luigi.Config):

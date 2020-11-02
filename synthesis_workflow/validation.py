@@ -54,6 +54,8 @@ matplotlib.use("Agg")
 
 VacuumCircuit = namedtuple("VacuumCircuit", ["cells", "morphs_df", "morphology_path"])
 
+SYNTH_MORPHOLOGY_PATH = "synth_morphology_path"
+
 
 def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext="asc"):
     """Convert the list of morphologies from mvd3 to morphology dataframe.
@@ -67,7 +69,7 @@ def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext="asc"):
         DataFrame: morphology dataframe
     """
     cells_df = CellCollection.load_mvd3(mvd3_path).as_dataframe()
-    cells_df["synth_morphology_path"] = cells_df["morphology"].apply(
+    cells_df[SYNTH_MORPHOLOGY_PATH] = cells_df["morphology"].apply(
         lambda morph: (Path(synth_output_path) / morph).with_suffix("." + ext)
     )
     cells_df["name"] = cells_df["morphology"]
@@ -92,7 +94,7 @@ def plot_morphometrics(
     comp_morphs_df,
     output_path,
     base_key="morphology_path",
-    comp_key="synth_morphology_path",
+    comp_key=SYNTH_MORPHOLOGY_PATH,
     base_label="base",
     comp_label="comp",
     normalize=False,

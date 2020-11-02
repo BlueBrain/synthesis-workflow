@@ -1,3 +1,6 @@
 graft tests
 
 global-exclude *.py[co] .DS_Store
+
+include morphval/templates/*
+include synthesis_workflow/defaults/morphval_default_config.yaml

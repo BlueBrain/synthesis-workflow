@@ -1,0 +1,240 @@
+<html>
+<head>
+  <title> {{ output_title }} </title>
+
+  <style>
+    {% include 'style.css' %}
+  </style>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.3.0/dist/bootstrap-toc.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+  <script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.3.0/dist/bootstrap-toc.min.js"></script>
+</head>
+
+<body class="from-beginning">
+  <!-- NavBar  -->
+  <section id="nav_container" class="nav-container">
+    <div id="nav_toggle" class="nav-toggle">X</div>
+    <nav id="nav_items_container" class="nav-items-container">
+      <span><a class="headers" href="#mtype_validation_summary"> {{ mtype }} </a></span>
+      {% for component in mtype_results | sort %}
+        <span><a class="headers" href="#{{ component }}"> {{ templateText[component]['name'] }} </a></span>
+        {% for feature in mtype_results[component] | sort %}
+          <span><a class="subitems" href="#{{ component }}_{{ feature }}">{{templateText[component][feature]['name']}}</a></span>
+        {% endfor %}
+      {% endfor %}
+      <span><a class="headers" href="#report_info"> Report Information </a></span>
+    </nav>
+  </section>
+  <!-- END NavBar  -->
+  <section id="section_container" class="section-container">
+    <hr width={{ line_width }}>
+    <h1><center id="{{ mtype }}"> {{ mtype }} - Validation Report </center></h1>
+    <hr width={{ line_width }}>
+    <h2><center id="mtype_validation_summary"> {{ mtype }} - Validation Summary </center></h2>
+
+    <!-- Carousel template -->
+      <div class="col-sm-6 carousel-template" hidden>
+        <h3><center class="carousel-title"> Test Cells </center></h3>
+        <div class="section-carousel-container">
+          <div class="left-arrow carousel-arrow">
+            <svg class="svg-arrow" viewBox="0 0 50 80" xml:space="preserve">
+              <polyline fill="none" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" points="45,75 5,40 45,5"></polyline>
+            </svg>
+          </div>
+          <div class="figure img-container"></div>
+          <div class="right-arrow carousel-arrow">
+            <svg class="svg-arrow" viewBox="0 0 50 80" xml:space="preserve">
+              <polyline fill="none" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" points="5,5 45,40 5,75 "></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+    <!-- END Carousel template-->
+    <!-- images for carousel -->
+    <div class="row image-carousel-container">
+      <div class="ref-cell-files" hidden>{{ ref_cell_files['full_morph'] | tojson }}</div>
+      <div class="test-cell-files" hidden>{{ test_cell_files['full_morph'] | tojson }}</div>
+    </div>
+    <!-- END images for carousel -->
+
+  {% if validation_report %}
+  <!-- This loops over the components (Neurite Types) of a single mtype -->
+  <div class="table-responsive"> <center>
+    <table class="table table-striped" style="width:80%">
+      <thead>
+        <tr>
+          <th> Component </th>
+          <th>  </th>
+          <th> Percentage </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for component in mtype_results | sort %}
+        <tr>
+          <th> <a href="#{{ component }}"> {{ templateText[component]['name'] }} </a>  </th>
+          <td> {{ templateText[component]['num_pass'] }}
+            out of {{ templateText[component]['num_features'] }} validations PASS
+          </td>
+          <td> {{ templateText[component]['pass_percentage'] }} % </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table> </center>
+  </div>
+  {% endif %}
+
+  {% for component in mtype_results | sort %}
+  <!-- Validation Summary over the features of one component -->
+  <hr width={{ line_width }}>
+  <h2 id="{{component}}"><center> {{ templateText[component]['name'] }} - Validation Summary </center></h2>
+  <!-- images for carousel -->
+  <div class="row image-carousel-container">
+    <div class="ref-cell-files" hidden>{{ ref_cell_files[component] | tojson }}</div>
+    <div class="test-cell-files" hidden>{{ test_cell_files[component] | tojson }}</div>
+  </div>
+  <!-- END images for carousel -->
+  <div class="table-responsive"> <center>
+    <table class="table table-striped" style="width:80%">
+      <thead>
+        <tr>
+          <th> Feature </th>
+          <th> Validation Criterion </th>
+          <th> Value </th>
+          {% if validation_report %}
+          <th> Threshold </th>
+          <th> Status </th>
+          {% else %}
+          <th> p-value </th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for feature in mtype_results[component] | sort %}
+        <tr>
+          <th> <a href="#{{ component }}_{{ feature }}">{{templateText[component][feature]['name']}}</a>  </th>
+          <td> {{ templateText[component][feature]['stat_test'] +', '+ templateText[component][feature]['validation_criterion']['criterion'] }} </td>
+          <td> {{ templateText[component][feature]['validation_criterion']['value'] }} </td>
+          {% if validation_report %}
+          <td> {{ templateText[component][feature]['validation_criterion']['threshold'] }} </td>
+          <td class="status-colored"> {{ templateText[component][feature]['validation_criterion']['status'] }} </td>
+          {% else %}
+          <td> {{ templateText[component][feature]['stat_test_result'][1] }} </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table> </center>
+  </div>
+  <hr width={{ line_width }}>
+  <h2><center> {{ templateText[component]['name'] }} - Detailed Results </center></h2>
+  <!-- The detailed results per each feature are iteratively computed.
+  They consist of a picture and three tables at the moment. -->
+  {% for feature in mtype_results[component] | sort %}
+  <hr width={{ line_width }}>
+  <div class="page-break"></div>
+  <div class="row">
+      <h3 id="{{component}}_{{feature}}"><center> {{ templateText[component][feature]['name'] }} </center></h3>
+      <div class="col-sm-6">
+        <div class="figure">
+            <img class="img-responsive" src="{{templateText[component][feature]['feature_histogram_file']}}" style="max-width:90%;height:auto">
+            <!--<figcaption class="figure-caption text-xs-left"> The reference and test data are distributed over # bins </figcaption> -->
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <table class="table table-bordered">
+          <caption><font size="5"><center> Summary Statistics </center></font></caption>
+            <tr>
+              <th></th>
+              <th> Test Data </th>
+              <th> Reference Data </th>
+            </tr>
+            {% for key in mtype_results[component][feature]['test_summary_statistics'] | sort %}
+            <tr>
+              <th> {{ key.capitalize().replace('_', ' ') }} </th>
+              <td> {{ templateText[component][feature]['test_summary_statistics'][key] }} </td>
+              <td> {{ templateText[component][feature]['ref_summary_statistics'][key] }} </td>
+            </tr>
+            {% endfor %}
+        </table>
+        <table class="table table-bordered">
+            <caption><font size="5"><center> Statistical Tests </center></font></caption>
+            <tr>
+              <th> Name </th>
+              <th> Test Statistic </th>
+              <th> p-value </th>
+            </tr>
+            <tr>
+              <th> {{ templateText[component][feature]['stat_test'] }} </th>
+              <td>
+                {{ templateText[component][feature]['stat_test_result'][0] }}
+              </td>
+              <td>
+                {{ templateText[component][feature]['stat_test_result'][1] }}
+              </td>
+            </tr>
+        </table>
+
+        {% if validation_report %}
+        <table class="table table-bordered">
+            <caption><font size="5"><center> Validation Criterion </center></font></caption>
+            <tr>
+              <th> Validation Criterion </th>
+              <th> Value </th>
+              <th> Threshold </th>
+              <th> Status </th>
+            </tr>
+            <tr>
+              <th> {{ templateText[component][feature]['stat_test'] + ', ' + templateText[component][feature]['validation_criterion']['criterion'] }} </th>
+              <td> {{ templateText[component][feature]['validation_criterion']['value'] }} </td>
+              <td> {{ templateText[component][feature]['validation_criterion']['threshold'] }} </td>
+              <td> {{ templateText[component][feature]['validation_criterion']['status'] }} </td>
+            </tr>
+        </table>
+        {% endif %}
+      </div>
+  </div>
+  {% endfor %}
+  {% endfor %}
+
+  <hr width={{ line_width }}>
+  <div class="page-break"></div>
+  <h2><center id="report_info">Report info</center> </h2>
+    <center>
+    <table class="table table-striped" style="width:90%">
+        <tr>
+          <th> Creation time </th>
+          <td> {{ timestamp }} </td>
+        </tr>
+        <tr>
+          <th> Output path </th>
+          <td> {{ results_dir }} </td>
+        </tr>
+        <tr>
+          <th> Config file </th>
+          <td> {{ config_file }} </td>
+        </tr>
+        <tr>
+          <th> Template file </th>
+          <td> {{ template_file }} </td>
+        </tr>
+        <tr>
+          <th> Test data directory </th>
+          <td> {{ test_dir }} </td>
+        </tr>
+        <tr>
+          <th> Reference data directory </th>
+          <td> {{ ref_dir }} </td>
+        </tr>
+    </table>
+  </center>
+
+  <div id="scroll_top" class="scroll-top">&uarr;</div>
+
+  <script>
+    {% include 'scripts.js' %}
+  </script>
+</body>
+</html>

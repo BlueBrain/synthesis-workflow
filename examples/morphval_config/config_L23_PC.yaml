@@ -1,0 +1,187 @@
+default: &default
+  stat_test: 'StatTests.ks'
+  threshold: 0.1
+  bins: 40
+  criterion: 'dist'
+
+BASAL_DATA: &basal_data
+  section_lengths:
+    stat_test: 'StatTests.ks'
+    threshold: 0.030511
+    bins: 40
+    criterion: 'dist'
+  section_bif_lengths:
+    <<: *default
+    threshold: 0.064112
+  section_term_lengths:
+    <<: *default
+    threshold: 0.10117
+  remote_bifurcation_angles:
+    <<: *default
+    threshold: 0.035168
+  local_bifurcation_angles:
+    <<: *default
+    threshold: 0.077675
+  partition:
+    <<: *default
+    threshold: 0.036447
+  section_branch_orders:
+    <<: *default
+    threshold: 0.11383
+  section_path_distances:
+    <<: *default
+    threshold: 0.043102
+  terminal_path_lengths_per_neurite:
+        <<: *default
+        threshold: 0.06011
+  section_radial_distances:
+    <<: *default
+    threshold: 0.063347
+  number_of_sections_per_neurite:
+    <<: *default
+    threshold: 0.22222
+  principal_direction_extents:
+    <<: *default
+    threshold: 0.12698
+  total_length_per_neurite:
+    <<: *default
+    threshold: 0.20635
+  total_length:
+    <<: *default
+    threshold: 0.4359
+  number_of_neurites:
+    <<: *default
+    threshold: 0.17094
+  number_of_bifurcations:
+    <<: *default
+    threshold: 0.47863
+  number_of_terminations:
+    <<: *default
+    threshold: 0.51282
+  section_tortuosity:
+    <<: *default
+    threshold: 0.24873
+  sholl_frequency:
+    <<: *default
+    threshold: 0.3
+
+APICAL_DATA: &apical_data
+  section_lengths:
+    stat_test: 'StatTests.ks'
+    threshold: 0.12008
+    bins: 40
+    criterion: 'dist'
+  section_bif_lengths:
+    <<: *default
+    threshold: 0.058047
+  section_term_lengths:
+    <<: *default
+    threshold: 0.18599
+  remote_bifurcation_angles:
+    <<: *default
+    threshold: 0.0749
+  local_bifurcation_angles:
+    <<: *default
+    threshold: 0.077675
+  partition:
+    <<: *default
+    threshold: 0.058482
+  section_branch_orders:
+    <<: *default
+    threshold: 0.084319
+  section_path_distances:
+    <<: *default
+    threshold: 0.091689
+  terminal_path_lengths_per_neurite:
+        <<: *default
+        threshold: 0.10913
+  section_radial_distances:
+    <<: *default
+    threshold: 0.069402
+  number_of_sections_per_neurite:
+    <<: *default
+    threshold: 0.39031
+  principal_direction_extents:
+    <<: *default
+    threshold: 0.31339
+  total_length_per_neurite:
+    <<: *default
+    threshold: 0.4302
+  total_length:
+    <<: *default
+    threshold: 0.4302
+  number_of_neurites:
+    <<: *default
+    threshold: 0.0
+  number_of_bifurcations:
+    <<: *default
+    threshold: 0.39031
+  number_of_terminations:
+    <<: *default
+    threshold: 0.39031
+  section_tortuosity:
+    <<: *default
+    threshold: 0.23836
+
+AXON_DATA: &axon_data
+  section_lengths:
+    stat_test: 'StatTests.ks'
+    threshold: 0.074816
+    bins: 40
+    criterion: 'dist'
+  section_bif_lengths:
+    <<: *default
+    threshold: 0.043479
+  section_term_lengths:
+    <<: *default
+    threshold: 0.11377
+  remote_bifurcation_angles:
+    <<: *default
+    threshold: 0.068648
+  local_bifurcation_angles:
+    <<: *default
+    threshold: 0.091552
+  partition:
+    <<: *default
+    threshold: 0.038157
+  section_branch_orders:
+    <<: *default
+    threshold: 0.14278
+  section_path_distances:
+    <<: *default
+    threshold: 0.048964
+  terminal_path_lengths_per_neurite:
+        <<: *default
+        threshold: 0.06011
+  section_radial_distances:
+    <<: *default
+    threshold: 0.095813
+  number_of_sections_per_neurite:
+    <<: *default
+    threshold: 0.62536
+  principal_direction_extents:
+    <<: *default
+    threshold: 0.40313
+  total_length_per_neurite:
+    <<: *default
+    threshold: 0.47436
+  total_length:
+    <<: *default
+    threshold: 0.47436
+  number_of_neurites:
+    <<: *default
+    threshold: 0.0
+  number_of_bifurcations:
+    <<: *default
+    threshold: 0.62536
+  number_of_terminations:
+    <<: *default
+    threshold: 0.62536
+  section_tortuosity:
+    <<: *default
+    threshold: 0.17446
+
+config:
+    L2_TPC:A:
+        basal_dendrite: *basal_data
+        apical_dendrite: *apical_data

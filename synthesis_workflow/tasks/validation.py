@@ -4,38 +4,42 @@ from pathlib import Path
 
 import luigi
 import pandas as pd
+import pkg_resources
+import yaml
 from voxcell import VoxelData
 from atlas_analysis.planes.planes import load_planes_centerline
 
-from ..tools import load_circuit
-from ..validation import convert_mvd3_to_morphs_df
-from ..validation import parse_log
-from ..validation import plot_collage
-from ..validation import plot_density_profiles
-from ..validation import plot_morphometrics
-from ..validation import plot_path_distance_fits
-from ..validation import plot_scale_statistics
-from ..validation import VacuumCircuit
-from .circuit import CreateAtlasLayerAnnotations
-from .circuit import CreateAtlasPlanes
-from .config import CircuitConfig
-from .config import MorphsDfLocalTarget
-from .config import PathConfig
-from .config import RunnerConfig
-from .config import SynthesisConfig
-from .config import ValidationConfig
-from .config import ValidationLocalTarget
-from .luigi_tools import BoolParameter
-from .luigi_tools import copy_params
-from .luigi_tools import ParamLink
-from .luigi_tools import WorkflowError
-from .luigi_tools import WorkflowTask
-from .synthesis import AddScalingRulesToParameters
-from .synthesis import ApplySubstitutionRules
-from .synthesis import BuildMorphsDF
-from .synthesis import BuildSynthesisDistributions
-from .synthesis import Synthesize
-from .vacuum_synthesis import VacuumSynthesize
+from morphval import validation_main as morphval_validation
+from synthesis_workflow.tools import load_circuit
+from synthesis_workflow.validation import convert_mvd3_to_morphs_df
+from synthesis_workflow.validation import parse_log
+from synthesis_workflow.validation import plot_collage
+from synthesis_workflow.validation import plot_density_profiles
+from synthesis_workflow.validation import plot_morphometrics
+from synthesis_workflow.validation import plot_path_distance_fits
+from synthesis_workflow.validation import plot_scale_statistics
+from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
+from synthesis_workflow.validation import VacuumCircuit
+from synthesis_workflow.tasks.circuit import CreateAtlasLayerAnnotations
+from synthesis_workflow.tasks.circuit import CreateAtlasPlanes
+from synthesis_workflow.tasks.config import CircuitConfig
+from synthesis_workflow.tasks.config import MorphsDfLocalTarget
+from synthesis_workflow.tasks.config import PathConfig
+from synthesis_workflow.tasks.config import RunnerConfig
+from synthesis_workflow.tasks.config import SynthesisConfig
+from synthesis_workflow.tasks.config import ValidationConfig
+from synthesis_workflow.tasks.config import ValidationLocalTarget
+from synthesis_workflow.tasks.luigi_tools import BoolParameter
+from synthesis_workflow.tasks.luigi_tools import copy_params
+from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import WorkflowError
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.synthesis import AddScalingRulesToParameters
+from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
+from synthesis_workflow.tasks.synthesis import BuildMorphsDF
+from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
+from synthesis_workflow.tasks.synthesis import Synthesize
+from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
 
 
 L = logging.getLogger(__name__)
@@ -88,7 +92,7 @@ class PlotMorphometrics(WorkflowTask):
     config_features = luigi.DictParameter(default=None)
     morphometrics_path = luigi.Parameter(default="morphometrics")
     base_key = luigi.Parameter(default="repaired_morphology_path")
-    comp_key = luigi.Parameter(default="synth_morphology_path")
+    comp_key = luigi.Parameter(default=SYNTH_MORPHOLOGY_PATH)
     base_label = luigi.Parameter(default="bio")
     comp_label = luigi.Parameter(default="synth")
     normalize = BoolParameter()
@@ -425,6 +429,87 @@ class PlotPathDistanceFits(WorkflowTask):
             self.outlier_percentage,
             self.nb_jobs,
         )
+
+    def output(self):
+        """"""
+        return ValidationLocalTarget(self.output_path)
+
+
+@copy_params(
+    mtypes=ParamLink(SynthesisConfig),
+    morphology_path=ParamLink(PathConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+)
+class MorphologyValidationReports(WorkflowTask):
+    """Create MorphVal reports.
+
+    Args:
+        output_path (str): path to the output file
+        mtypes (list(str)): mtypes to plot
+        morphology_path (str): column name to use in the DF from ApplySubstitutionRules
+        outlier_percentage (int): percentage from which the outliers are removed
+        nb_jobs (int): number of jobs
+    """
+
+    config_path = luigi.OptionalParameter(default=None)
+    output_path = luigi.Parameter(default="morphology_validation_reports")
+    cell_figure_count = luigi.IntParameter(
+        default=10, description="Number of example cells to show"
+    )
+    bio_compare = BoolParameter(
+        default=False, description="Use the bio compare template"
+    )
+
+    def requires(self):
+        """"""
+        return {
+            "ref": ApplySubstitutionRules(),
+            "test": ConvertMvd3(),
+        }
+
+    def run(self):
+        """"""
+        L.debug("Morphology validation output path = %s", self.output().path)
+
+        ref_morphs_df = pd.read_csv(self.input()["ref"].path)
+        test_morphs_df = pd.read_csv(self.input()["test"].path)
+
+        if self.mtypes is not None:
+            ref_morphs_df = ref_morphs_df.loc[ref_morphs_df["mtype"].isin(self.mtypes)]
+            test_morphs_df = test_morphs_df.loc[
+                test_morphs_df["mtype"].isin(self.mtypes)
+            ]
+
+        if self.config_path is not None:
+            with open(self.config_path) as f:
+                config = yaml.safe_load(f)
+        else:
+            with pkg_resources.resource_stream(
+                "synthesis_workflow", "defaults/morphval_default_config.yaml"
+            ) as f:
+                default_config = yaml.safe_load(f)
+                config = {
+                    mtype: default_config["config"]["mtype"]
+                    for mtype in ref_morphs_df["mtype"].unique()
+                }
+
+        ref_morphs_df = ref_morphs_df[["name", "mtype", self.morphology_path]].rename(
+            columns={self.morphology_path: "filepath"}
+        )
+        test_morphs_df = test_morphs_df[
+            ["name", "mtype", SYNTH_MORPHOLOGY_PATH]
+        ].rename(columns={SYNTH_MORPHOLOGY_PATH: "filepath"})
+
+        validator = morphval_validation.Validation(
+            config,
+            test_morphs_df,
+            ref_morphs_df,
+            self.output().ppath,
+            create_timestamp_dir=False,
+            notebook=False,
+        )
+        validator.validate_features(cell_figure_count=self.cell_figure_count)
+        validator.write_report(validation_report=(not self.bio_compare))
 
     def output(self):
         """"""

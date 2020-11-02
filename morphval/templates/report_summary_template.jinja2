@@ -1,0 +1,75 @@
+<html>
+<head>
+  <title> {{ output_title }} </title>
+
+  <style>
+    {% include 'style.css' %}
+  </style>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.3.0/dist/bootstrap-toc.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+  <script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.3.0/dist/bootstrap-toc.min.js"></script>
+</head>
+
+<body class="from-beginning">
+    <hr width={{ line_width }}>
+    <h1><center id="{{ mtype }}"> {{ mtype }} - Validation Report Summary</center></h1>
+
+    <!-- Carousel template -->
+      <div class="col-sm-6 carousel-template" hidden>
+        <h3><center class="carousel-title"> Test Cells </center></h3>
+        <div class="section-carousel-container">
+          <div class="left-arrow carousel-arrow">
+            <svg class="svg-arrow" viewBox="0 0 50 80" xml:space="preserve">
+              <polyline fill="none" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" points="45,75 5,40 45,5"></polyline>
+            </svg>
+          </div>
+          <div class="figure img-container"></div>
+          <div class="right-arrow carousel-arrow">
+            <svg class="svg-arrow" viewBox="0 0 50 80" xml:space="preserve">
+              <polyline fill="none" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" points="5,5 45,40 5,75 "></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+    <!-- END Carousel template-->
+    <!-- images for carousel -->
+    <div class="row image-carousel-container">
+      <div class="ref-cell-files" hidden>{{ ref_cell_files['full_morph'] | tojson }}</div>
+      <div class="test-cell-files" hidden>{{ test_cell_files['full_morph'] | tojson }}</div>
+    </div>
+    <!-- END images for carousel -->
+
+  {% if validation_report %}
+  <!-- This loops over the components (Neurite Types) of a single mtype -->
+  <div class="table-responsive"> <center>
+    <table class="table table-striped" style="width:80%">
+      <thead>
+        <tr>
+          <th> Component </th>
+          <th>  </th>
+          <th> Percentage </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for component in mtype_results | sort %}
+        <tr>
+          <th> {{ templateText[component]['name'] }} </th>
+          <td> {{ templateText[component]['num_pass'] }}
+            out of {{ templateText[component]['num_features'] }} validations PASS
+          </td>
+          <td> {{ templateText[component]['pass_percentage'] }} % </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table> </center>
+  </div>
+  {% endif %}
+
+  <script>
+    {% include 'scripts.js' %}
+  </script>
+</body>
+</html>
