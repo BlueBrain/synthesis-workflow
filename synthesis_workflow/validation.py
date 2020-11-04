@@ -716,14 +716,13 @@ def parse_log(
 ):
     """Parse log file and return a DataFrame with data"""
     # pylint: disable=too-many-locals
-    # TODO: update this when region-grower is ready
 
     def _search(pattern, line, data):
         group = re.search(pattern, line)
         if group:
             groups = group.groups()
             new_data = json.loads(groups[1])
-            new_data["worker_task_id"] = groups[0]
+            new_data["worker_task_id"] = int(groups[0])
             data.append(new_data)
 
     # List log files
@@ -746,7 +745,6 @@ def parse_log(
         _search(default_scale_regex, line, default_scale_data)
         _search(target_scale_regex, line, target_scale_data)
         _search(neurite_hard_limit_regex, line, neurite_hard_limit_data)
-
     # Format data
     neuron_type_position_df = pd.DataFrame(neuron_type_position_data)
     default_scale_df = pd.DataFrame(default_scale_data)
@@ -782,32 +780,30 @@ def parse_log(
 
     # Merge data
     result_data = neuron_type_position_df
-    result_data = pd.merge(
-        result_data, default_min, on="worker_task_id", suffixes=("", "_default_min")
+    result_data = result_data.merge(
+        default_min, how="left", on="worker_task_id", suffixes=("", "_default_min")
     )
-    result_data = pd.merge(
-        result_data, default_max, on="worker_task_id", suffixes=("", "_default_max")
+    result_data = result_data.merge(
+        default_max, how="left", on="worker_task_id", suffixes=("", "_default_max")
     )
-    result_data = pd.merge(
-        result_data, target_min, on="worker_task_id", suffixes=("", "_target_min")
+    result_data = result_data.merge(
+        target_min, how="left", on="worker_task_id", suffixes=("", "_target_min")
     )
-    result_data = pd.merge(
-        result_data, target_max, on="worker_task_id", suffixes=("", "_target_max")
+    result_data = result_data.merge(
+        target_max, how="left", on="worker_task_id", suffixes=("", "_target_max")
     )
-    result_data = pd.merge(
-        result_data,
+    result_data = result_data.merge(
         neurite_hard_min,
+        how="left",
         on="worker_task_id",
         suffixes=("", "_hard_limit_min"),
     )
-    result_data = pd.merge(
-        result_data,
+    return result_data.merge(
         neurite_hard_max,
+        how="left",
         on="worker_task_id",
         suffixes=("", "_hard_limit_max"),
     )
-
-    return result_data
 
 
 def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
@@ -824,7 +820,7 @@ def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
     filename = Path(output_dir) / "statistics.pdf"
     with PdfPages(filename) as pdf:
         if scale_data.empty:
-            fig = plt.figure()
+            fig = plt.figure(figsize=(10, 20))
             ax = plt.gca()
             ax.text(
                 0.5,
@@ -837,14 +833,17 @@ def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
             with DisableLogger():
                 pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
             plt.close(fig)
+
         if mtypes is None:
             mtypes = scale_data["mtype"].unique().tolist()
-        for col in scale_data.columns:
-            if col in ["worker_task_id", "mtype", "x", "y", "z"]:
-                continue
-            ax = scale_data[["mtype", col]].boxplot(by="mtype")
 
-            fig = ax.figure
+        for col in scale_data.drop(
+            columns=["worker_task_id", "mtype", "x", "y", "z"], errors="ignore"
+        ).columns:
+            fig = plt.figure(figsize=(10, 20))
+            ax = plt.gca()
+            scale_data[["mtype", col]].boxplot(by="mtype", vert=False, ax=ax)
+
             ax.grid(True)
             fig.suptitle("")
             with DisableLogger():

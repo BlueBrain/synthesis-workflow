@@ -25,6 +25,7 @@ from .config import SynthesisConfig
 from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
 from .luigi_tools import ParamLink
+from .luigi_tools import RatioParameter
 from .luigi_tools import WorkflowTask
 from .utils import GetSynthesisInputs
 
@@ -163,13 +164,9 @@ class BuildCircuit(WorkflowTask):
         default="cell_composition.yaml",
         description="path to the cell composition file (YAML)",
     )
-    density_factor = luigi.NumericalParameter(
+    density_factor = RatioParameter(
         default=0.01,
-        var_type=float,
-        min_value=0,
-        max_value=1,
         left_op=luigi.parameter.operator.lt,
-        right_op=luigi.parameter.operator.le,
         description="The density of positions generated from the atlas",
     )
     seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")

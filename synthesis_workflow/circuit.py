@@ -151,8 +151,8 @@ def slice_circuit(input_mvd3, output_mvd3, slicer):
     """
     cells = CellCollection.load_mvd3(input_mvd3)
     sliced_cells = slicer(cells.as_dataframe())
-    sliced_cells.reset_index(inplace=True)
-    sliced_cells.index += 1
+    sliced_cells.reset_index(inplace=True, drop=True)
+    sliced_cells.index += 1  # this is to match CellCollection index from 1
     CellCollection.from_dataframe(sliced_cells).save_mvd3(output_mvd3)
     return sliced_cells
 

@@ -34,6 +34,7 @@ from .config import SynthesisLocalTarget
 from .luigi_tools import BoolParameter
 from .luigi_tools import copy_params
 from .luigi_tools import ParamLink
+from .luigi_tools import RatioParameter
 from .luigi_tools import WorkflowTask
 from .utils import GetSynthesisInputs
 
@@ -75,6 +76,9 @@ class BuildMorphsDF(WorkflowTask):
 
     def run(self):
         """"""
+
+        L.debug("Build morphology dataframe from %s", self.neurondb_path)
+
         mtype_taxonomy_path = self.input().ppath / self.mtype_taxonomy_path
         morphs_df = load_neurondb_to_dataframe(
             self.neurondb_path,
@@ -251,8 +255,9 @@ class BuildAxonMorphologies(WorkflowTask):
         axon_morphs_path (str): path to save .tsv file with list of morphologies for axon grafting
         annotations_path (str): path to annotations file used by
             ``placementAlgorithm.choose_morphologies``, if None, random axons will be choosen
-        neurondb_dat_path (str): path to neurondb.dat file for
+        neurondb_basename (str): basename of the neurondb file for
             ``placementAlgorithm.choose_morphologies``
+        axon_cells_path (str): path to the directory where cells with axons are located
         placement_rules_path (str): see ``placementAlgorithm.choose_morphologies``
         placement_alpha (float): see ``placementAlgorithm.choose_morphologies``
         placement_scales (list): see ``placementAlgorithm.choose_morphologies``
@@ -261,7 +266,13 @@ class BuildAxonMorphologies(WorkflowTask):
 
     axon_morphs_path = luigi.Parameter(default="axon_morphs.tsv")
     annotations_path = luigi.Parameter(default=None)
-    neurondb_dat_path = luigi.Parameter(description="path to the neurondb.dat file")
+    neurondb_basename = luigi.Parameter(
+        default="neuronDB",
+        description="base name of the neurondb file (without file extension)",
+    )
+    axon_cells_path = luigi.Parameter(
+        description="path to the directory where cells with axons are located"
+    )
     placement_rules_path = luigi.Parameter(default=None)
     placement_alpha = luigi.FloatParameter(default=1.0)
     placement_scales = luigi.ListParameter(default=None)
@@ -271,39 +282,47 @@ class BuildAxonMorphologies(WorkflowTask):
     def requires(self):
         """"""
         tasks = {"circuit": SliceCircuit()}
-        if self.annotations_path is None:
-            tasks.update(
-                {
-                    "axon_cells": BuildAxonMorphsDF(
-                        neurondb_path=Path(self.neurondb_dat_path).parent
-                        / "neuronDB.xml"
-                    )
-                }
-            )
+        tasks["axon_cells"] = BuildAxonMorphsDF(
+            neurondb_path=(
+                Path(self.axon_cells_path) / self.neurondb_basename
+            ).with_suffix(".xml"),
+            morphology_dirs={"clone_path": self.axon_cells_path},
+        )
         return tasks
 
     def run(self):
         """"""
 
         ensure_dir(self.output().path)
+        if self.annotations_path is None:
+            neurondb_path = None
+            atlas_path = None
+            axon_cells = self.input()["axon_cells"].path
+        else:
+            axon_cells = None
+            neurondb_path = (
+                Path(self.axon_cells_path) / self.neurondb_basename
+            ).with_suffix(".dat")
 
-        atlas_path = CircuitConfig().atlas_path
         if any(
             [
                 self.annotations_path is None,
                 self.placement_rules_path is None,
-                self.neurondb_dat_path is None,
+                neurondb_path is None,
+                axon_cells is not None,
             ]
         ):
             atlas_path = None
+        else:
+            atlas_path = CircuitConfig().atlas_path
 
         create_axon_morphologies_tsv(
             self.input()["circuit"].path,
-            self.input()["axon_cells"].path if "axon_cells" in self.input() else None,
+            morphs_df_path=axon_cells,
             atlas_path=atlas_path,
             annotations_path=self.annotations_path,
             rules_path=self.placement_rules_path,
-            morphdb_path=self.neurondb_dat_path,
+            morphdb_path=neurondb_path,
             alpha=self.placement_alpha,
             scales=self.placement_scales,
             seed=self.placement_seed,
@@ -341,6 +360,11 @@ class Synthesize(WorkflowTask):
         description="path to the apical points file (YAML)",
     )
     debug_region_grower_scales = BoolParameter(default=False)
+    max_drop_ratio = RatioParameter(
+        default=0.1,
+        description="The maximum drop ratio",
+    )
+    seed = luigi.IntParameter(default=0, description="pseudo-random generator seed")
 
     def requires(self):
         """"""
@@ -370,8 +394,8 @@ class Synthesize(WorkflowTask):
         # Get base-morph-dir argument value
         if self.axon_morphs_base_dir is None:
             axon_morphs_base_dir = get_axon_base_dir(
-                pd.read_csv(self.input()["substituted_cells"].path),
-                self.morphology_path,
+                pd.read_csv(self.requires()["axons"].input()["axon_cells"].path),
+                "clone_path",
             )
         else:
             axon_morphs_base_dir = self.axon_morphs_base_dir
@@ -392,8 +416,8 @@ class Synthesize(WorkflowTask):
             "no_mpi": True,
             "morph-axon": axon_morphs_path,
             "base-morph-dir": axon_morphs_base_dir,
-            "max_drop_ratio": str(0.1),
-            "seed": str(0),
+            "max_drop_ratio": self.max_drop_ratio,
+            "seed": self.seed,
         }
 
         run_synthesize_morphologies(

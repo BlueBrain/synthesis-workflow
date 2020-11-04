@@ -331,11 +331,12 @@ class PlotScales(WorkflowTask):
 
     def run(self):
         """"""
+        morphs_df = pd.read_csv(self.input().path)
         if (
             self.mtypes is None
             or self.mtypes[0] == "all"  # pylint: disable=unsubscriptable-object
         ):
-            mtypes = pd.read_csv(self.input().path).mtype.unique()
+            mtypes = morphs_df.mtype.unique()
         else:
             mtypes = self.mtypes
 
@@ -357,6 +358,21 @@ class PlotScales(WorkflowTask):
             self.target_scale_regex,
             self.neurite_hard_limit_regex,
         )
+        scale_data.sort_values("worker_task_id", inplace=True)
+        scale_data.set_index("worker_task_id", inplace=True)
+
+        morphs_df["x"] = morphs_df["x"].round(4)
+        morphs_df["y"] = morphs_df["y"].round(4)
+        morphs_df["z"] = morphs_df["z"].round(4)
+        scale_data["x"] = scale_data["x"].round(4)
+        scale_data["y"] = scale_data["y"].round(4)
+        scale_data["z"] = scale_data["z"].round(4)
+        failed = scale_data.loc[
+            ~scale_data.x.isin(morphs_df.x)
+            & ~scale_data.y.isin(morphs_df.y)
+            & ~scale_data.z.isin(morphs_df.z)
+        ]
+        L.info("Failed cells are %s", failed)
         plot_scale_statistics(
             mtypes,
             scale_data,

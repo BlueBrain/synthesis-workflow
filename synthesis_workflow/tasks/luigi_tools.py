@@ -160,6 +160,32 @@ class ExtParameter(luigi.Parameter):
         return match.group(1)
 
 
+class RatioParameter(luigi.NumericalParameter):
+    """Class to parse ratio parameters
+
+    The argument must be a float between 0 and 1.
+    The operators to include or exclude the boundaries can be set with 'left_op' and
+    'right_op' parameters. Defaults operators include the boundaries.
+    """
+
+    def __init__(
+        self,
+        *args,
+        left_op=luigi.parameter.operator.le,
+        right_op=luigi.parameter.operator.le,
+        **kwargs
+    ):
+        super().__init__(
+            *args,
+            min_value=0,
+            max_value=1,
+            var_type=float,
+            left_op=left_op,
+            right_op=right_op,
+            **kwargs
+        )
+
+
 class OptionalIntParameter(luigi.OptionalParameter, luigi.IntParameter):
     """Class to parse optional int parameters"""
 

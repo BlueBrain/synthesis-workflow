@@ -263,7 +263,6 @@ def run_master(
 
     # Build argument class instance
     args = SynthArgs(**underscored)
-
     L.info("Run %s with the following arguments: %s", master_cls.__name__, args)
 
     # Setup the worker
@@ -291,7 +290,8 @@ def run_master(
             n_jobs=nb_jobs,
             verbose=verbose,
             backend="multiprocessing",
-            batch_size=int(len(task_ids) / (cpu_count() if nb_jobs == 1 else nb_jobs)),
+            batch_size=1
+            + int(len(task_ids) / (cpu_count() if nb_jobs == -1 else nb_jobs)),
         )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in task_ids)
 
         # Gather the results

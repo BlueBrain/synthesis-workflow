@@ -162,7 +162,7 @@ def get_axon_base_dir(morphs_df, col_name="morphology_path"):
 # pylint: disable=too-many-arguments, too-many-locals
 def create_axon_morphologies_tsv(
     circuit_path,
-    morphs_df_path,
+    morphs_df_path=None,
     atlas_path=None,
     annotations_path=None,
     rules_path=None,
@@ -184,22 +184,22 @@ def create_axon_morphologies_tsv(
     Returns:
         str: path to base directory of morphologies for axon grafting
     """
-    check_placement_params = [
-        atlas_path is not None,
-        annotations_path is not None,
-        rules_path is not None,
-    ]
-    if any(check_placement_params) and not all(check_placement_params):
+    check_placement_params = {
+        "morphs_df_path": morphs_df_path is None,
+        "atlas_path": atlas_path is not None,
+        "annotations_path": annotations_path is not None,
+        "rules_path": rules_path is not None,
+        "morphdb_path": morphdb_path is not None,
+    }
+    if any(check_placement_params.values()) and not all(
+        check_placement_params.values()
+    ):
         raise ValueError(
-            "Either 0 or all the following parameter should be None: %s"
-            % [
-                "atlas_path",
-                "annotations_path",
-                "rules_path",
-            ]
+            "Either 'morphs_df_path' or all the following parameter should be None: %s"
+            % [k for k in check_placement_params if k != "morphs_df_path"]
         )
 
-    if all(check_placement_params):
+    if all(check_placement_params.values()):
         L.info("Use placement algorithm for axons")
 
         atlas = Atlas.open(atlas_path)
@@ -228,7 +228,7 @@ def create_axon_morphologies_tsv(
         cells_df = worker.cells.properties
         axon_morphs = pd.DataFrame()
 
-        batch_size = int(
+        batch_size = 1 + int(
             len(cells_df.index) / (nb_jobs if nb_jobs > 0 else cpu_count())
         )
         L.info("Using batch_size of %s", batch_size)
