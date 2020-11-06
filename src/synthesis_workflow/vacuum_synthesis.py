@@ -13,9 +13,9 @@ from neurom import viewer
 from tns import NeuronGrower
 from diameter_synthesis import build_diameters
 
-from . import STR_TO_TYPES
-from .synthesis import get_max_len
-from .utils import DisableLogger
+from synthesis_workflow import STR_TO_TYPES
+from synthesis_workflow.synthesis import get_max_len
+from synthesis_workflow.utils import DisableLogger
 
 
 def _grow_morphology(

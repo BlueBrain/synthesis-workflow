@@ -29,9 +29,9 @@ from tns import extract_input
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
-from . import STR_TO_TYPES
-from .fit_utils import fit_path_distance_to_extent
-from .tools import run_master
+from synthesis_workflow import STR_TO_TYPES
+from synthesis_workflow.fit_utils import fit_path_distance_to_extent
+from synthesis_workflow.tools import run_master
 
 
 L = logging.getLogger(__name__)

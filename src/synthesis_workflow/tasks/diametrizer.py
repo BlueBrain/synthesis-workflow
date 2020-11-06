@@ -19,14 +19,14 @@ from morphio.mut import Morphology
 from neurom import load_neurons
 from tqdm import tqdm
 
-from ..tools import update_morphs_df
-from .config import DiametrizerConfig
-from .config import OutputLocalTarget
-from .config import RunnerConfig
-from .luigi_tools import BoolParameter
-from .luigi_tools import copy_params
-from .luigi_tools import ParamLink
-from .luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.config import DiametrizerConfig
+from synthesis_workflow.tasks.config import OutputLocalTarget
+from synthesis_workflow.tasks.config import RunnerConfig
+from synthesis_workflow.tasks.luigi_tools import BoolParameter
+from synthesis_workflow.tasks.luigi_tools import copy_params
+from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tools import update_morphs_df
 
 
 matplotlib.use("Agg")

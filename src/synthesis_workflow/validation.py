@@ -39,13 +39,13 @@ from tns import NeuronGrower
 from voxcell import CellCollection
 from voxcell.exceptions import VoxcellError
 
-from .circuit import get_cells_between_planes
-from .fit_utils import clean_outliers
-from .fit_utils import get_path_distances
-from .fit_utils import get_path_distance_from_extent
-from .fit_utils import get_projections
-from .tools import ensure_dir
-from .utils import DisableLogger
+from synthesis_workflow.circuit import get_cells_between_planes
+from synthesis_workflow.fit_utils import clean_outliers
+from synthesis_workflow.fit_utils import get_path_distances
+from synthesis_workflow.fit_utils import get_path_distance_from_extent
+from synthesis_workflow.fit_utils import get_projections
+from synthesis_workflow.tools import ensure_dir
+from synthesis_workflow.utils import DisableLogger
 
 
 L = logging.getLogger(__name__)

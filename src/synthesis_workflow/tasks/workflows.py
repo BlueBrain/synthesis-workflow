@@ -2,20 +2,20 @@
 import luigi
 import pandas as pd
 
-from ..validation import plot_morphometrics
-from .config import ValidationLocalTarget
-from .luigi_tools import BoolParameter
-from .luigi_tools import WorkflowTask
-from .luigi_tools import WorkflowWrapperTask
-from .synthesis import ApplySubstitutionRules
-from .utils import GetSynthesisInputs
-from .vacuum_synthesis import PlotVacuumMorphologies
-from .validation import MorphologyValidationReports
-from .validation import PlotCollage
-from .validation import PlotDensityProfiles
-from .validation import PlotMorphometrics
-from .validation import PlotPathDistanceFits
-from .validation import PlotScales
+from synthesis_workflow.tasks.config import ValidationLocalTarget
+from synthesis_workflow.tasks.luigi_tools import BoolParameter
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.luigi_tools import WorkflowWrapperTask
+from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
+from synthesis_workflow.tasks.utils import GetSynthesisInputs
+from synthesis_workflow.tasks.vacuum_synthesis import PlotVacuumMorphologies
+from synthesis_workflow.tasks.validation import MorphologyValidationReports
+from synthesis_workflow.tasks.validation import PlotCollage
+from synthesis_workflow.tasks.validation import PlotDensityProfiles
+from synthesis_workflow.tasks.validation import PlotMorphometrics
+from synthesis_workflow.tasks.validation import PlotPathDistanceFits
+from synthesis_workflow.tasks.validation import PlotScales
+from synthesis_workflow.validation import plot_morphometrics
 
 
 class ValidateSynthesis(WorkflowWrapperTask):

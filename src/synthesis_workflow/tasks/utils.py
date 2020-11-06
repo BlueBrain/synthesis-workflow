@@ -6,9 +6,9 @@ from tempfile import TemporaryDirectory
 import luigi
 from git import Repo
 
-from .config import PathConfig
-from .luigi_tools import OutputLocalTarget
-from .luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.config import PathConfig
+from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 
 
 class GitClone(WorkflowTask):

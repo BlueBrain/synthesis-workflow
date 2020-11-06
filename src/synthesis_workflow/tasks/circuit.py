@@ -9,24 +9,24 @@ from voxcell import VoxelData
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
 
-from ..circuit import build_circuit
-from ..circuit import circuit_slicer
-from ..circuit import create_planes
-from ..circuit import halve_atlas
-from ..circuit import slice_circuit
-from ..tools import ensure_dir
-from ..tools import get_layer_tags
-from .config import AtlasLocalTarget
-from .config import CircuitConfig
-from .config import CircuitLocalTarget
-from .config import PathConfig
-from .config import SynthesisConfig
-from .luigi_tools import BoolParameter
-from .luigi_tools import copy_params
-from .luigi_tools import ParamLink
-from .luigi_tools import RatioParameter
-from .luigi_tools import WorkflowTask
-from .utils import GetSynthesisInputs
+from synthesis_workflow.circuit import build_circuit
+from synthesis_workflow.circuit import circuit_slicer
+from synthesis_workflow.circuit import create_planes
+from synthesis_workflow.circuit import halve_atlas
+from synthesis_workflow.circuit import slice_circuit
+from synthesis_workflow.tasks.config import AtlasLocalTarget
+from synthesis_workflow.tasks.config import CircuitConfig
+from synthesis_workflow.tasks.config import CircuitLocalTarget
+from synthesis_workflow.tasks.config import PathConfig
+from synthesis_workflow.tasks.config import SynthesisConfig
+from synthesis_workflow.tasks.luigi_tools import BoolParameter
+from synthesis_workflow.tasks.luigi_tools import copy_params
+from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import RatioParameter
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.utils import GetSynthesisInputs
+from synthesis_workflow.tools import ensure_dir
+from synthesis_workflow.tools import get_layer_tags
 
 
 class CreateAtlasLayerAnnotations(WorkflowTask):

@@ -7,19 +7,19 @@ import luigi
 import morphio
 import pandas as pd
 
-from ..tools import ensure_dir
-from ..vacuum_synthesis import grow_vacuum_morphologies
-from ..vacuum_synthesis import plot_vacuum_morphologies
-from .config import MorphsDfLocalTarget
-from .config import RunnerConfig
-from .config import SynthesisConfig
-from .config import SynthesisLocalTarget
-from .config import ValidationLocalTarget
-from .luigi_tools import copy_params
-from .luigi_tools import ParamLink
-from .luigi_tools import WorkflowTask
-from .synthesis import BuildSynthesisDistributions
-from .synthesis import BuildSynthesisParameters
+from synthesis_workflow.tasks.config import MorphsDfLocalTarget
+from synthesis_workflow.tasks.config import RunnerConfig
+from synthesis_workflow.tasks.config import SynthesisConfig
+from synthesis_workflow.tasks.config import SynthesisLocalTarget
+from synthesis_workflow.tasks.config import ValidationLocalTarget
+from synthesis_workflow.tasks.luigi_tools import copy_params
+from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
+from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
+from synthesis_workflow.tools import ensure_dir
+from synthesis_workflow.vacuum_synthesis import grow_vacuum_morphologies
+from synthesis_workflow.vacuum_synthesis import plot_vacuum_morphologies
 
 
 morphio.set_maximum_warnings(0)

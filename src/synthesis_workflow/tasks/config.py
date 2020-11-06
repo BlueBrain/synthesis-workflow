@@ -4,9 +4,9 @@ import warnings
 
 import luigi
 
-from .luigi_tools import ExtParameter
-from .luigi_tools import OptionalIntParameter
-from .luigi_tools import OutputLocalTarget
+from synthesis_workflow.tasks.luigi_tools import ExtParameter
+from synthesis_workflow.tasks.luigi_tools import OptionalIntParameter
+from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
 
 
 # Add some warning filters

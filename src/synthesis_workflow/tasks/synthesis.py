@@ -13,30 +13,30 @@ from diameter_synthesis.build_models import build as build_diameter_models
 from region_grower.utils import NumpyEncoder
 from tns import extract_input
 
-from ..synthesis import add_scaling_rules_to_parameters
-from ..synthesis import apply_substitutions
-from ..synthesis import build_distributions
-from ..synthesis import create_axon_morphologies_tsv
-from ..synthesis import get_axon_base_dir
-from ..synthesis import get_neurite_types
-from ..synthesis import rescale_morphologies
-from ..synthesis import run_synthesize_morphologies
-from ..tools import ensure_dir
-from ..tools import load_neurondb_to_dataframe
-from .circuit import SliceCircuit
-from .config import CircuitConfig
-from .config import DiametrizerConfig
-from .config import MorphsDfLocalTarget
-from .config import PathConfig
-from .config import RunnerConfig
-from .config import SynthesisConfig
-from .config import SynthesisLocalTarget
-from .luigi_tools import BoolParameter
-from .luigi_tools import copy_params
-from .luigi_tools import ParamLink
-from .luigi_tools import RatioParameter
-from .luigi_tools import WorkflowTask
-from .utils import GetSynthesisInputs
+from synthesis_workflow.synthesis import add_scaling_rules_to_parameters
+from synthesis_workflow.synthesis import apply_substitutions
+from synthesis_workflow.synthesis import build_distributions
+from synthesis_workflow.synthesis import create_axon_morphologies_tsv
+from synthesis_workflow.synthesis import get_axon_base_dir
+from synthesis_workflow.synthesis import get_neurite_types
+from synthesis_workflow.synthesis import rescale_morphologies
+from synthesis_workflow.synthesis import run_synthesize_morphologies
+from synthesis_workflow.tasks.circuit import SliceCircuit
+from synthesis_workflow.tasks.config import CircuitConfig
+from synthesis_workflow.tasks.config import DiametrizerConfig
+from synthesis_workflow.tasks.config import MorphsDfLocalTarget
+from synthesis_workflow.tasks.config import PathConfig
+from synthesis_workflow.tasks.config import RunnerConfig
+from synthesis_workflow.tasks.config import SynthesisConfig
+from synthesis_workflow.tasks.config import SynthesisLocalTarget
+from synthesis_workflow.tasks.luigi_tools import BoolParameter
+from synthesis_workflow.tasks.luigi_tools import copy_params
+from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import RatioParameter
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.utils import GetSynthesisInputs
+from synthesis_workflow.tools import ensure_dir
+from synthesis_workflow.tools import load_neurondb_to_dataframe
 
 
 morphio.set_maximum_warnings(0)
