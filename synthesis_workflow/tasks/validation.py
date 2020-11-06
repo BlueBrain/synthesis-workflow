@@ -474,11 +474,14 @@ class MorphologyValidationReports(WorkflowTask):
         ref_morphs_df = pd.read_csv(self.input()["ref"].path)
         test_morphs_df = pd.read_csv(self.input()["test"].path)
 
-        if self.mtypes is not None:
-            ref_morphs_df = ref_morphs_df.loc[ref_morphs_df["mtype"].isin(self.mtypes)]
-            test_morphs_df = test_morphs_df.loc[
-                test_morphs_df["mtype"].isin(self.mtypes)
-            ]
+        if self.mtypes is None or "all" in self.mtypes:
+            mtypes = None
+        else:
+            mtypes = self.mtypes
+
+        if mtypes is not None:
+            ref_morphs_df = ref_morphs_df.loc[ref_morphs_df["mtype"].isin(mtypes)]
+            test_morphs_df = test_morphs_df.loc[test_morphs_df["mtype"].isin(mtypes)]
 
         if self.config_path is not None:
             with open(self.config_path) as f:
@@ -508,7 +511,9 @@ class MorphologyValidationReports(WorkflowTask):
             create_timestamp_dir=False,
             notebook=False,
         )
-        validator.validate_features(cell_figure_count=self.cell_figure_count)
+        validator.validate_features(
+            cell_figure_count=self.cell_figure_count, nb_jobs=self.nb_jobs
+        )
         validator.write_report(validation_report=(not self.bio_compare))
 
     def output(self):
