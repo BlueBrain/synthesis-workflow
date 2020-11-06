@@ -98,24 +98,14 @@ def slice_n_cells(cells, n_cells, random_state=0):
     return sampled_cells
 
 
-def is_between_planes(point, plane_left, plane_right):
-    """Check if a point is between two planes in equation representation."""
-    eq_left = plane_left.get_equation()
-    eq_right = plane_right.get_equation()
-    return (eq_left[:3].dot(point) > eq_left[3]) & (
-        eq_right[:3].dot(point) < eq_right[3]
-    )
-
-
 def get_cells_between_planes(cells, plane_left, plane_right):
     """Get cells gids between two planes in equation representation."""
-    cells["selected"] = cells[["x", "y", "z"]].apply(
-        lambda soma_position: is_between_planes(
-            soma_position.to_numpy(), plane_left, plane_right
-        ),
-        axis=1,
-    )
-    return cells[cells.selected].drop("selected", axis=1)
+    eq_left = plane_left.get_equation()
+    eq_right = plane_right.get_equation()
+    left = np.einsum("j,ij", eq_left[:3], cells[["x", "y", "z"]].values)
+    right = np.einsum("j,ij", eq_right[:3], cells[["x", "y", "z"]].values)
+    selected = (left > eq_left[3]) & (right < eq_right[3])
+    return cells.loc[selected]
 
 
 def circuit_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
