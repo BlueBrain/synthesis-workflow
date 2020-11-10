@@ -6,8 +6,9 @@ import luigi
 import pandas as pd
 import pkg_resources
 import yaml
-from voxcell import VoxelData
 from atlas_analysis.planes.planes import load_planes_centerline
+from neurom.view import view
+from voxcell import VoxelData
 
 from morphval import validation_main as morphval_validation
 from synthesis_workflow.tools import load_circuit
@@ -31,6 +32,7 @@ from synthesis_workflow.tasks.config import ValidationConfig
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import copy_params
+from synthesis_workflow.tasks.luigi_tools import OptionalNumericalParameter
 from synthesis_workflow.tasks.luigi_tools import ParamLink
 from synthesis_workflow.tasks.luigi_tools import WorkflowError
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
@@ -203,11 +205,33 @@ class PlotCollage(WorkflowTask):
         nb_jobs (int) : number of joblib workers
         joblib_verbose (int) verbose level of joblib
         dpi (int): dpi for pdf rendering (rasterized)
-
+        realistic_diameters (bool): set or unset realistic diameter when NeuroM plot neurons
+        linewidth (float): linewidth used by NeuroM to plot neurons
+        diameter_scale (float): diameter scale used by NeuroM to plot neurons
     """
 
     collage_base_path = luigi.Parameter(default="collages")
     dpi = luigi.IntParameter(default=1000)
+    realistic_diameters = BoolParameter(
+        default=True,
+        description="Set or unset realistic diameter when NeuroM plot neurons",
+    )
+    linewidth = luigi.NumericalParameter(
+        default=0.1,
+        var_type=float,
+        min_value=0,
+        max_value=float("inf"),
+        left_op=luigi.parameter.operator.lt,
+        description="Linewidth used by NeuroM to plot neurons",
+    )
+    diameter_scale = OptionalNumericalParameter(
+        default=view._DIAMETER_SCALE,  # pylint: disable=protected-access
+        var_type=float,
+        min_value=0,
+        max_value=float("inf"),
+        left_op=luigi.parameter.operator.lt,
+        description="Diameter scale used by NeuroM to plot neurons",
+    )
 
     def requires(self):
         """"""
@@ -228,6 +252,9 @@ class PlotCollage(WorkflowTask):
                 nb_jobs=self.nb_jobs,
                 joblib_verbose=self.joblib_verbose,
                 dpi=self.dpi,
+                realistic_diameters=self.realistic_diameters,
+                linewidth=self.linewidth,
+                diameter_scale=self.diameter_scale,
             )
 
     def output(self):
@@ -240,6 +267,10 @@ class PlotCollage(WorkflowTask):
     joblib_verbose=ParamLink(RunnerConfig),
     collage_base_path=ParamLink(PlotCollage),
     sample=ParamLink(ValidationConfig),
+    dpi=ParamLink(PlotCollage),
+    realistic_diameters=ParamLink(PlotCollage),
+    linewidth=ParamLink(PlotCollage),
+    diameter_scale=ParamLink(PlotCollage),
 )
 class PlotSingleCollage(WorkflowTask):
     """Plot collage for single mtype.
@@ -254,7 +285,6 @@ class PlotSingleCollage(WorkflowTask):
     """
 
     mtype = luigi.Parameter()
-    dpi = luigi.IntParameter(default=1000)
 
     def requires(self):
         """"""
@@ -266,16 +296,27 @@ class PlotSingleCollage(WorkflowTask):
 
     def run(self):
         """"""
+        mvd3_path = self.input()["synthesis"]["out_mvd3"].path
+        morphologies_path = self.input()["synthesis"]["out_morphologies"].path
+        atlas_path = CircuitConfig().atlas_path
+        L.debug("Load circuit mvd3 from %s", mvd3_path)
+        L.debug("Load circuit morphologies from %s", morphologies_path)
+        L.debug("Load circuit atlas from %s", atlas_path)
         circuit = load_circuit(
-            path_to_mvd3=self.input()["synthesis"]["out_mvd3"].path,
-            path_to_morphologies=self.input()["synthesis"]["out_morphologies"].path,
-            path_to_atlas=CircuitConfig().atlas_path,
+            path_to_mvd3=mvd3_path,
+            path_to_morphologies=morphologies_path,
+            path_to_atlas=atlas_path,
         )
 
-        planes = load_planes_centerline(self.input()["planes"].path)["planes"]
-        layer_annotation = VoxelData.load_nrrd(
-            self.input()["layers"]["annotations"].path
-        )
+        planes_path = self.input()["planes"].path
+        L.debug("Load planes from %s", planes_path)
+        planes = load_planes_centerline(planes_path)["planes"]
+
+        layer_annotation_path = self.input()["layers"]["annotations"].path
+        L.debug("Load layer annotations from %s", layer_annotation_path)
+        layer_annotation = VoxelData.load_nrrd(layer_annotation_path)
+
+        L.debug("Plot single collage")
         plot_collage(
             circuit,
             planes,
@@ -286,6 +327,11 @@ class PlotSingleCollage(WorkflowTask):
             nb_jobs=self.nb_jobs,
             joblib_verbose=self.joblib_verbose,
             dpi=self.dpi,
+            plot_neuron_kwargs={
+                "realistic_diameters": self.realistic_diameters,
+                "linewidth": self.linewidth,
+                "diameter_scale": self.diameter_scale,
+            },
         )
 
     def output(self):

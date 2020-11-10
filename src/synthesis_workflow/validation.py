@@ -393,16 +393,39 @@ def plot_cells(
     mtype=None,
     sample=10,
     atlas=None,
+    plot_neuron_kwargs=None,
 ):
     """Plot cells for collage."""
-    cells = circuit.cells.get({"mtype": mtype})
+
     if mtype is not None:
-        cells = cells[cells.mtype == mtype]
+        cells = circuit.cells.get({"mtype": mtype})
+    else:
+        cells = circuit.cells.get()
 
     if len(cells) == 0:
         raise Exception("no cells of that mtype")
-    gids = get_cells_between_planes(cells, plane_left, plane_right).index
-    for gid in gids[:sample]:
+
+    if plot_neuron_kwargs is None:
+        plot_neuron_kwargs = {}
+
+    gids = get_cells_between_planes(cells, plane_left, plane_right).index[:sample]
+
+    if atlas is not None:
+        vec = [0, 1, 0]
+        all_pos_orig = cells.loc[gids, ["x", "y", "z"]].values
+        all_orientations = atlas.orientations.lookup(all_pos_orig)
+        all_lookups = np.einsum("ijk, k", all_orientations, vec)
+        all_pos_final = all_pos_orig + all_lookups * 300
+        all_dist_plane_orig = all_pos_orig - plane_left.point
+        all_dist_plane_final = all_pos_final - plane_left.point
+        all_pos_orig_plane_coord = np.tensordot(
+            all_dist_plane_orig, rotation_matrix.T, axes=1
+        )
+        all_pos_final_plane_coord = np.tensordot(
+            all_dist_plane_final, rotation_matrix.T, axes=1
+        )
+
+    for num, gid in enumerate(gids):
         morphology = circuit.morph.get(gid, transform=True, source="ascii")
 
         def _to_plane_coord(p):
@@ -412,22 +435,17 @@ def plot_cells(
         morphology = morphology.transform(_to_plane_coord)
 
         if atlas is not None:
-            pos_orig = circuit.cells.positions(gid).to_numpy()
-            pos_final = pos_orig + atlas.lookup_orientation(pos_orig) * 300
-            pos_orig = _to_plane_coord(pos_orig)
-            pos_final = _to_plane_coord(pos_final)
             plt.plot(
-                [pos_orig[0], pos_final[0]],
-                [pos_orig[1], pos_final[1]],
+                [all_pos_orig_plane_coord[num, 0], all_pos_final_plane_coord[num, 0]],
+                [all_pos_orig_plane_coord[num, 1], all_pos_final_plane_coord[num, 1]],
                 c="0.5",
                 lw=0.2,
             )
 
-        viewer.plot_neuron(
-            ax, morphology, plane="xy", realistic_diameters=True, linewidth=0.1
-        )
+        viewer.plot_neuron(ax, morphology, plane="xy", **plot_neuron_kwargs)
 
 
+# pylint: disable=too-many-arguments
 def _plot_collage(
     planes,
     layer_annotation=None,
@@ -439,6 +457,7 @@ def _plot_collage(
     n_pixels_y=64,
     with_y_field=True,
     with_cells=True,
+    plot_neuron_kwargs=None,
 ):
     """Internal plot collage for multiprocessing."""
     if with_y_field and atlas is None:
@@ -459,6 +478,7 @@ def _plot_collage(
         cmap=matplotlib.colors.ListedColormap(["C0", "C1", "C2", "C3", "C4", "C5"]),
         alpha=0.3,
     )
+
     plt.colorbar()
     if with_cells:
         plot_cells(
@@ -470,7 +490,9 @@ def _plot_collage(
             mtype=mtype,
             sample=sample,
             atlas=atlas,
+            plot_neuron_kwargs=plot_neuron_kwargs,
         )
+
     if with_y_field:
         # note: some of these parameters are harcoded for NCx plot, adjust as needed
         X_y, Y_y, orientation_u, orientation_v = get_y_info(
@@ -486,10 +508,12 @@ def _plot_collage(
             scale_units="xy",
             scale=1,
         )
+
     ax = plt.gca()
     ax.set_aspect("equal")
     ax.set_rasterized(True)
     ax.set_title("")
+
     return fig
 
 
@@ -507,6 +531,7 @@ def plot_collage(
     n_pixels=1024,
     with_y_field=True,
     n_pixels_y=64,
+    plot_neuron_kwargs=None,
 ):
     """Plot collage of an mtype and a list of planes.
 
@@ -539,6 +564,7 @@ def plot_collage(
             n_pixels=n_pixels,
             n_pixels_y=n_pixels_y,
             with_y_field=with_y_field,
+            plot_neuron_kwargs=plot_neuron_kwargs,
         )
         for fig in Parallel(nb_jobs, verbose=joblib_verbose)(
             delayed(f)(planes) for planes in zip(planes[:-1:3], planes[2::3])

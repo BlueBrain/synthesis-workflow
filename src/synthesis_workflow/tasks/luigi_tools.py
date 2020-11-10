@@ -186,24 +186,42 @@ class RatioParameter(luigi.NumericalParameter):
         )
 
 
-class OptionalIntParameter(luigi.OptionalParameter, luigi.IntParameter):
-    """Class to parse optional int parameters"""
+class OptionalParameter(luigi.OptionalParameter):
+    """Mixin to make a parameter class optional"""
+
+    def __init__(self, *args, **kwargs):
+        self._cls = self.__class__
+        self._base_cls = self.__class__.__bases__[-1]
+        if OptionalParameter in (self._cls, self._base_cls):
+            raise TypeError(
+                "OptionalParameter can only be used as a mixin (must not be the rightmost "
+                "class in the class definition)"
+            )
+        super().__init__(*args, **kwargs)
 
     def parse(self, x):
-        if x:
-            return int(x)
+        if x and x.lower() != "null":
+            return self._base_cls.parse(self, x)
         else:
             return None
 
     def _warn_on_wrong_param_type(self, param_name, param_value):
-        if self.__class__ != OptionalIntParameter:
+        if self.__class__ != self._cls:
             return
         if not isinstance(param_value, int) and param_value is not None:
             warnings.warn(
-                'OptionalIntParameter "{}" with value "{}" is not of type int or None.'.format(
-                    param_name, param_value
+                '{} "{}" with value "{}" is not of type int or None.'.format(
+                    self._cls.__name__, param_name, param_value
                 )
             )
+
+
+class OptionalIntParameter(OptionalParameter, luigi.IntParameter):
+    """Class to parse optional int parameters"""
+
+
+class OptionalNumericalParameter(OptionalParameter, luigi.NumericalParameter):
+    """Class to parse optional int parameters"""
 
 
 class BoolParameter(luigi.BoolParameter):
