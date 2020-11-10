@@ -54,11 +54,7 @@ class VacuumSynthesize(WorkflowTask):
         tmd_parameters = json.load(self.input()["tmd_parameters"].open())
         tmd_distributions = json.load(self.input()["tmd_distributions"].open())
 
-        if (
-            # pylint: disable=unsubscriptable-object
-            self.mtypes is None
-            or self.mtypes[0] == "all"
-        ):
+        if self.mtypes is None:
             mtypes = list(tmd_parameters.keys())
         else:
             mtypes = self.mtypes

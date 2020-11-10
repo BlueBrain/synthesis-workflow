@@ -156,7 +156,7 @@ class BuildSynthesisParameters(WorkflowTask):
     def run(self):
         """"""
         morphs_df = pd.read_csv(self.input()["morphologies"].path)
-        mtypes = morphs_df.mtype.unique()
+        mtypes = sorted(morphs_df.mtype.unique())
         neurite_types = get_neurite_types(morphs_df, mtypes)
 
         if self.input_tmd_parameters_path is not None:

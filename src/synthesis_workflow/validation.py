@@ -640,7 +640,7 @@ def plot_path_distance_fits(
     # Read morphology DataFrame
     morphs_df = pd.read_csv(morphs_df_path)
 
-    if mtypes is None or mtypes[0] == "all":
+    if mtypes is None:
         mtypes = sorted(
             [
                 mtype
@@ -837,14 +837,16 @@ def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
             plt.close(fig)
 
         if mtypes is None:
-            mtypes = scale_data["mtype"].unique().tolist()
+            mtypes = sorted(scale_data["mtype"].unique())
 
         for col in scale_data.drop(
             columns=["worker_task_id", "mtype", "x", "y", "z"], errors="ignore"
         ).columns:
             fig = plt.figure(figsize=(10, 20))
             ax = plt.gca()
-            scale_data[["mtype", col]].boxplot(by="mtype", vert=False, ax=ax)
+            scale_data.loc[scale_data["mtype"].isin(mtypes), ["mtype", col]].boxplot(
+                by="mtype", vert=False, ax=ax
+            )
 
             ax.grid(True)
             fig.suptitle("")

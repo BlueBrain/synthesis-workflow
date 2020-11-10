@@ -93,7 +93,11 @@ class SynthesisConfig(luigi.Config):
         description="The list of cortical thicknesses",
     )
     mtypes = luigi.ListParameter(
-        default=None, description="The list of mtypes to process"
+        default=None,
+        description=(
+            "The list of mtypes to process (default is None, which means that all found "
+            "mtypes are taken)"
+        ),
     )
 
 

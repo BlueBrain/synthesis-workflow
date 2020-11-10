@@ -215,14 +215,11 @@ class PlotCollage(WorkflowTask):
 
     def run(self):
         """"""
-        if (
-            # pylint: disable=unsubscriptable-object
-            self.mtypes is None
-            or self.mtypes[0] == "all"
-        ):
-            mtypes = pd.read_csv(self.input().path).mtype.unique()
+        if self.mtypes is None:
+            mtypes = sorted(pd.read_csv(self.input().path).mtype.unique())
         else:
             mtypes = self.mtypes
+
         for mtype in mtypes:
             yield PlotSingleCollage(
                 collage_base_path=self.collage_base_path,
@@ -336,11 +333,8 @@ class PlotScales(WorkflowTask):
     def run(self):
         """"""
         morphs_df = pd.read_csv(self.input().path)
-        if (
-            self.mtypes is None
-            or self.mtypes[0] == "all"  # pylint: disable=unsubscriptable-object
-        ):
-            mtypes = morphs_df.mtype.unique()
+        if self.mtypes is None:
+            mtypes = sorted(morphs_df.mtype.unique())
         else:
             mtypes = self.mtypes
 
@@ -474,14 +468,11 @@ class MorphologyValidationReports(WorkflowTask):
         ref_morphs_df = pd.read_csv(self.input()["ref"].path)
         test_morphs_df = pd.read_csv(self.input()["test"].path)
 
-        if self.mtypes is None or "all" in self.mtypes:
-            mtypes = None
-        else:
-            mtypes = self.mtypes
-
-        if mtypes is not None:
-            ref_morphs_df = ref_morphs_df.loc[ref_morphs_df["mtype"].isin(mtypes)]
-            test_morphs_df = test_morphs_df.loc[test_morphs_df["mtype"].isin(mtypes)]
+        if self.mtypes is not None:
+            ref_morphs_df = ref_morphs_df.loc[ref_morphs_df["mtype"].isin(self.mtypes)]
+            test_morphs_df = test_morphs_df.loc[
+                test_morphs_df["mtype"].isin(self.mtypes)
+            ]
 
         if self.config_path is not None:
             with open(self.config_path) as f:

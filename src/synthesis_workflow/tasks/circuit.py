@@ -209,20 +209,12 @@ class SliceCircuit(WorkflowTask):
 
     def run(self):
         """"""
-        mtypes = self.mtypes
-        if (
-            # pylint: disable=unsupported-membership-test
-            mtypes is None
-            or "all" in mtypes
-        ):
-            mtypes = None
-
         planes = load_planes_centerline(self.input()["atlas_planes"].path)["planes"]
 
         _slicer = partial(
             circuit_slicer,
             n_cells=self.n_cells,
-            mtypes=mtypes,
+            mtypes=self.mtypes,
             planes=planes,
             hemisphere=self.hemisphere,
         )
