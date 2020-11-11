@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """CLI for MorphVal package"""
 import argparse
+import pkg_resources
 
 from morphval.validation_main import Validation
 from morphval import config
@@ -28,7 +29,12 @@ def get_parser():
         "-c", "--config", required=True, help="full path to yaml config file"
     )
     parser.add_argument(
-        "--example-config", action="store_true", help="print out an example config"
+        "--example-config",
+        action="store_true",
+        help=(
+            "print out an example config in which the 'mtype' key should be replaced "
+            "by an actual mtype"
+        ),
     )
     parser.add_argument(
         "--bio-compare",
@@ -50,7 +56,11 @@ def main():
     args = get_parser().parse_args()
 
     if args.example_config:
-        print(config.EXAMPLE_CONFIG)
+        print(
+            pkg_resources.resource_string(
+                "synthesis_workflow", "defaults/morphval_default_config.yaml"
+            )
+        )
         return
 
     my_config = config.load_config(args.config)

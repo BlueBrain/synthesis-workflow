@@ -7,4 +7,4 @@
 
    Home <self>
    changelog
-   api
+   autoapi/index

@@ -1,21 +1,15 @@
 Changelog
 =========
 
-Version 0.1
------------
-
-New Features
-~~~~~~~~~~~~
-- Example code in Python
-
-
-Bug Fixes
-~~~~~~~~~
-- Describe Bug Fixes here
-- Remove this subsection if there are no Bug Fixes
-
+Version 0.0.2
+-------------
 
 Improvements
 ~~~~~~~~~~~~
-- Describe Improvements here
-- Remove this subsection if there are no Improvements
+- Improve doc generation
+
+
+Version 0.0.1
+-------------
+
+- First release

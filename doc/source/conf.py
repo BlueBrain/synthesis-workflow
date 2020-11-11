@@ -34,9 +34,29 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinx.ext.autosummary',
+    'autoapi.extension',
+]
+
+autoapi_dirs = [
+    "../../src/morphval",
+    "../../src/synthesis_workflow",
+    "../../src/synthesis_workflow/tasks",
+]
+autoapi_ignore = [
+    "*version.py",
+]
+autoapi_python_use_implicit_namespaces = True
+autoapi_keep_files = False
+autoapi_options = [
+    "imported-members",
+    "members",
+    "private-members",
+    "show-inheritance",
+    "show-inheritance-diagram",
+    "show-module-summary",
+    "special-members",
+    "undoc-members",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -64,7 +84,7 @@ html_theme_options = {
     'metadata_distribution': 'synthesis-workflow',
 }
 
-html_title = u'synthesis-workflow'
+html_title = 'Synthesis Workflow'
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False
@@ -75,3 +95,4 @@ autosummary_generate=True
 # autodoc settings
 autodoc_typehints='signature'
 autodoc_default_options = {'members': True}
+autoclass_content = "both"

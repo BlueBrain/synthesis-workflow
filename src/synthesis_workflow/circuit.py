@@ -58,10 +58,11 @@ def build_circuit(
     density_factor=0.01,
     seed=None,
 ):
-    """Based on YAML cell composition recipe, build a circuit as MVD3 file with:
-    - cell positions
-    - required cell properties: 'layer', 'mtype', 'etype'
-    - additional cell properties prescribed by the recipe and / or atlas
+    """
+    Based on YAML cell composition recipe, build a circuit as MVD3 file with:
+        - cell positions
+        - required cell properties: 'layer', 'mtype', 'etype'
+        - additional cell properties prescribed by the recipe and / or atlas
     """
     if seed is not None:
         np.random.seed(seed)
@@ -164,9 +165,11 @@ def create_planes(
     Args:
         layer_annotation (VoxelData): annotations with layers
         plane_type (str): type of planes creation algorithm, two choices:
-            - centerline: centerline is computed between _first_bound and _last_bound with
-                internal algorithm (from atlas-analysis package)
-            - aligned: centerline is a straight line, along the centerline_axis
+
+            * centerline: centerline is computed between _first_bound and _last_bound with
+              internal algorithm (from atlas-analysis package)
+            * aligned: centerline is a straight line, along the centerline_axis
+
         plane_count (int): number of planes to create slices of atlas,
         slice_thickness (float): thickness of slices (in micrometer)
         centerline_first_bound (list): (for plane_type == centerline) location of first bound
