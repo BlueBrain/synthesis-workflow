@@ -53,7 +53,6 @@ autoapi_options = [
     "members",
     "private-members",
     "show-inheritance",
-    "show-inheritance-diagram",
     "show-module-summary",
     "special-members",
     "undoc-members",
