@@ -339,14 +339,22 @@ def get_layer_info(
     X = np.repeat(xs_plane.reshape((1, -1)), n_pixels, axis=0).T
     Y = np.repeat(ys_plane.reshape((1, -1)), n_pixels, axis=0)
     rot_T = rotation_matrix.T
-    points = np.zeros([n_pixels, n_pixels, 3])
 
-    for i, x_plane in enumerate(xs_plane):
-        for j, y_plane in enumerate(ys_plane):
-            # transform plane coordinates into real coordinates (coordinates of VoxelData)
-            points[i, j] = (
-                rot_T.dot([x_plane, 0, 0]) + rot_T.dot([0, y_plane, 0]) + plane_origin
-            )
+    x_vec = xs_plane.copy()
+    x_vec.resize((3, xs_plane.size))
+    x_vec = x_vec.T
+
+    y_vec = ys_plane.copy()
+    y_vec.resize((3, ys_plane.size))
+    y_vec = y_vec.T[:, [1, 0, 2]]  # pylint: disable=unsubscriptable-object
+
+    x_rot = np.einsum("ij, kj", rot_T, x_vec).T
+    y_rot = np.einsum("ij, kj", rot_T, y_vec).T
+
+    y_final = np.repeat(y_rot[np.newaxis, ...], xs_plane.size, axis=0)
+    x_final = np.repeat(x_rot, ys_plane.size, axis=0).reshape(y_final.shape)
+
+    points = x_final + y_final + plane_origin
 
     layers = layer_annotation.lookup(points, outer_value=-1).astype(float)
     layers[layers < 1] = np.nan
