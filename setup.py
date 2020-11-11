@@ -41,6 +41,7 @@ reqs = [
 
 doc_reqs = [
     "sphinx",
+    "sphinx-autoapi",
     "sphinx-bluebrain-theme",
 ]
 
