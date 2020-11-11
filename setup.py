@@ -49,7 +49,7 @@ test_reqs = [
     "pytest",
     "pytest-cov",
     "pytest-html",
-    "pytest-mpl",
+    "pytest-xdist",
 ]
 
 VERSION = imp.load_source("", "src/version.py").VERSION

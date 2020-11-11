@@ -2,4 +2,4 @@ diff_pdf_visually
 pytest
 pytest-cov
 pytest-html
-pytest-mpl
+pytest-xdist
