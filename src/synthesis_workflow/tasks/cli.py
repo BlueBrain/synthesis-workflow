@@ -87,16 +87,15 @@ class ArgParser:
         parsers = {"root": parser}
 
         workflow_parser = parser.add_subparsers(
-            help="Possible workflows", dest="workflow", required=True
+            help="Possible workflows", dest="workflow"
         )
 
         for workflow_name, task in WORKFLOW_TASKS.items():
             try:
-                cls = task()
-                task_name = cls.__class__.__name__
-                doc = cls.__class__.__doc__
+                task_name = task.__name__
+                doc = task.__doc__
                 subparser = workflow_parser.add_parser(workflow_name, help=doc)
-                for param, param_obj in cls.get_params():
+                for param, param_obj in task.get_params():
                     param_name = "--" + param.replace("_", "-")
                     subparser.add_argument(
                         param_name,

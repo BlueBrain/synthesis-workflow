@@ -21,6 +21,7 @@ reqs = [
     "diameter_synthesis>=0.1.7",
     "gitpython",
     "h5py<3",
+    "jinja2",
     "joblib",
     "luigi",
     "matplotlib",
@@ -30,6 +31,7 @@ reqs = [
     "neurom!=2.0.1.dev4",
     "pandas",
     "placement_algorithm>=2.1.1",
+    "PyYAML",
     "region_grower>=0.1.10",
     "scipy",
     "seaborn",
@@ -85,7 +87,10 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     entry_points={
-        "console_scripts": ["synthesis_workflow=synthesis_workflow.tasks.cli:main"]
+        "console_scripts": [
+            "synthesis_workflow=synthesis_workflow.tasks.cli:main",
+            "morph_validation=morphval.cli:main",
+        ]
     },
     include_package_data=True,
 )
