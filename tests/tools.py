@@ -145,9 +145,9 @@ def compare_mvd3_files(ref_path, test_path, rtol=None, atol=None, ignore_columns
         return f"The files {ref_path} and {test_path} are different:\n{res}"
 
 
-def compare_pdf_files(ref_path, test_path):
+def compare_pdf_files(ref_path, test_path, *args, **kwargs):
     """Compare two *.pdf files"""
-    res = pdfdiff(ref_path, test_path)
+    res = pdfdiff(ref_path, test_path, *args, **kwargs)
     if res is True:
         return True
     else:
@@ -188,8 +188,8 @@ def compare_tree(
         comp_file = comp_path / relative_path
         if verbose:
             print("Compare:\n\t%s\n\t%s" % (ref_file, comp_file))
-        if suffix in COMPARATORS:
-            if comp_file.exists():
+        if comp_file.exists():
+            if suffix in COMPARATORS:
                 args = specific_args.get(relative_path.as_posix(), {}).get("args", [])
                 kwargs = specific_args.get(relative_path.as_posix(), {}).get(
                     "kwargs", {}
@@ -204,20 +204,20 @@ def compare_tree(
                         "following reason reason: %s " % "\n".join(e.args)
                     )
             else:
-                msg = f"The file '{relative_path}' does not exist in '{comp_path}'"
-                different_files.append(msg)
+                # If no comparator is given for this suffix, test with MD5 hashes
+                with ref_file.open("rb") as f:
+                    ref_md5 = md5(f.read()).hexdigest()
+                with comp_file.open("rb") as f:
+                    comp_md5 = md5(f.read()).hexdigest()
+                if ref_md5 != comp_md5:
+                    msg = (
+                        f"The MD5 hashes are different for the file '{relative_path}': "
+                        f"{ref_md5} != {comp_md5}"
+                    )
+                    different_files.append(msg)
         else:
-            # If no comparator is given for this suffix, test with MD5 hashes
-            with ref_file.open("rb") as f:
-                ref_md5 = md5(f.read()).hexdigest()
-            with comp_file.open("rb") as f:
-                comp_md5 = md5(f.read()).hexdigest()
-            if ref_md5 != comp_md5:
-                msg = (
-                    f"The MD5 hashes are different for the file '{relative_path}': "
-                    f"{ref_md5} != {comp_md5}"
-                )
-                different_files.append(msg)
+            msg = f"The file '{relative_path}' does not exist in '{comp_path}'"
+            different_files.append(msg)
 
     # Test that all files are equal and raise the formatted message if there are differences
     assert len(different_files) == 0, "\n".join(different_files)

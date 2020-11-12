@@ -404,7 +404,6 @@ def plot_cells(
     plot_neuron_kwargs=None,
 ):
     """Plot cells for collage."""
-
     if mtype is not None:
         cells = circuit.cells.get({"mtype": mtype})
     else:
@@ -550,14 +549,14 @@ def plot_collage(
         mtype (str): mtype of cells to plot
         pdf_filename (str): pdf filename
         sample (int): maximum number of cells to plot
-        nb_jobs (int) : number of joblib workers
-        joblib_verbose (int) verbose level of joblib
+        nb_jobs (int): number of joblib workers
+        joblib_verbose (int): verbose level of joblib
         dpi (int): dpi for pdf rendering (rasterized)
         n_pixels (int): number of pixels for plotting layers
         with_y_field (bool): plot y field
         n_pixels_y (int): number of pixels for plotting y field
+        plot_neuron_kwargs (dict): dict given to ``neurom.viewer.plot_neuron`` as kwargs
     """
-
     atlas = AtlasHelper(circuit.atlas)
 
     ensure_dir(pdf_filename)
@@ -585,7 +584,7 @@ def plot_collage(
 def _generate_synthetic_random_population(
     dir_path, nb, proj_min, proj_max, tmd_parameters, tmd_distributions
 ):
-    """Generate a synthetic population with random projections"""
+    """Generate a synthetic population with random projections."""
     files = []
     y_synth = []
     slope = tmd_parameters["context_constraints"]["apical"]["extent_to_target"]["slope"]
@@ -621,9 +620,7 @@ def _generate_synthetic_random_population(
 def _get_fit_population(
     mtype, files, outlier_percentage, tmd_parameters, tmd_distributions
 ):
-    """Get projections and path lengths of a given biological population and a
-    synthetic population based on the first one."""
-
+    """Get projections and path lengths of a given and a synthetic population."""
     # Load biological neurons
     if len(files) > 0:
         input_population = load_population(files)
@@ -661,8 +658,7 @@ def plot_path_distance_fits(
     outlier_percentage=90,
     nb_jobs=-1,
 ):
-    """Plot path-distance fits"""
-
+    """Plot path-distance fits."""
     # Read TMD parameters
     with open(tmd_parameters_path) as f:
         tmd_parameters = json.load(f)
@@ -750,7 +746,7 @@ def parse_log(
     target_scale_regex,
     neurite_hard_limit_regex,
 ):
-    """Parse log file and return a DataFrame with data"""
+    """Parse log file and return a DataFrame with data."""
     # pylint: disable=too-many-locals
 
     def _search(pattern, line, data):
@@ -847,8 +843,9 @@ def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
 
     Args:
         mtypes (list): mtypes of cells to plot
-        scale data (dict): dicto od DataFrame(s) with scale data
+        scale_data (dict): dicto od DataFrame(s) with scale data
         output_dir (str): result directory
+        dpi (int): resolution of the output image
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 

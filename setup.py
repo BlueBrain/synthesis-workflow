@@ -42,13 +42,14 @@ reqs = [
 ]
 
 doc_reqs = [
+    "graphviz",
     "sphinx",
     "sphinx-autoapi",
     "sphinx-bluebrain-theme",
 ]
 
 test_reqs = [
-    "diff_pdf_visually",
+    "diff_pdf_visually>=1.5.1",
     "pytest",
     "pytest-cov",
     "pytest-html",
@@ -59,8 +60,8 @@ VERSION = imp.load_source("", "src/version.py").VERSION
 
 setup(
     name="synthesis-workflow",
-    author="bbp-ou-cell",
-    author_email="bbp-ou-cell@groupes.epfl.ch",
+    author="bbp-ou-cells",
+    author_email="bbp-ou-cells@groupes.epfl.ch",
     version=VERSION,
     description="Workflow used for synthesis and its validation.",
     long_description=README,

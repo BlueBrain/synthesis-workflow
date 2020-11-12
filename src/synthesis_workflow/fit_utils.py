@@ -1,5 +1,4 @@
-"""Some functions used to fit path distances with depth
-"""
+"""Some functions used to fit path distances with depth."""
 from typing import Tuple, Sequence
 
 import numpy as np
@@ -9,7 +8,7 @@ from tmd.Population.Population import Population
 
 
 def _get_tmd_feature(input_population: Population, feature: str) -> np.array:
-    """Returns a list of features using tmd"""
+    """Returns a list of features using tmd."""
     f = [
         tmd.methods.get_persistence_diagram(n.apical[0], feature=feature)
         for n in input_population.neurons
@@ -19,27 +18,31 @@ def _get_tmd_feature(input_population: Population, feature: str) -> np.array:
 
 
 def get_path_distances(input_population: Population) -> np.array:
-    """Returns path distances using tmd
+    """Returns path distances using tmd.
 
     Args:
         input_population: the population of neurons
 
-    Returns: list of path distances"""
+    Returns:
+        list of path distances
+    """
     return _get_tmd_feature(input_population, "path_distances")
 
 
 def get_projections(input_population: Population) -> np.array:
-    """Returns projections using tmd
+    """Returns projections using tmd.
 
     Args:
         input_population: the population of neurons
 
-    Returns: list of projections"""
+    Returns:
+        list of projections
+    """
     return _get_tmd_feature(input_population, "projection")
 
 
 def fit_function(x: float, slope: float) -> float:
-    """The function used to fit data"""
+    """The function used to fit data."""
     return slope * x
 
 
@@ -53,8 +56,9 @@ def clean_outliers(
         y: the Y-axis coordinates
         outlier_percentage: the percentage used to find and remove outliers
 
-    Returns: cleaned X and Y coordinates"""
-
+    Returns:
+        cleaned X and Y coordinates
+    """
     # Fit a linear function passing by 0 to the data
     np.random.seed(42)  # ensure stability of fit values
     popt = curve_fit(fit_function, x, y)[0]
@@ -75,7 +79,9 @@ def clean_outliers(
 def fit_path_distance_to_extent(
     input_population: Population, outlier_percentage: int = 90
 ) -> Tuple[float, float]:
-    """Returns two parameters (slope, intercept) for the linear fit of
+    """Returns slope and intercept of a linear fit.
+
+    Returns the two parameters (slope, intercept) for the linear fit of
     path length (Y-variable) to total extents (X-variable).
     Removes outliers up to outlier_percentage for a better fit.
 
@@ -104,6 +110,7 @@ def get_path_distance_from_extent(
     slope: float, intercept: float, extent: float
 ) -> float:
     """Returns a path distance for an input extent according to fitted function.
+
     The function is given by the equation:
     Path = slope * extent + intercept
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""CLI for MorphVal package"""
+"""CLI for MorphVal package."""
 import argparse
 import pkg_resources
 
@@ -8,7 +8,7 @@ from morphval import config
 
 
 def get_parser():
-    """return the argument parser"""
+    """Return the argument parser."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-t", "--test-dir", required=True, help="full path to directory with test data"
@@ -52,7 +52,7 @@ def get_parser():
 
 
 def main():
-    """Main function of MorphVal package"""
+    """Main function of MorphVal package."""
     args = get_parser().parse_args()
 
     if args.example_config:

@@ -12,7 +12,7 @@ from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 
 
 class GitClone(WorkflowTask):
-    """Task to clone a git repository"""
+    """Task to clone a git repository."""
 
     url = luigi.Parameter()
     dest = luigi.Parameter()

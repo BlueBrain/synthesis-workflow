@@ -141,112 +141,134 @@ def set_new_state(task_class):
     task_class.counter = luigi.IntParameter(default=task_class().counter + 1)
 
 
+class TasksFixture:
+    """Class with some luigi tasks to test"""
+
+    def __init__(self, tmpdir):
+        class TaskA(luigi_tools.WorkflowTask):
+            """"""
+
+            counter = luigi.IntParameter(default=0)
+            rerun = luigi.BoolParameter()
+
+            def run(self):
+                for i in luigi.task.flatten(self.output()):
+                    create_not_empty_file(i.path)
+
+            def output(self):
+                return luigi.LocalTarget(tmpdir / "TaskA.target")
+
+        class TaskB(luigi_tools.WorkflowTask):
+            """"""
+
+            counter = luigi.IntParameter(default=0)
+            rerun = luigi.BoolParameter()
+
+            def requires(self):
+                return TaskA()
+
+            def run(self):
+                for i in luigi.task.flatten(self.output()):
+                    create_not_empty_file(i.path)
+
+            def output(self):
+                return [
+                    luigi.LocalTarget(tmpdir / "TaskB.target"),
+                    [
+                        luigi.LocalTarget(tmpdir / "TaskB2.target"),
+                        luigi.LocalTarget(tmpdir / "TaskB3.target"),
+                    ],
+                ]
+
+        class TaskC(luigi_tools.WorkflowTask):
+            """"""
+
+            counter = luigi.IntParameter(default=0)
+            rerun = luigi.BoolParameter()
+
+            def requires(self):
+                return TaskA()
+
+            def run(self):
+                for i in luigi.task.flatten(self.output()):
+                    create_not_empty_file(i.path)
+
+            def output(self):
+                return {
+                    "first_target": luigi.LocalTarget(tmpdir / "TaskC.target"),
+                    "second_target": luigi.LocalTarget(tmpdir / "TaskC2.target"),
+                }
+
+        class TaskD(luigi_tools.WorkflowTask):
+            """"""
+
+            counter = luigi.IntParameter(default=0)
+            rerun = luigi.BoolParameter()
+
+            def requires(self):
+                return [TaskB(), TaskC()]
+
+            def run(self):
+                for i in luigi.task.flatten(self.output()):
+                    create_not_empty_file(i.path)
+
+            def output(self):
+                return [
+                    luigi.LocalTarget(tmpdir / "TaskD.target"),
+                    luigi.LocalTarget(tmpdir / "TaskD2.target"),
+                ]
+
+        class TaskE(luigi_tools.WorkflowTask):
+            """"""
+
+            counter = luigi.IntParameter(default=0)
+            rerun = luigi.BoolParameter()
+
+            def requires(self):
+                return TaskD()
+
+            def run(self):
+                for i in luigi.task.flatten(self.output()):
+                    create_not_empty_file(i.path)
+
+            def output(self):
+                return {
+                    "first_target": luigi.LocalTarget(tmpdir / "TaskE.target"),
+                    "other_targets": {
+                        "second_target": luigi.LocalTarget(tmpdir / "TaskE2.target"),
+                        "third_target": luigi.LocalTarget(tmpdir / "TaskE3.target"),
+                    },
+                }
+
+        self.TaskA = TaskA
+        self.TaskB = TaskB
+        self.TaskC = TaskC
+        self.TaskD = TaskD
+        self.TaskE = TaskE
+
+    def set_new_state(self, task_class=None):
+        """Set a new state to a luigi.Task class to force luigi to check this class again"""
+        if task_class is not None:
+            task_class.counter = luigi.IntParameter(default=task_class().counter + 1)
+        else:
+            for i in self.__dict__.values():
+                i.counter = luigi.IntParameter(default=i().counter + 1)
+
+
 def test_forceable_tasks(tmpdir):
-    class TaskA(luigi_tools.WorkflowTask):
-        """"""
-
-        counter = luigi.IntParameter(default=0)
-        rerun = luigi.BoolParameter()
-
-        def run(self):
-            for i in luigi.task.flatten(self.output()):
-                create_not_empty_file(i.path)
-
-        def output(self):
-            return luigi.LocalTarget(tmpdir / "TaskA.target")
-
-    class TaskB(luigi_tools.WorkflowTask):
-        """"""
-
-        counter = luigi.IntParameter(default=0)
-        rerun = luigi.BoolParameter()
-
-        def requires(self):
-            return TaskA()
-
-        def run(self):
-            for i in luigi.task.flatten(self.output()):
-                create_not_empty_file(i.path)
-
-        def output(self):
-            return [
-                luigi.LocalTarget(tmpdir / "TaskB.target"),
-                [
-                    luigi.LocalTarget(tmpdir / "TaskB2.target"),
-                    luigi.LocalTarget(tmpdir / "TaskB3.target"),
-                ],
-            ]
-
-    class TaskC(luigi_tools.WorkflowTask):
-        """"""
-
-        counter = luigi.IntParameter(default=0)
-        rerun = luigi.BoolParameter()
-
-        def requires(self):
-            return TaskA()
-
-        def run(self):
-            for i in luigi.task.flatten(self.output()):
-                create_not_empty_file(i.path)
-
-        def output(self):
-            return {
-                "first_target": luigi.LocalTarget(tmpdir / "TaskC.target"),
-                "second_target": luigi.LocalTarget(tmpdir / "TaskC2.target"),
-            }
-
-    class TaskD(luigi_tools.WorkflowTask):
-        """"""
-
-        counter = luigi.IntParameter(default=0)
-        rerun = luigi.BoolParameter()
-
-        def requires(self):
-            return [TaskB(), TaskC()]
-
-        def run(self):
-            for i in luigi.task.flatten(self.output()):
-                create_not_empty_file(i.path)
-
-        def output(self):
-            return [
-                luigi.LocalTarget(tmpdir / "TaskD.target"),
-                luigi.LocalTarget(tmpdir / "TaskD2.target"),
-            ]
-
-    class TaskE(luigi_tools.WorkflowTask):
-        """"""
-
-        counter = luigi.IntParameter(default=0)
-        rerun = luigi.BoolParameter()
-
-        def requires(self):
-            return TaskD()
-
-        def run(self):
-            for i in luigi.task.flatten(self.output()):
-                create_not_empty_file(i.path)
-
-        def output(self):
-            return {
-                "first_target": luigi.LocalTarget(tmpdir / "TaskE.target"),
-                "other_targets": {
-                    "second_target": luigi.LocalTarget(tmpdir / "TaskE2.target"),
-                    "third_target": luigi.LocalTarget(tmpdir / "TaskE3.target"),
-                },
-            }
+    all_tasks = TasksFixture(tmpdir)
 
     all_targets = {}
-    for task in [TaskA(), TaskB(), TaskC(), TaskD(), TaskE()]:
-        all_targets[task.__class__.__name__] = task.output()
+    for task in all_tasks.__dict__.values():
+        all_targets[task.__name__] = task().output()
 
     # Test that everything is run when all rerun are False and targets are missing
     print("=================== FIRST BUILD ====================")
-    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
-        set_new_state(task_class)
+    all_tasks = TasksFixture(tmpdir)
+    # for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
+    #     set_new_state(task_class)
 
-    assert luigi.build([TaskE()], local_scheduler=True)
+    assert luigi.build([all_tasks.TaskE()], local_scheduler=True)
 
     assert all([check_not_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
 
@@ -255,9 +277,8 @@ def test_forceable_tasks(tmpdir):
         create_empty_file(i.path)
 
     print("=================== SECOND BUILD ====================")
-    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
-        set_new_state(task_class)
-    assert luigi.build([TaskE()], local_scheduler=True)
+    all_tasks = TasksFixture(tmpdir)
+    assert luigi.build([all_tasks.TaskE()], local_scheduler=True)
 
     assert all([check_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
 
@@ -266,11 +287,10 @@ def test_forceable_tasks(tmpdir):
         create_empty_file(i.path)
 
     print("=================== THIRD BUILD ====================")
-    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
-        set_new_state(task_class)
-    TaskA.rerun = luigi.BoolParameter(default=True)
-    assert luigi.build([TaskE()], local_scheduler=True)
-    TaskA.rerun = luigi.BoolParameter()
+    all_tasks = TasksFixture(tmpdir)
+    all_tasks.TaskA.rerun = luigi.BoolParameter(default=True)
+    assert luigi.build([all_tasks.TaskE()], local_scheduler=True)
+    all_tasks.TaskA.rerun = luigi.BoolParameter()
 
     assert all([check_not_empty_file(i.path) for i in luigi.task.flatten(all_targets)])
 
@@ -279,11 +299,10 @@ def test_forceable_tasks(tmpdir):
         create_empty_file(i.path)
 
     print("=================== FORTH BUILD ====================")
-    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
-        set_new_state(task_class)
-    TaskB.rerun = luigi.BoolParameter(default=True)
-    assert luigi.build([TaskE()], local_scheduler=True)
-    TaskB.rerun = luigi.BoolParameter()
+    all_tasks = TasksFixture(tmpdir)
+    all_tasks.TaskB.rerun = luigi.BoolParameter(default=True)
+    assert luigi.build([all_tasks.TaskE()], local_scheduler=True)
+    all_tasks.TaskB.rerun = luigi.BoolParameter()
 
     assert all(
         [
@@ -303,6 +322,7 @@ def test_forceable_tasks(tmpdir):
     )
 
     # Test that calling a task inside another one does not remove its targets
+    all_tasks = TasksFixture(tmpdir)
 
     class TaskF(luigi_tools.WorkflowTask):
         """"""
@@ -311,11 +331,11 @@ def test_forceable_tasks(tmpdir):
         rerun = luigi.BoolParameter()
 
         def requires(self):
-            return TaskE()
+            return all_tasks.TaskE()
 
         def run(self):
             # Call A inside F but the targets of A should not be removed
-            _ = TaskA(counter=999)
+            _ = all_tasks.TaskA(counter=999)
 
             for i in luigi.task.flatten(self.output()):
                 create_not_empty_file(i.path)
@@ -333,11 +353,9 @@ def test_forceable_tasks(tmpdir):
         create_empty_file(i.path)
 
     print("=================== FORTH BUILD ====================")
-    for task_class in [TaskA, TaskB, TaskC, TaskD, TaskE]:
-        set_new_state(task_class)
-    TaskB.rerun = luigi.BoolParameter(default=True)
+    all_tasks.TaskB.rerun = luigi.BoolParameter(default=True)
     assert luigi.build([TaskF()], local_scheduler=True)
-    TaskB.rerun = luigi.BoolParameter()
+    all_tasks.TaskB.rerun = luigi.BoolParameter()
 
     assert all(
         [
@@ -355,6 +373,20 @@ def test_forceable_tasks(tmpdir):
             if task_name in ["TaskA", "TaskC"]
         ]
     )
+
+
+def test_dependency_graph(tmpdir):
+    all_tasks = TasksFixture(tmpdir)
+    start = all_tasks.TaskE()
+
+    graph = luigi_tools.get_dependency_graph(start)
+    assert graph == [
+        (all_tasks.TaskE(), all_tasks.TaskD()),
+        (all_tasks.TaskD(), all_tasks.TaskB()),
+        (all_tasks.TaskB(), all_tasks.TaskA()),
+        (all_tasks.TaskD(), all_tasks.TaskC()),
+        (all_tasks.TaskC(), all_tasks.TaskA()),
+    ]
 
 
 def test_remove_folder_target(tmpdir):

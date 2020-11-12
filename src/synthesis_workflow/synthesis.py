@@ -49,7 +49,7 @@ def get_neurite_types(morphs_df, mtypes):
 
 
 def apply_substitutions(original_morphs_df, substitution_rules=None):
-    """apply substitution rule on .dat file.
+    """Applies substitution rule on .dat file.
 
     Args:
         original_morphs_df (DataFrame): dataframe with morphologies
@@ -136,7 +136,7 @@ def build_distributions(
 
 
 def get_axon_base_dir(morphs_df, col_name="morphology_path"):
-    """Get the common base directory of morphologies"""
+    """Get the common base directory of morphologies."""
     if morphs_df.empty:
         raise RuntimeError("Can not get axon base dir from an empty DataFrame")
 
@@ -265,11 +265,13 @@ def create_axon_morphologies_tsv(
     axon_morphs.to_csv(axon_morphs_path, sep="\t", index=True)
 
 
-def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales=None):
-    """Run placement algorithm from python.
+def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales_path=None):
+    """Runs placement algorithm from python.
 
     Args:
         kwargs (dict): dictionary with argument from placement-algorithm CLI
+        nb_jobs (int): number of jobs
+        debug_scales_path (str): path to the directory containing the log files
     """
     parser_args = [
         i.replace("-", "_")
@@ -309,10 +311,10 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales=None):
 
     # Set logging arguments
     logger_kwargs = None
-    if debug_scales is not None:
+    if debug_scales_path is not None:
         logger_kwargs = {
             "log_level": logging.DEBUG,
-            "log_file": debug_scales.path,
+            "log_file": debug_scales_path,
             "name": "region_grower",
         }
 
@@ -444,7 +446,7 @@ def add_scaling_rules_to_parameters(
     scaling_rules,
     nb_jobs=-1,
 ):
-    """Add the scaling rules to TMD parameters"""
+    """Adds the scaling rules to TMD parameters."""
 
     def _get_target_layer(target_layer_str):
         res = re.match("^L?([0-9]*)", target_layer_str)

@@ -1,4 +1,4 @@
-"""Main module of MorphVal package"""
+"""Main module of MorphVal package."""
 import collections
 import os
 import time
@@ -26,7 +26,7 @@ SUMMARY_TEMPLATE_FILE = (TEMPLATES / "report_summary_template.jinja2").as_posix(
 
 
 def save_csv(dir_name, feature, data):
-    """Save data to CSV file"""
+    """Save data to CSV file."""
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     file_name = os.path.join(dir_name, feature + ".csv")
@@ -35,7 +35,7 @@ def save_csv(dir_name, feature, data):
 
 
 def load_template(template_file):
-    """Load a template"""
+    """Load a template."""
     t_dir, t_file = os.path.split(template_file)
     templateLoader = jinja2.FileSystemLoader(searchpath=t_dir)
     templateEnv = jinja2.Environment(loader=templateLoader)
@@ -43,7 +43,7 @@ def load_template(template_file):
 
 
 def count_passing_validations(features):
-    """counts the number of passing, and total validations for a dict of features
+    """Count the number of passing, and total validations for a dict of features.
 
     Returns:
         returns tuple(feature_pass, features_total)
@@ -55,7 +55,7 @@ def count_passing_validations(features):
 
 
 def compute_validation_criterion(config, stat_test_results):
-    """based on the config thresholds and criterion, computes if validation passed or failed"""
+    """Based on the config thresholds and criterion, computes if validation passed or failed."""
     ret = collections.OrderedDict(
         [
             ("threshold", config["threshold"]),
@@ -73,7 +73,8 @@ def compute_validation_criterion(config, stat_test_results):
 
 
 def do_validation(validation_config, ref_population, test_population):
-    """
+    """Validate a test population against a reference population.
+
     Args:
         validation_config(dict): {component: {feature: {...}}}
         ref_population(NeuroM morph population): reference population
@@ -129,7 +130,7 @@ def do_validation(validation_config, ref_population, test_population):
 
 
 def write_morphometrics(output_dir, morphometrics):
-    """dumps CSV of morphometrics for each of the features"""
+    """Dump CSV of morphometrics for each of the features."""
     for component_name, features in morphometrics.items():
         for feature_name, feature_metrics in features.items():
             for kind in ("test", "ref"):
@@ -142,7 +143,7 @@ def write_morphometrics(output_dir, morphometrics):
 def create_morphometrics_histograms(
     output_dir, morphometrics, config, notebook_desc=None
 ):
-    """Creates histograms based on morphometrics"""
+    """Create histograms based on morphometrics."""
     m_items = common.add_progress_bar(
         morphometrics.items(), "[{}] Histograms", notebook_desc
     )
@@ -165,7 +166,7 @@ def create_morphometrics_histograms(
 def validate_feature(
     mtype, config, output_dir, ref_files, test_files, cell_figure_count, notebook=False
 ):
-    """Validate one feature"""
+    """Validate one feature."""
     ref_population = neurom.load_neurons(ref_files)
     test_population = neurom.load_neurons(test_files)
 
@@ -189,8 +190,8 @@ def validate_feature(
 
 
 class Validation:
-    """
-    Validation state object.
+    """Validation state object.
+
     This class holds the state information of a validation run.
     """
 
@@ -203,24 +204,26 @@ class Validation:
         create_timestamp_dir=True,
         notebook=False,
     ):
-        """
+        """Create a new Validation object.
+
         Args:
-            config(dict): which validations to perform, and how:
+            config (dict): which validations to perform, and how:
                 ex {'L23_PC':       # cell type
-                    {'soma':        # component
-                     {'soma_radii': # feature
-                      {'stat_test': 'StatTests.ks',  # test configuration
-                       'threshold': 0.1,
-                       'bins': 40,
-                       'criterion': 'dist'
-                       }}}}
-            test_data(str path or pandas.DataFrame): directory to the files under test or a
+                     {'soma':        # component
+                       {'soma_radii': # feature
+                         {'stat_test': 'StatTests.ks',  # test configuration
+                          'threshold': 0.1,
+                          'bins': 40,
+                          'criterion': 'dist'
+                          }}}}
+            test_data (str path or pandas.DataFrame): directory to the files under test or a
                 pandas.DataFrame with 'mtype' and 'filepath' columns
-            ref_data(str path or pandas.DataFrame): directory to the reference files or a
+            ref_data (str path or pandas.DataFrame): directory to the reference files or a
                 pandas.DataFrame with 'mtype' and 'filepath' columns
-            output_dir(str path): where the output should be written
-            create_timestamp_dir(bool): whether a directory should be created in output_dir,
+            output_dir (str path): where the output should be written
+            create_timestamp_dir (bool): whether a directory should be created in output_dir,
                 with the timestamp of the run
+            notebook (bool): trigger the Jupyter notebook mode
         """
         self.timestamp = time.strftime("%Y%m%d-%H%M")
 
@@ -273,7 +276,7 @@ class Validation:
         return pd.DataFrame(files)
 
     def validate_features(self, cell_figure_count=100, nb_jobs=-1, joblib_verbose=0):
-        """Validate all features"""
+        """Validate all features."""
         self.results = results = collections.OrderedDict()
 
         batch_size = 1 + int(
@@ -312,9 +315,11 @@ class Validation:
 
     def generate_report_data(self, mtype):
         """Generate dictionary with the text that will fill the template.
+
         It contains all data of the results dictionary in text form with
         additional information on the directories where the data come from.
-        tt is a shortcut for template text."""
+        tt is a shortcut for template text.
+        """
         tt = {}
 
         # c is a shortcut for component (NeuriteType) and f for feature.
@@ -354,7 +359,7 @@ class Validation:
     def merge_results_features(
         mtype, component, feature_name, feature_config, feature_results
     ):
-        """Merge result features"""
+        """Merge result features."""
         stat_test = feature_config["stat_test"]
         stat_test_results = feature_results["statistical_tests"][stat_test]["results"]
         results_validation_criterion = feature_results["validation_criterion"]
@@ -391,7 +396,7 @@ class Validation:
     def write_report(
         self, validation_report=True, template_file=TEMPLATE_FILE, prefix="report-"
     ):
-        """For each mtype in the results, write out its report
+        """For each mtype in the results, write out its report.
 
         Args:
             validation_report(bool): True if 'validation' to be shown in report,
@@ -399,7 +404,6 @@ class Validation:
             template_file(str): template file name
             prefix(str): report is saved as <prefix> + <mtype> + '.html'
         """
-
         report_dir = os.path.join(self.output_dir, "html")
         if not os.path.exists(report_dir):
             os.makedirs(report_dir)
@@ -420,7 +424,7 @@ class Validation:
         template_file=SUMMARY_TEMPLATE_FILE,
         prefix="report-summary-",
     ):
-        """Write summary report"""
+        """Write summary report."""
         return self.write_report(
             validation_report=validation_report,
             template_file=template_file,
@@ -428,7 +432,7 @@ class Validation:
         )
 
     def render_mtype_report(self, template_file, mtype, validation_report):
-        """Render mtype report"""
+        """Render mtype report."""
         template = load_template(template_file)
         templateText = self.generate_report_data(mtype)
 
@@ -469,10 +473,14 @@ class Validation:
 
 
 def compute_summary_statistics(data):
-    """Computes the summary statistics of a feature.
-    data : the feature data array
-    returns the dictionary summary_statistics which contains sample size,
-    mean, standard deviation and median.
+    """Compute the summary statistics of a feature.
+
+    Args:
+        data : the feature data array
+
+    Returns:
+        The dictionary summary_statistics which contains sample size,
+        mean, standard deviation and median.
     """
     summary_statistics = collections.OrderedDict(
         [
@@ -486,11 +494,16 @@ def compute_summary_statistics(data):
 
 
 def compute_statistical_tests(test_data, ref_data, test_name, thresh):
-    """Computes the test statistic and the p-value of a statistical test
-    and fills a dictionary with the results.
-    test_data, ref_data : the test and reference feature arrays respectively
-    test: the statistical test (ex.: KS test)
-    returns the dictionary : statistical tests
+    """Compute the test statistic and the p-value of a statistical test.
+
+    Args:
+        test_data: the test feature array
+        ref_data: the reference feature array
+        test: the statistical test (ex.: KS test)
+        thresh: the threshold
+
+    Returns:
+        the dictionary : statistical tests
     """
     test = validation.load_stat_test(test_name)
     results, status = validation.stat_test(test_data, ref_data, test, thresh)
@@ -512,17 +525,17 @@ def compute_statistical_tests(test_data, ref_data, test_name, thresh):
 
 
 def plot_save_feature(figures_dir, test_data, ref_data, feature, bin_count):
-    """plots and saves the figure of the overlaid histograms of feature distributions
-    as a .png figure.
+    """Plot and saves the figure of the overlaid histograms of feature distributions.
+
+    The result image is a .png figure.
 
     Args:
-        figures_dir(str) : the directory where the figures are stored,
-        test_data(np.array): test feature array
-        ref_data(np.array): reference feature array
-        feature(str): the feature name
-        bins_count(int): the number of histogram bins
+        figures_dir (str): the directory where the figures are stored,
+        test_data (np.array): test feature array
+        ref_data (np.array): reference feature array
+        feature (str): the feature name
+        bin_count (int): the number of histogram bins
     """
-
     if not os.path.exists(figures_dir):
         os.makedirs(figures_dir)
 

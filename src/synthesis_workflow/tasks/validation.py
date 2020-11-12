@@ -77,7 +77,11 @@ class ConvertMvd3(WorkflowTask):
 
 
 class PlotMorphometrics(WorkflowTask):
-    """Plot morphometric.
+    """Plot cell morphometrics for two groups of cells so they can be easily compared.
+
+    The generated images are like the following:
+
+    .. image:: morphometrics-1.png
 
     Args:
         in_atlas (bool): set to True to consider cells in an atlas
@@ -196,7 +200,13 @@ class PlotDensityProfiles(WorkflowTask):
     sample=ParamLink(ValidationConfig, default=20),
 )
 class PlotCollage(WorkflowTask):
-    """Plot collage.
+    """Plot collage for all given mtypes.
+
+    Collage reports show the cells in the atlas.
+
+    The generated images are like the following:
+
+    .. image:: collages-1.png
 
     Args:
         collage_base_path (str): path to the output folder
@@ -273,7 +283,7 @@ class PlotCollage(WorkflowTask):
     diameter_scale=ParamLink(PlotCollage),
 )
 class PlotSingleCollage(WorkflowTask):
-    """Plot collage for single mtype.
+    """Plot collage for a single mtype.
 
     Args:
         collage_base_path (str): path to the output folder
@@ -346,6 +356,12 @@ class PlotSingleCollage(WorkflowTask):
 )
 class PlotScales(WorkflowTask):
     """Plot scales.
+
+    Create images of scaling factors used when the cells are generated.
+
+    The generated images are like the following:
+
+    .. image:: scale_statistics-5.png
 
     Args:
         scales_base_path (str): path to the output folder
@@ -434,7 +450,11 @@ class PlotScales(WorkflowTask):
     nb_jobs=ParamLink(RunnerConfig),
 )
 class PlotPathDistanceFits(WorkflowTask):
-    """Plot collage for single mtype.
+    """Plot fits of path distances as functions of their projection.
+
+    The generated images are like the following:
+
+    .. image:: path_distance_fit-1.png
 
     Args:
         output_path (str): path to the output file

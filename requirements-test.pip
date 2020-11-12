@@ -1,4 +1,4 @@
-diff_pdf_visually
+diff_pdf_visually>=1.5.1
 pytest
 pytest-cov
 pytest-html

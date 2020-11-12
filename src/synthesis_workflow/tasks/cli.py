@@ -1,12 +1,17 @@
 """CLI for validation workflows."""
 import argparse
+import inspect
 import logging
 import os
+import re
 import sys
+from pathlib import Path
 
 import luigi
 
+import synthesis_workflow
 from synthesis_workflow.tasks import workflows
+from synthesis_workflow.tasks.luigi_tools import get_dependency_graph
 from synthesis_workflow.utils import setup_logging
 
 
@@ -25,18 +30,18 @@ LUIGI_PARAMETERS = ["workers", "local_scheduler", "log_level"]
 
 
 class ArgParser:
-    """Class to build parser and parse arguments"""
+    """Class to build parser and parse arguments."""
 
     def __init__(self):
         self.parsers = self._get_parsers()
 
     @property
     def parser(self):
-        """Return the root parser"""
+        """Return the root parser."""
         return self.parsers["root"]
 
     def _get_parsers(self):
-        """Return the main argument parser"""
+        """Return the main argument parser."""
         parser = argparse.ArgumentParser(
             description="Run the synthesis workflow",
         )
@@ -69,11 +74,21 @@ class ArgParser:
             help="Number of workers that luigi can summon.",
         )
 
+        parser.add_argument(
+            "-dg",
+            "--create-dependency-graph",
+            help=(
+                "Create the dependency graph of a workflow instead of running it. "
+                "Pass either 'ascii' to print the graph to screen or a path to render "
+                "it as an image (depending on the extension of the given path)."
+            ),
+        )
+
         return self._get_workflow_parsers(parser)
 
     @staticmethod
     def _get_workflow_parsers(parser=None):
-        """Return the workflow argument parser
+        """Return the workflow argument parser.
 
         If parser is None, a new parser is created with the workflows as subparsers,
         otherwise if it is supplied, the parsers are added as subparsers.
@@ -110,20 +125,19 @@ class ArgParser:
         return parsers
 
     def parse_args(self, argv):
-        """Parse the arguments, and return a argparse.Namespace object"""
+        """Parse the arguments, and return a argparse.Namespace object."""
         args = self.parser.parse_args(argv)
 
         return args
 
 
 def _setup_logging(log_level, log_file=None, log_file_level=None):
-    """Setup logging"""
+    """Setup logging."""
     setup_logging(log_level, log_file, log_file_level)
 
 
 def main(arguments=None):
-    """Main function"""
-
+    """Main function."""
     if arguments is None:
         arguments = sys.argv[1:]
 
@@ -131,8 +145,6 @@ def main(arguments=None):
     parser = ArgParser()
     args = parser.parse_args(arguments)
 
-    # Setup logger
-    _setup_logging(args.log_level)
     L.debug("Args: %s", args)
 
     # Check that one workflow is in arguments
@@ -147,17 +159,74 @@ def main(arguments=None):
     if args.config_path is not None:
         os.environ["LUIGI_CONFIG_PATH"] = args.config_path
 
-    # Use current logger configuration for luigi logger
-    luigi.setup_logging.InterfaceLogging.config.set(
-        "core", "no_configure_logging", "True"
-    )
-
     # Get arguments to configure luigi
     luigi_config = {k: v for k, v in vars(args).items() if k in LUIGI_PARAMETERS}
 
     # Prepare workflow task and aguments
     task = WORKFLOW_TASKS[args.workflow]
     args_dict = {k: v for k, v in vars(args).items() if k in task.get_param_names()}
+
+    # Export the dependency graph of the workflow instead of running it
+    if args.create_dependency_graph is not None:
+        try:
+            from graphviz import Digraph  # pylint: disable=import-outside-toplevel
+        except ImportError:
+            print("Could not import GraphViz, please install it.")
+            sys.exit()
+        task = WORKFLOW_TASKS[args.workflow](**args_dict)
+        g = get_dependency_graph(task)
+        default_graph_attrs = {
+            "rankdir": "TB",
+            "size": "7.0, 15.0",
+            "bgcolor": "transparent",
+        }
+        default_node_attrs = {
+            "shape": "box",
+            "fontsize": "9",
+            "height": "0.25",
+            "fontname": '"Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans"',
+            "style": "setlinewidth(0.5),filled",
+            "fillcolor": "white",
+        }
+        default_edge_attrs = {
+            "arrowsize": "0.5",
+            "style": "setlinewidth(0.5)",
+        }
+        dot = Digraph(
+            comment="Dependency graph",
+            strict=True,
+            graph_attr=default_graph_attrs,
+            node_attr=default_node_attrs,
+            edge_attr=default_edge_attrs,
+        )
+        dot.node(task.__class__.__name__, color="red", penwidth="1.5")
+        base_f = Path(inspect.getfile(synthesis_workflow)).parent
+        for parent, child in g:
+            url = (
+                Path(inspect.getfile(child.__class__))
+                .relative_to(base_f)
+                .with_suffix("")
+                / "index.html"
+            )
+            anchor = "#" + ".".join(
+                child.__module__.split(".")[1:] + [child.__class__.__name__]
+            )
+            dot.node(child.__class__.__name__, URL="../../" + url.as_posix() + anchor)
+            dot.edge(
+                parent.__class__.__name__,
+                child.__class__.__name__,
+                **default_edge_attrs
+            )
+        filepath = Path(args.create_dependency_graph)
+        filename = filepath.with_suffix("")
+        pattern = re.compile(r"\.?(.*)")
+        match = re.match(pattern, filepath.suffix)
+        dot.render(
+            filename=filename,
+            format=match.group(1),
+            cleanup=True,
+        )
+        sys.exit()
 
     # Run the luigi task
     luigi.build([WORKFLOW_TASKS[args.workflow](**args_dict)], **luigi_config)

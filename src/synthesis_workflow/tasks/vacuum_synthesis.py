@@ -86,7 +86,16 @@ class VacuumSynthesize(WorkflowTask):
     vacuum_synth_morphology_path=ParamLink(VacuumSynthesize),
 )
 class PlotVacuumMorphologies(WorkflowTask):
-    """Plot morphologies to obtain annotations."""
+    """Plot morphologies to obtain annotations.
+
+    The generated images are like the following:
+
+    .. image:: vacuum_morphologies-1.png
+
+    Args:
+        pdf_filename (str): path to the output file
+        vacuum_synth_morphology_path (str): column name to use from the morphlogy DataFrame
+    """
 
     pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
 

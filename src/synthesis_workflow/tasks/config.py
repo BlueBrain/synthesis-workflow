@@ -142,27 +142,27 @@ class ValidationConfig(luigi.Config):
 
 
 class AtlasLocalTarget(OutputLocalTarget):
-    """Specific target for atlas targets"""
+    """Specific target for atlas targets."""
 
 
 class CircuitLocalTarget(OutputLocalTarget):
-    """Specific target for circuit targets"""
+    """Specific target for circuit targets."""
 
 
 class MorphsDfLocalTarget(OutputLocalTarget):
-    """Specific target for morphology dataframe targets"""
+    """Specific target for morphology dataframe targets."""
 
 
 class SynthesisLocalTarget(OutputLocalTarget):
-    """Specific target for synthesis targets"""
+    """Specific target for synthesis targets."""
 
 
 class ValidationLocalTarget(OutputLocalTarget):
-    """Specific target for validation targets"""
+    """Specific target for validation targets."""
 
 
 def reset_default_prefixes():
-    """Set default output paths for targets"""
+    """Set default output paths for targets."""
     OutputLocalTarget.set_default_prefix(PathConfig().result_path)
     AtlasLocalTarget.set_default_prefix(
         # pylint: disable=protected-access

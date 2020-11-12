@@ -1,4 +1,4 @@
-"""Statistical validation tools"""
+"""Statistical validation tools."""
 import copy
 from collections import namedtuple
 from decimal import Decimal
@@ -31,11 +31,12 @@ Stats = namedtuple("Stats", ["dist", "pvalue"])
 
 
 def extract_hist(data, bins=20):
-    """Extracts a histogram distribution
-    from data. Choose bins to select the bins,
-    according to numpy.histogram guidelines.
-    """
+    """Extract a histogram distribution from data.
 
+    Args:
+        data: the data from which the histogram is computed
+        bins: select the bins, according to numpy.histogram guidelines.
+    """
     bin_data, edges = np.histogram(data, bins, normed=True)
 
     edges_centers = [
@@ -46,7 +47,7 @@ def extract_hist(data, bins=20):
 
 
 def load_stat_test(test_name):
-    """Load stat test object from test name"""
+    """Load stat test object from test name."""
     obj = stats
     for attr in test_name.split("."):
         obj = getattr(obj, attr)
@@ -54,10 +55,11 @@ def load_stat_test(test_name):
 
 
 def stat_test(validation_data, reference_data, test, fargs=0.1, val_crit="pvalue"):
-    """Runs the selected statistical test
-    and returns the results(distance, pvalue)
-    along with a PASS - FAIL statement
-    according to the selected threshold.
+    """Run the selected statistical test.
+
+    Returns:
+        the results(distance, pvalue) along with a PASS - FAIL statement
+        according to the selected threshold.
     """
     res_tmp = stats.compare_two(validation_data, reference_data, test)
     results = Stats(*res_tmp)
@@ -70,9 +72,7 @@ def stat_test(validation_data, reference_data, test, fargs=0.1, val_crit="pvalue
 
 
 def write_hist(data, feature, name, bins=20):
-    """Writes the histogram in the format
-    expected by the validation report.
-    """
+    """Write the histogram in the format expected by the validation report."""
     bin_data, edges = extract_hist(data, bins=bins)
 
     pop_data = copy.deepcopy(DICTDATA)
@@ -89,9 +89,7 @@ def write_hist(data, feature, name, bins=20):
 
 
 def unpack_config_data(config, name, component, feature):
-    """Returns values needed for statistical tests
-    from config file.
-    """
+    """Return values needed for statistical tests from config file."""
     base_config = config[name][component][feature]
     return (
         base_config["bins"],
@@ -102,9 +100,7 @@ def unpack_config_data(config, name, component, feature):
 
 
 def write_all(validation_data, reference_data, component, feature, name, config):
-    """Writes the histogram in the format
-    expected by the validation report.
-    """
+    """Write the histogram in the format expected by the validation report."""
     all_data = copy.deepcopy(DICTALLDATA)
 
     bins, test, thresh, val_crit = unpack_config_data(
@@ -143,8 +139,9 @@ def write_all(validation_data, reference_data, component, feature, name, config)
 
 
 def extract_feature(test_population, ref_population, component, feature):
-    """Extracts the distributions of the selected
-    feature from the test and reference populations.
+    """Extract the distributions of the selected feature.
+
+    The distributions are extracted from the test and reference populations.
     """
     neurite_type = getattr(NeuriteType, component)
 

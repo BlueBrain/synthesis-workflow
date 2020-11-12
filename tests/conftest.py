@@ -6,7 +6,6 @@ from pathlib import Path
 from subprocess import call
 
 import luigi
-import nrrd
 import numpy as np
 import pytest
 

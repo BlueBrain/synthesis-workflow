@@ -14,8 +14,7 @@ RIGHT = 1
 
 
 def halve_atlas(annotated_volume, axis=0, side=LEFT):
-    """
-    Returns the half of the annotated volume along the x-axis.
+    """Return the half of the annotated volume along the x-axis.
 
     The identifiers of the voxels located on the left half or the right half
     of the annotated volume are zeroed depending on which `side` is choosen.
@@ -29,9 +28,8 @@ def halve_atlas(annotated_volume, axis=0, side=LEFT):
             Defaults to LEFT.
 
     Returns:
-        halves `annotated_volume` where where voxels on the opposite `side` have been
+        Halves `annotated_volume` where where voxels on the opposite `side` have been
         zeroed (black).
-
     """
     assert axis in range(3)
     assert side in [LEFT, RIGHT]
@@ -58,7 +56,8 @@ def build_circuit(
     density_factor=0.01,
     seed=None,
 ):
-    """
+    """Builds a new circuit by calling ``brainbuilder.app.cells._place``.
+
     Based on YAML cell composition recipe, build a circuit as MVD3 file with:
         - cell positions
         - required cell properties: 'layer', 'mtype', 'etype'
@@ -84,12 +83,12 @@ def build_circuit(
 
 
 def slice_per_mtype(cells, mtypes):
-    """Select cells of given mtype."""
+    """Selects cells of given mtype."""
     return cells[cells["mtype"].isin(mtypes)]
 
 
 def slice_n_cells(cells, n_cells, random_state=0):
-    """Select n_cells random cells per mtypes."""
+    """Selects n_cells random cells per mtypes."""
     sampled_cells = pd.DataFrame()
     for mtype in cells.mtype.unique():
         samples = cells[cells.mtype == mtype].sample(
@@ -100,7 +99,7 @@ def slice_n_cells(cells, n_cells, random_state=0):
 
 
 def get_cells_between_planes(cells, plane_left, plane_right):
-    """Get cells gids between two planes in equation representation."""
+    """Gets cells gids between two planes in equation representation."""
     eq_left = plane_left.get_equation()
     eq_right = plane_right.get_equation()
     left = np.einsum("j,ij", eq_left[:3], cells[["x", "y", "z"]].values)
@@ -110,7 +109,7 @@ def get_cells_between_planes(cells, plane_left, plane_right):
 
 
 def circuit_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
-    """Select n_cells mtype in mtypes."""
+    """Selects n_cells mtype in mtypes."""
     if mtypes is not None:
         cells = slice_per_mtype(cells, mtypes)
 
@@ -133,12 +132,12 @@ def circuit_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
 
 
 def slice_circuit(input_mvd3, output_mvd3, slicer):
-    """Slice an mvd3 file using a slicing function.
+    """Slices an mvd3 file using a slicing function.
 
     Args:
         input_mvd3 (str): path to input mvd3 file
         output_mvd3 (str): path to ouput_mvd3 file
-        slicing_function (function): function to slice the cells dataframe
+        slicer (function): function to slice the cells dataframe
     """
     cells = CellCollection.load_mvd3(input_mvd3)
     sliced_cells = slicer(cells.as_dataframe())
@@ -177,7 +176,6 @@ def create_planes(
         centerline_last_bound (list): (for plane_type == centerline) location of last bound
             for centerline (in voxcell index)
         centerline_axis (str): (for plane_type = aligned) axis along which to create planes
-
     """
     if plane_type == "centerline":
         centerline = _create_centerline(

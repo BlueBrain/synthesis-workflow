@@ -390,6 +390,10 @@ class Synthesize(WorkflowTask):
         out_morphologies = self.output()["out_morphologies"]
         out_apical_points = self.output()["apical_points"]
         debug_scales = self.output().get("debug_scales")
+        if debug_scales is not None:
+            debug_scales_path = debug_scales.path
+        else:
+            debug_scales_path = None
 
         ensure_dir(axon_morphs_path)
         ensure_dir(out_mvd3.path)
@@ -426,7 +430,7 @@ class Synthesize(WorkflowTask):
         }
 
         run_synthesize_morphologies(
-            kwargs, nb_jobs=self.nb_jobs, debug_scales=debug_scales
+            kwargs, nb_jobs=self.nb_jobs, debug_scales_path=debug_scales_path
         )
 
     def output(self):

@@ -1,4 +1,4 @@
-"""common.py - private helper functions of the validation module"""
+"""Private helper functions of the validation module."""
 import contextlib
 import os
 import json
@@ -26,12 +26,12 @@ COMP_MAP = {
 
 
 def pretty_name(name):
-    """Make a pretty name"""
+    """Make a pretty name."""
     return name.replace("_", " ")
 
 
 def add_progress_bar(items, template, description):
-    """Add a progress bar in notebooks"""
+    """Add a progress bar in notebooks."""
     if description:
         from tqdm import tqdm_notebook  # pylint: disable=import-outside-toplevel
 
@@ -40,15 +40,17 @@ def add_progress_bar(items, template, description):
 
 
 def progress_bar_label(template, description, notebook):
-    """Format progress bar label"""
+    """Format progress bar label."""
     return template.format(description) if notebook else None
 
 
 def dump2json(data_dir, var_name, data):
-    """Saves the dictionary 'data' into a .json file.
-    data_dir : the data directory
-    var_name : the name of the dictionary as a string
-    data : the data dictionary
+    """Save the dictionary 'data' into a .json file.
+
+    Args:
+        data_dir : the data directory
+        var_name : the name of the dictionary as a string
+        data : the data dictionary
     """
     fname = os.path.join(data_dir, var_name + ".json")
     with open(fname, "w") as fd:
@@ -57,14 +59,24 @@ def dump2json(data_dir, var_name, data):
 
 
 def load_json(fname):
-    """loads a json file from file with fname into the results dictionary
-    returns the results dictionary"""
+    """Load a json file from file with fname into the results dictionary.
+
+    Returns:
+        The results dictionary
+    """
     with open(fname, "r") as fd:
         return json.load(fd)
 
 
 def find_cells(dir_name):
-    """Returns the cells in dir_name"""
+    """Return the cells in dir_name.
+
+    Args:
+        dir_name (str): path to the directory containing the cells
+
+    Returns:
+        The list of cell files
+    """
     # now we skip all hidden files, starting with '.'
     files = [os.path.join(dir_name, f) for f in os.listdir(dir_name) if f[0] != "."]
 
@@ -76,7 +88,7 @@ def find_cells(dir_name):
 
 @contextlib.contextmanager
 def pyplot_non_interactive():
-    """suppress pyplot showing blank graphs when in interactive mode
+    """Suppress pyplot showing blank graphs when in interactive mode.
 
     This usually happens in the context of jupyter notebooks
     """
@@ -90,7 +102,7 @@ def pyplot_non_interactive():
 
 @contextlib.contextmanager
 def get_agg_fig():
-    """Yield a figure and close it afterwards"""
+    """Yield a figure and close it afterwards."""
     fig = Figure()
     FigureCanvas(fig)
     yield fig
@@ -98,7 +110,7 @@ def get_agg_fig():
 
 
 def center_population(population):
-    """returns a new population where all cells have been translated to their soma origins"""
+    """Return a new population where all cells have been translated to their soma origins."""
     morphs = [
         geom.transform.translate(n, -np.asarray(n.soma.center)) for n in population
     ]
@@ -106,13 +118,13 @@ def center_population(population):
 
 
 def truncate_population(population, count):
-    """returns a new population with `count` elements"""
+    """Return a new population with `count` elements."""
     morphs = [population[i] for i in range(min(len(population), count))]
     return Population(morphs, name=population.name)
 
 
 def get_components_population(population, component):
-    """Get component of a given population"""
+    """Get component of a given population."""
     if component == "full_morph":
         return population
 
@@ -130,7 +142,7 @@ def get_components_population(population, component):
 
 
 def compute_bounding_box(*populations):
-    """Get bounding box of a population"""
+    """Get bounding box of a population."""
     min_bounding_box = np.full(shape=(3,), fill_value=np.inf)
     max_bounding_box = np.full(shape=(3,), fill_value=-np.inf)
 
@@ -147,7 +159,7 @@ def compute_bounding_box(*populations):
 
 
 def plot_population(output_dir, population, xlim, ylim, notebook_desc=None):
-    """Plot a population"""
+    """Plot a population."""
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 

@@ -28,7 +28,6 @@ def _grow_morphology(
     external_diametrizer=None,
 ):
     """Grow single morphology for parallel computations."""
-
     name = f"vacuum_{gid}.asc"
     morphology_path = morphology_base_path / name
     vacuum_synth_morphs_df = pd.DataFrame()
@@ -66,7 +65,6 @@ def grow_vacuum_morphologies(
     With diametrizer='external', we will use diameter-synthesis,
     otherwise 'M1-M5' from TNS are allowed.
     """
-
     global_gid = 0
     vacuum_synth_morphs_df = pd.DataFrame()
     for mtype in tqdm(mtypes):

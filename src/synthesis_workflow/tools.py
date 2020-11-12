@@ -25,6 +25,7 @@ def add_mtype_taxonomy(morphs_df, mtype_taxonomy):
     """From a dict with mtype to morph_class, fill in the morphs_df dataframe.
 
     Args:
+        morphs_df (pandas.DataFrame): the morphs_df DataFrame
         mtype_taxonomy (pandas.DataFrame): with columns mtype and mClass
     """
     morphs_df["morph_class"] = morphs_df["mtype"].map(
@@ -39,6 +40,7 @@ def add_morphology_paths(morphs_df, morphology_dirs):
     """Same as the path loader of morph_tool.utils.neurondb_dataframe, but add multiple columns.
 
     Args:
+        morphs_df (pandas.DataFrame): the morphs_df DataFrame
         morphology_dirs: (dict) If passed, a column with the path to each morphology file
             will be added for each entry of the dict, where the column name is the dict key
     """
@@ -49,11 +51,12 @@ def add_morphology_paths(morphs_df, morphology_dirs):
 
 
 def add_apical_points(morphs_df, apical_points):
-    """Add apical points isec in morphs_df.
+    """Adds apical points isec in morphs_df.
+
     Args:
+        morphs_df (pandas.DataFrame): the morphs_df DataFrame
         apical_points (dict): name of cell as key and apical point isec as value
     """
-
     morphs_df["apical_point_isec"] = -1
     # morphs_df["apical_point_isec_test"] = morphs_df["name"].map(apical_points)
     for name, apical_point in apical_points.items():
@@ -69,10 +72,10 @@ def load_neurondb_to_dataframe(
 
     Args:
         neurondb_path (str): path to a neurondb.xml file
-        morphology_dirs: (dict) If passed, a column with the path to each morphology file
+        morphology_dirs (dict): If passed, a column with the path to each morphology file
             will be added for each entry of the dict, where the column name is the dict key
-        mtype_taxonomy_path (str): path to mtype_taxonomy.tsv file
-        apical_points (dict): name of cell as key and apical point isec as value
+        pc_in_types_path (str): path to mtype_taxonomy.tsv file
+        apical_points_path (str): path to JSON file containing apical points
     """
     morphs_df = neurondb_dataframe(Path(neurondb_path))
 
@@ -100,7 +103,7 @@ def load_circuit(
     path_to_atlas=None,
     circuit_config=None,
 ):
-    """Load a circuit with bluepy.v2."""
+    """Loads a circuit with bluepy.v2."""
     if circuit_config:
         return Circuit(circuit_config)
     return Circuit(
@@ -113,17 +116,17 @@ def load_circuit(
 
 
 def ensure_dir(file_path):
-    """Create directory to save file."""
+    """Creates directory to save file."""
     Path(file_path).parent.mkdir(parents=True, exist_ok=True)
 
 
 def update_morphs_df(morphs_df_path, new_morphs_df):
-    """Update a morphs_df with new entries to preserve duplicates."""
+    """Updates a morphs_df with new entries to preserve duplicates."""
     return pd.read_csv(morphs_df_path).merge(new_morphs_df, how="left")
 
 
 def get_layer_tags(atlas_dir):
-    """Create a VoxelData with layer tags"""
+    """Creates a VoxelData with layer tags."""
     atlas = LocalAtlas(atlas_dir)
 
     names, ids = atlas.get_layers()  # pylint: disable=no-member
@@ -138,9 +141,10 @@ def get_layer_tags(atlas_dir):
 
 
 class IdProcessingFormatter(logging.Formatter):
-    """Logging formatter class"""
+    """Logging formatter class."""
 
     def __init__(self, fmt=None, datefmt=None, current_id=None):
+        """Cretate a new IdProcessingFormatter object."""
         if fmt is None:
             fmt = "%(asctime)s - %(name)s - %(levelname)s -- %(message)s"
         if datefmt is None:
@@ -153,7 +157,7 @@ class IdProcessingFormatter(logging.Formatter):
             self.set_id(current_id)
 
     def set_id(self, new_id):
-        """Update current ID to insert in format"""
+        """Updates current ID to insert in format."""
         if new_id is None:
             new_fmt = self.orig_fmt
         else:
@@ -164,11 +168,11 @@ class IdProcessingFormatter(logging.Formatter):
 
 
 class DebugingFileHandler(logging.FileHandler):
-    """Logging class that can be retrieved"""
+    """Logging class that can be retrieved."""
 
 
 def _wrap_worker(_id, worker, logger_kwargs=None):
-    """Wrap the worker job and catch exceptions that must be caught"""
+    """Wraps the worker job and catch exceptions that must be caught."""
     try:
         if logger_kwargs is not None:
             logger_name = logger_kwargs.get("name")
@@ -254,15 +258,16 @@ def run_master(
     verbose=10,
     logger_kwargs=None,
 ):
-    """Runing the parrallel computation, (adapted from placement_algorithm).
+    """Runing the parallel computation, (adapted from placement_algorithm).
 
     Args:
-        master_cls: The Master application
-        kwargs: A class with same attributes as CLI args
-        parser_args: The arguments of the parser
-        defaults: The default values
-        nb_jobs: Number of threads used
-        logger_kwargs: Parameters given to logger in each processes
+        master_cls (class): The Master application
+        kwargs (dict): A class with same attributes as CLI args
+        parser_args (list): The arguments of the parser
+        defaults (dict): The default values
+        nb_jobs (int): Number of threads used
+        verbose (int): verbosity level used by Joblib
+        logger_kwargs (dict): Parameters given to logger in each processes
     """
     # Format keys to be compliant with argparse
     underscored = {k.replace("-", "_"): v for k, v in kwargs.items()}

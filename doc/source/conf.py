@@ -19,10 +19,10 @@ from pkg_resources import get_distribution
 
 # -- Project information -----------------------------------------------------
 
-project = 'synthesis-workflow'
+project = "synthesis-workflow"
 
 # The short X.Y version
-version = get_distribution('synthesis_workflow').version
+version = get_distribution("synthesis_workflow").version
 
 # The full version, including alpha/beta/rc tags
 release = version
@@ -34,8 +34,9 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.napoleon',
-    'autoapi.extension',
+    "autoapi.extension",
+    "sphinx.ext.graphviz",
+    "sphinx.ext.napoleon",
 ]
 
 autoapi_dirs = [
@@ -48,6 +49,7 @@ autoapi_ignore = [
 ]
 autoapi_python_use_implicit_namespaces = True
 autoapi_keep_files = False
+autoapi_add_toctree_entry = False
 autoapi_options = [
     "imported-members",
     "members",
@@ -72,7 +74,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx-bluebrain-theme'
+html_theme = "sphinx-bluebrain-theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -80,18 +82,40 @@ html_theme = 'sphinx-bluebrain-theme'
 # html_static_path = ['_static']
 
 html_theme_options = {
-    'metadata_distribution': 'synthesis-workflow',
+    "metadata_distribution": "synthesis-workflow",
 }
 
-html_title = 'Synthesis Workflow'
+html_title = "Synthesis Workflow"
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False
 
 # autosummary settings
-autosummary_generate=True
+autosummary_generate = True
 
 # autodoc settings
-autodoc_typehints='signature'
-autodoc_default_options = {'members': True}
+autodoc_typehints = "signature"
+autodoc_default_options = {"members": True}
 autoclass_content = "both"
+
+import re
+
+SKIP = [
+    r".*\.L",
+    r".*tasks\..*\.requires",
+    r".*tasks\..*\.run",
+    r".*tasks\..*\.output",
+]
+
+
+def maybe_skip_member(app, what, name, obj, skip, options):
+    skip = None
+    for pattern in SKIP:
+        if re.match(pattern, name) is not None:
+            skip = True
+            break
+    return skip
+
+
+def setup(app):
+    app.connect("autoapi-skip-member", maybe_skip_member)

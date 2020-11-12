@@ -13,11 +13,11 @@ L = logging.getLogger(__name__)
 
 
 class WorkflowError(Exception):
-    """Exception raised when the workflow is not consistent"""
+    """Exception raised when the workflow is not consistent."""
 
 
 def recursive_check(task, attr="rerun"):
-    """Check if a task or any of its recursive dependencies has a given attribute set to True"""
+    """Check if a task or any of its recursive dependencies has a given attribute set to True."""
     val = getattr(task, attr, False)
 
     for dep in task.deps():
@@ -27,7 +27,7 @@ def recursive_check(task, attr="rerun"):
 
 
 def target_remove(target, *args, **kwargs):
-    """Remove a given target by calling its 'exists()' and 'remove()' methods"""
+    """Remove a given target by calling its 'exists()' and 'remove()' methods."""
     try:
         if target.exists():
             target.remove()
@@ -38,7 +38,7 @@ def target_remove(target, *args, **kwargs):
 
 
 def apply_over_luigi_iterable(luigi_iterable, func):
-    """Apply the given function to a luigi iterable (task.input() or task.output())"""
+    """Apply the given function to a luigi iterable (task.input() or task.output())."""
     try:
         for key, i in luigi_iterable.items():
             func(i, key)
@@ -49,6 +49,7 @@ def apply_over_luigi_iterable(luigi_iterable, func):
 
 def apply_over_inputs(task, func):
     """Apply the given function to all inputs of a luigi task.
+
     The given function should accept the following arguments:
     * luigi_iterable: the inputs or outputs of the task
     * key=None: the key when the iterable is a dictionnary
@@ -63,6 +64,7 @@ def apply_over_inputs(task, func):
 
 def apply_over_outputs(task, func):
     """Apply the given function to all outputs of a luigi task.
+
     The given function should accept the following arguments:
     * luigi_iterable: the inputs or outputs of the task
     * key=None: the key when the iterable is a dictionnary
@@ -77,7 +79,7 @@ def apply_over_outputs(task, func):
 
 @luigi.Task.event_handler(luigi.Event.SUCCESS)
 def log_targets(task):
-    """Hook to log output target of the task"""
+    """Hook to log output target of the task."""
 
     def log_func(target, key=None):
         class_name = task.__class__.__name__
@@ -91,7 +93,7 @@ def log_targets(task):
 
 @luigi.Task.event_handler(luigi.Event.START)
 def log_parameters(task):
-    """Hook to log actual parameter values considering their global processing"""
+    """Hook to log actual parameter values considering their global processing."""
     class_name = task.__class__.__name__
     L.debug("Attributes of %s task after global processing:", class_name)
     for name in task.get_param_names():
@@ -114,7 +116,7 @@ class ForceableTask(luigi.Task):
 
 
 class GlobalParamTask(luigi.Task):
-    """Mixin used to add customisable global parameters"""
+    """Mixin used to add customisable global parameters."""
 
     def __getattribute__(self, name):
         tmp = super().__getattribute__(name)
@@ -142,17 +144,19 @@ class GlobalParamTask(luigi.Task):
 
 
 class WorkflowTask(GlobalParamTask, ForceableTask):
-    """Default task used in workflows
+    """Default task used in workflows.
+
     This task can be forced running again by setting the 'rerun' parameter to True.
-    It can also use copy and link parameters from other tasks."""
+    It can also use copy and link parameters from other tasks.
+    """
 
 
 class WorkflowWrapperTask(WorkflowTask, luigi.WrapperTask):
-    """Base wrapper class with global parameters"""
+    """Base wrapper class with global parameters."""
 
 
 class ExtParameter(luigi.Parameter):
-    """Class to parse file extension parameters"""
+    """Class to parse file extension parameters."""
 
     def parse(self, x):
         pattern = re.compile(r"\.?(.*)")
@@ -161,7 +165,7 @@ class ExtParameter(luigi.Parameter):
 
 
 class RatioParameter(luigi.NumericalParameter):
-    """Class to parse ratio parameters
+    """Class to parse ratio parameters.
 
     The argument must be a float between 0 and 1.
     The operators to include or exclude the boundaries can be set with 'left_op' and
@@ -187,7 +191,7 @@ class RatioParameter(luigi.NumericalParameter):
 
 
 class OptionalParameter(luigi.OptionalParameter):
-    """Mixin to make a parameter class optional"""
+    """Mixin to make a parameter class optional."""
 
     def __init__(self, *args, **kwargs):
         self._cls = self.__class__
@@ -217,15 +221,15 @@ class OptionalParameter(luigi.OptionalParameter):
 
 
 class OptionalIntParameter(OptionalParameter, luigi.IntParameter):
-    """Class to parse optional int parameters"""
+    """Class to parse optional int parameters."""
 
 
 class OptionalNumericalParameter(OptionalParameter, luigi.NumericalParameter):
-    """Class to parse optional int parameters"""
+    """Class to parse optional int parameters."""
 
 
 class BoolParameter(luigi.BoolParameter):
-    """Class to parse boolean parameters and set explicit parsing when default is True"""
+    """Class to parse boolean parameters and set explicit parsing when default is True."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -234,8 +238,9 @@ class BoolParameter(luigi.BoolParameter):
 
 
 class OutputLocalTarget(luigi.LocalTarget):
-    """A target that adds a prefix before the given path. If prefix is not given, the
-    current working directory is taken.
+    """A target that adds a prefix before the given path.
+
+    If prefix is not given, the current working directory is taken.
     """
 
     _prefix = None
@@ -246,7 +251,7 @@ class OutputLocalTarget(luigi.LocalTarget):
 
     @property
     def path(self):
-        """The path stored in this target"""
+        """The path stored in this target."""
         return str(self.ppath)
 
     @path.setter
@@ -255,7 +260,7 @@ class OutputLocalTarget(luigi.LocalTarget):
 
     @property
     def ppath(self):
-        """The path stored in this target returned as a ``pathlib.Path`` object"""
+        """The path stored in this target returned as a ``pathlib.Path`` object."""
         if self._prefix is not None:
             return self._prefix / self._path
         else:
@@ -263,7 +268,7 @@ class OutputLocalTarget(luigi.LocalTarget):
 
     @classmethod
     def set_default_prefix(cls, prefix):
-        """Set the default prefix to the class"""
+        """Set the default prefix to the class."""
         OutputLocalTarget._reset_prefix(cls, prefix)
 
     @staticmethod
@@ -278,7 +283,7 @@ class OutputLocalTarget(luigi.LocalTarget):
 
 
 class ParamLink:
-    """Class to store parameter linking informations"""
+    """Class to store parameter linking informations."""
 
     def __init__(self, cls, name=None, default=None):
         self.cls = cls
@@ -287,8 +292,8 @@ class ParamLink:
 
 
 class copy_params:
-    """
-    Copy a parameter from another Task.
+    """Copy a parameter from another Task.
+
     If no value is given to this parameter, the value from the other task is taken.
 
     **Usage**:
@@ -324,7 +329,6 @@ class copy_params:
     """
 
     def __init__(self, **params_to_copy):
-        """Init."""
         super().__init__()
         if not params_to_copy:
             raise TypeError("params_to_copy cannot be empty")
@@ -332,7 +336,6 @@ class copy_params:
         self.params_to_copy = params_to_copy
 
     def __call__(self, task_that_inherits):
-        """Call."""
         # Get all parameters
         for param_name, attr in self.params_to_copy.items():
             # Check if the parameter exists in the inheriting task
@@ -364,3 +367,19 @@ class copy_params:
                     task._global_params[param_name] = attr
 
         return task_that_inherits
+
+
+def get_dependency_graph(task):
+    """Compute dependency graph of a given task.
+
+    Args:
+        task (luigi.Task): the task from which the dependency graph is computed.
+
+    Returns:
+        list(luigi.task): A list of (parent, child) tuples
+    """
+    childs = []
+    for t in task.deps():
+        childs.append((task, t))
+        childs.extend(get_dependency_graph(t))
+    return childs

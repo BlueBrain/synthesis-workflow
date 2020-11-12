@@ -26,7 +26,7 @@ def setup_logging(
     date_format=None,
     logger=None,
 ):
-    """Setup logging"""
+    """Setup logging."""
     if logger is None:
         root = logging.getLogger()
         root.setLevel(logging.DEBUG)
