@@ -284,13 +284,22 @@ class BuildAxonMorphologies(WorkflowTask):
     placement_seed = luigi.IntParameter(default=0)
     nb_jobs = luigi.IntParameter(default=20)
 
+    def get_neuron_db_path(self, db_name):
+        """Helper function to fix neuronDB vs neurondb in file names."""
+        return (
+            Path(self.axon_cells_path) / Path(self.neurondb_basename).parent / db_name
+        ).with_suffix(".xml")
+
     def requires(self):
         """"""
         tasks = {"circuit": SliceCircuit()}
+
+        neurondb_path = self.get_neuron_db_path("neurondb")
+        if not neurondb_path.exists():
+            neurondb_path = self.get_neuron_db_path("neuronDB")
+
         tasks["axon_cells"] = BuildAxonMorphsDF(
-            neurondb_path=(
-                Path(self.axon_cells_path) / self.neurondb_basename
-            ).with_suffix(".xml"),
+            neurondb_path=neurondb_path,
             morphology_dirs={"clone_path": self.axon_cells_path},
         )
         return tasks

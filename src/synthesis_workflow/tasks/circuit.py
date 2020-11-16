@@ -14,6 +14,7 @@ from synthesis_workflow.circuit import circuit_slicer
 from synthesis_workflow.circuit import create_planes
 from synthesis_workflow.circuit import halve_atlas
 from synthesis_workflow.circuit import slice_circuit
+from synthesis_workflow.circuit import create_atlas_thickness_mask
 from synthesis_workflow.tasks.config import AtlasLocalTarget
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import CircuitLocalTarget
@@ -158,6 +159,9 @@ class BuildCircuit(WorkflowTask):
         left_op=luigi.parameter.operator.lt,
         description="The density of positions generated from the atlas",
     )
+    mask_path = luigi.Parameter(
+        default=None, description="path to save thickness mask (NCx only)"
+    )
     seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")
 
     def requires(self):
@@ -168,12 +172,20 @@ class BuildCircuit(WorkflowTask):
         """"""
         cell_composition_path = self.input().ppath / self.cell_composition_path
         mtype_taxonomy_path = self.input().ppath / self.mtype_taxonomy_path
+
+        thickness_mask_path = None
+        if self.mask_path is not None:
+            thickness_mask = create_atlas_thickness_mask(CircuitConfig().atlas_path)
+            thickness_mask.save_nrrd(self.mask_path)
+            thickness_mask_path = Path(self.mask_path).stem
+
         cells = build_circuit(
             cell_composition_path,
             mtype_taxonomy_path,
             CircuitConfig().atlas_path,
             self.density_factor,
-            self.seed,
+            mask=thickness_mask_path,
+            seed=self.seed,
         )
         ensure_dir(self.output().path)
         cells.save(self.output().path)

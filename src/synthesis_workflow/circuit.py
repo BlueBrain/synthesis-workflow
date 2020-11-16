@@ -1,7 +1,9 @@
 """Functions for slicing mvd3 circuit files to place specific cells only."""
+import logging
 import pandas as pd
 from tqdm import tqdm
 from voxcell import CellCollection
+from voxcell.nexus.voxelbrain import LocalAtlas
 import numpy as np
 
 from atlas_analysis.planes.planes import create_planes as _create_planes
@@ -9,6 +11,7 @@ from atlas_analysis.planes.planes import create_centerline as _create_centerline
 from atlas_analysis.planes.planes import _smoothing
 from brainbuilder.app.cells import _place as place
 
+L = logging.getLogger(__name__)
 LEFT = 0
 RIGHT = 1
 
@@ -49,11 +52,53 @@ def halve_atlas(annotated_volume, axis=0, side=LEFT):
     return annotated_volume
 
 
+def create_atlas_thickness_mask(atlas_dir):
+    """Create a mask on an atlas to to select voxels with small enough thicknesses values.
+
+    WARNING: this function can only be used for Isocortex atlas for now.
+    """
+    atlas = LocalAtlas(atlas_dir)
+    brain_regions = atlas.load_data("brain_regions", memcache=True)
+    tolerance = 2.0 * brain_regions.voxel_dimensions[0]
+
+    # Layer thicknesses from J. Defilipe 2017 (unpublished), see Section 5.1.1.4
+    # of the release report "Neocortex Tissue Reconstruction",
+    # https://github.com/BlueBrain/ncx_release_report.git
+    max_thicknesses = [210.639, 190.2134, 450.6398, 242.554, 670.2, 893.62]
+
+    isocortex_mask = atlas.get_region_mask("Isocortex", memcache=True).raw
+
+    too_thick = np.full(isocortex_mask.shape, False, dtype=np.bool)
+    for i, max_thickness in enumerate(max_thicknesses, 1):
+        ph = atlas.load_data(f"[PH]{i}", memcache=True)
+        with np.errstate(invalid="ignore"):
+            invalid_thickness = (ph.raw[..., 1] - ph.raw[..., 0]) > (
+                max_thickness + tolerance
+            )
+        too_thick = np.logical_or(too_thick, invalid_thickness)
+
+        L.info(
+            "Layer %s with %s percentage of bad voxels",
+            i,
+            np.round(100 * invalid_thickness[isocortex_mask].mean(), 3),
+        )
+
+    L.info(
+        "%s percentage of bad voxels in total",
+        np.round(100 * too_thick[isocortex_mask].mean(), 3),
+    )
+
+    return brain_regions.with_data(
+        np.logical_and(~too_thick, isocortex_mask).astype(np.uint8)
+    )
+
+
 def build_circuit(
     cell_composition_path,
     mtype_taxonomy_path,
     atlas_path,
     density_factor=0.01,
+    mask=None,
     seed=None,
 ):
     """Builds a new circuit by calling ``brainbuilder.app.cells._place``.
@@ -72,7 +117,7 @@ def build_circuit(
         mini_frequencies_path=None,
         atlas_cache=None,
         region=None,
-        mask_dset=None,
+        mask_dset=mask,
         density_factor=density_factor,
         soma_placement="basic",
         atlas_properties=None,
@@ -185,8 +230,8 @@ def create_planes(
 
     elif plane_type == "aligned":
         _n_points = 10
-        bbox = layer_annotation.bbox
         centerline = np.zeros([_n_points, 3])
+        bbox = layer_annotation.bbox
         centerline[:, centerline_axis] = np.linspace(
             bbox[0, centerline_axis],
             bbox[1, centerline_axis],
