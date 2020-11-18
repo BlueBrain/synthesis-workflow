@@ -7,6 +7,8 @@ It is devided into two packages:
 	* **synthesis-workflow**, which contains the workflow tasks and tools.
 	* **MorphVal**, which is a library used for morphology validation and can be used as a standalone.
 
+The complete documentation of this project is available here:`<https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow/latest/index.html>`_
+
 
 Installation
 ------------
@@ -67,16 +69,3 @@ You can get help and complete parameter description with the following command:
 .. code::
 
     morph_validation --help
-
-Workflows
----------
-
-The package ``synthesis-workflow`` contains many tasks that are organized in workflows.
-The two main workflows are the following:
-
-    * ``synthesis-workflow.tasks.ValidateVacuumSynthesis``: this workflow generates cells
-      in vacuum (e.g. with no atlas information) and compute some simple validation features.
-    * ``synthesis-workflow.tasks.ValidateSynthesis``: this workflow generates cells in a
-      given atlas and compute many validation features.
-
-More details on these workflows and their tasks can be found in the API Reference.
