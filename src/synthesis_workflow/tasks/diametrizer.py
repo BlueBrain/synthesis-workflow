@@ -70,7 +70,11 @@ def _plot_models(models_params, models_data, fig_folder="figures", ext=".png"):
     nb_jobs=ParamLink(RunnerConfig),
 )
 class BuildDiameterModels(WorkflowTask):
-    """Task to build diameter models from set of cells."""
+    """Task to build diameter models from set of cells.
+
+    Attributes:
+        nb_jobs (int): Number of workers.
+    """
 
     morphs_df_path = luigi.Parameter(default="morphs_df.csv")
     morphology_path = luigi.Parameter(default="morphology_path")

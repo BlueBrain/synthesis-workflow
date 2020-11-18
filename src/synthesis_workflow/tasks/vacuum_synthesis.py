@@ -20,6 +20,7 @@ from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
 from synthesis_workflow.tools import ensure_dir
 from synthesis_workflow.vacuum_synthesis import grow_vacuum_morphologies
 from synthesis_workflow.vacuum_synthesis import plot_vacuum_morphologies
+from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
 
 
 morphio.set_maximum_warnings(0)
@@ -33,14 +34,27 @@ L = logging.getLogger(__name__)
     joblib_verbose=ParamLink(RunnerConfig),
 )
 class VacuumSynthesize(WorkflowTask):
-    """Grow cells in vacuum, for annotation tasks."""
+    """Grow cells in vacuum, for annotation tasks.
 
-    vacuum_synth_morphology_path = luigi.Parameter(default="vacuum_synth_morphologies")
+    Attributes:
+        mtypes (list(str)): List of mtypes to plot.
+        nb_jobs (int): Number of jobs.
+        joblib_verbose (int): Verbosity level of joblib.
+    """
+
+    vacuum_synth_morphology_path = luigi.Parameter(default=VACUUM_SYNTH_MORPHOLOGY_PATH)
+    """str: Name of the column in the morphs_df.csv file."""
+
     vacuum_synth_morphs_df_path = luigi.Parameter(default="vacuum_synth_morphs_df.csv")
+    """str: Path to the morphs_df.csv file."""
+
     diametrizer = luigi.ChoiceParameter(
         default="external", choices=["external"] + [f"M{i}" for i in range(1, 6)]
     )
+    """str: Diametrizer model to use."""
+
     n_cells = luigi.IntParameter(default=10)
+    """int: Number of cells to synthesize."""
 
     def requires(self):
         """"""
@@ -92,12 +106,12 @@ class PlotVacuumMorphologies(WorkflowTask):
 
     .. image:: vacuum_morphologies-1.png
 
-    Args:
-        pdf_filename (str): path to the output file
-        vacuum_synth_morphology_path (str): column name to use from the morphlogy DataFrame
+    Attributes:
+        vacuum_synth_morphology_path (str): Column name to use from the morphlogy DataFrame.
     """
 
     pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
+    """str: Path to the output file."""
 
     def requires(self):
         """"""

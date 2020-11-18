@@ -209,6 +209,12 @@ class OptionalParameter(luigi.OptionalParameter):
         else:
             return None
 
+    def normalize(self, x):
+        if x is not None:
+            return self._base_cls.normalize(self, x)
+        else:
+            return None
+
     def _warn_on_wrong_param_type(self, param_name, param_value):
         if self.__class__ != self._cls:
             return
@@ -222,6 +228,10 @@ class OptionalParameter(luigi.OptionalParameter):
 
 class OptionalIntParameter(OptionalParameter, luigi.IntParameter):
     """Class to parse optional int parameters."""
+
+
+class OptionalChoiceParameter(OptionalParameter, luigi.ChoiceParameter):
+    """Class to parse optional choice parameters."""
 
 
 class OptionalNumericalParameter(OptionalParameter, luigi.NumericalParameter):

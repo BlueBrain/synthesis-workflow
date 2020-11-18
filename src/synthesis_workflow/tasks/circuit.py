@@ -22,6 +22,7 @@ from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import copy_params
+from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
 from synthesis_workflow.tasks.luigi_tools import ParamLink
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
@@ -31,19 +32,19 @@ from synthesis_workflow.tools import get_layer_tags
 
 
 class CreateAtlasLayerAnnotations(WorkflowTask):
-    """Create the annotation file for layers from an atlas.
-
-    Args:
-        layer_annotations_path (str): path to save layer annotations constructed from atlas
-        use_half (bool): set to True to use half of the atlas (left or right hemisphere)
-        half_axis (int): direction to select half of the atlas (can be 0, 1 or 2)
-        half_side (int): side to choose to halve the atlas (0=left, 1=right)
-    """
+    """Create the annotation file for layers from an atlas."""
 
     layer_annotations_path = luigi.Parameter(default="layer_annotation.nrrd")
+    """str: Path to save layer annotations constructed from atlas."""
+
     use_half = BoolParameter(default=False)
+    """bool: Set to True to use half of the atlas (left or right hemisphere)."""
+
     half_axis = luigi.IntParameter(default=0)
+    """int: Direction to select half of the atlas (can be 0, 1 or 2)."""
+
     half_side = luigi.IntParameter(default=0)
+    """int: Side to choose to halve the atlas (0=left, 1=right)."""
 
     def run(self):
         """"""
@@ -82,36 +83,60 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
 
 
 class CreateAtlasPlanes(WorkflowTask):
-    """Create plane cuts of an atlas.
-
-    Args:
-        plane_type (str): type of planes creation algorithm, two choices:
-
-            * centerline: centerline is computed between first_bound and last_bound with
-              internal algorithm (from atlas-analysis package), (warning: experimental)
-            * aligned: centerline is a straight line, along the centerline_axis
-
-        plane_count (int): number of planes to create slices of atlas,
-        slice_thickness (float): thickness of slices (in micrometer)
-        centerline_first_bound (list): (for plane_type == centerline) location of first bound
-            for centerline (in voxcell index)
-        centerline_last_bound (list): (for plane_type == centerline) location of last bound
-            for centerline (in voxcell index)
-        centerline_axis (str): (for plane_type = aligned) axis along which to create planes
-        atlas_planes_path (str): path to save atlas planes
-    """
+    """Create plane cuts of an atlas."""
 
     plane_type = luigi.ChoiceParameter(
-        default="centerline", choices=["aligned", "centerline"]
+        default="centerline",
+        choices=["aligned", "centerline"],
+        description="Type of planes creation algorithm.",
     )
-    plane_count = luigi.IntParameter(default=10)
-    slice_thickness = luigi.FloatParameter(default=100)
+    """str: Type of planes creation algorithm, two choices:
 
-    centerline_first_bound = luigi.ListParameter(default=[126, 181, 220])
-    centerline_last_bound = luigi.ListParameter(default=[407, 110, 66])
-    centerline_axis = luigi.IntParameter(default=0)
+        * centerline: centerline is computed between first_bound and last_bound with
+          internal algorithm (from atlas-analysis package), (warning: experimental)
+        * aligned: centerline is a straight line, along the centerline_axis
+    """
 
-    atlas_planes_path = luigi.Parameter(default="atlas_planes")
+    plane_count = luigi.IntParameter(
+        default=10, description="Number of planes to create slices of atlas."
+    )
+    """int: Number of planes to create slices of atlas."""
+
+    slice_thickness = luigi.FloatParameter(
+        default=100, description="Thickness of slices (in micrometer)."
+    )
+    """float: Thickness of slices (in micrometer)."""
+
+    centerline_first_bound = luigi.ListParameter(
+        default=[126, 181, 220],
+        description=(
+            "(only for plane_type == centerline) Location of first bound for centerline "
+            "(in voxcell index)."
+        ),
+    )
+    """list: (only for plane_type == centerline) Location of first bound for centerline
+    (in voxcell index)."""
+
+    centerline_last_bound = luigi.ListParameter(
+        default=[407, 110, 66],
+        description=(
+            "(only for plane_type == centerline) Location of last bound for centerline "
+            "(in voxcell index)."
+        ),
+    )
+    """list: (only for plane_type == centerline) Location of last bound for centerline
+    (in voxcell index)."""
+
+    centerline_axis = luigi.IntParameter(
+        default=0,
+        description="(only for plane_type = aligned) Axis along which to create planes.",
+    )
+    """str: (only for plane_type = aligned) Axis along which to create planes."""
+
+    atlas_planes_path = luigi.Parameter(
+        default="atlas_planes", description="Path to save atlas planes."
+    )
+    """str: Path to save atlas planes."""
 
     def requires(self):
         """"""
@@ -143,26 +168,30 @@ class CreateAtlasPlanes(WorkflowTask):
 class BuildCircuit(WorkflowTask):
     """Generate cell positions and me-types from atlas, compositions and taxonomy.
 
-    Args:
-        cell_composition_path (str): path to the cell composition file (YAML)
+    Attributes:
         mtype_taxonomy_path (str): path to the taxonomy file (TSV)
-        density_factor (float): density factor
-        seed (int): pseudo-random generator seed
     """
 
     cell_composition_path = luigi.Parameter(
         default="cell_composition.yaml",
-        description="path to the cell composition file (YAML)",
+        description="Path to the cell composition file (YAML).",
     )
+    """str: Path to the cell composition file (YAML)."""
+
     density_factor = RatioParameter(
         default=0.01,
         left_op=luigi.parameter.operator.lt,
-        description="The density of positions generated from the atlas",
+        description="The density of positions generated from the atlas.",
     )
+    """float: The density of positions generated from the atlas."""
+
     mask_path = luigi.Parameter(
-        default=None, description="path to save thickness mask (NCx only)"
+        default=None, description="Path to save thickness mask (NCx only)."
     )
-    seed = luigi.IntParameter(default=None, description="pseudo-random generator seed")
+    """str: Path to save thickness mask (NCx only)."""
+
+    seed = luigi.IntParameter(default=None, description="Pseudo-random generator seed.")
+    """int: Pseudo-random generator seed."""
 
     def requires(self):
         """"""
@@ -201,16 +230,20 @@ class BuildCircuit(WorkflowTask):
 class SliceCircuit(WorkflowTask):
     """Create a smaller circuit .mvd3 file for subsampling.
 
-    Args:
-        sliced_circuit_path (str): path to save sliced circuit somata mvd3
-        mtypes (list): list of mtypes to consider
-        n_cells (int): number of cells per mtype to consider
-        hemisphere (str): 'left' or 'right'
+    Attributes:
+        mtypes (list): List of mtypes to consider.
     """
 
     sliced_circuit_path = luigi.Parameter(default="sliced_circuit_somata.mvd3")
+    """str: Path to save sliced circuit somata mvd3."""
+
     n_cells = luigi.IntParameter(default=10)
-    hemisphere = luigi.Parameter(default=None)
+    """int: Number of cells per mtype to consider."""
+
+    hemisphere = OptionalChoiceParameter(
+        default=None, choices=["left", "right"], description="The hemisphere side."
+    )
+    """str: (optional) The hemisphere side."""
 
     def requires(self):
         """"""

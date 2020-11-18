@@ -53,8 +53,8 @@ L = logging.getLogger(__name__)
 class ConvertMvd3(WorkflowTask):
     """Convert synthesize mvd3 file to morphs_df.csv file.
 
-    Args:
-        ext (str): extension for morphology files
+    Attributes:
+        ext (str): Extension for morphology files.
     """
 
     def requires(self):
@@ -82,26 +82,31 @@ class PlotMorphometrics(WorkflowTask):
     The generated images are like the following:
 
     .. image:: morphometrics-1.png
-
-    Args:
-        in_atlas (bool): set to True to consider cells in an atlas
-        config_features (dict): the feature from ``morph_validator.feature_configs`` to plot
-        morphometrics_path (str): path to output directory (relative from PathConfig.result_path)
-        base_key (str): base key to use in the morphology DataFrame
-        comp_key (str): compared key to use in the morphology DataFrame
-        base_label (str): label for base morphologies
-        comp_label (str): label for compared morphologies
-        normalize (str): normalize data if set to True
     """
 
     in_atlas = BoolParameter(default=False)
+    """bool: Set to True to consider cells in an atlas."""
+
     config_features = luigi.DictParameter(default=None)
+    """dict: The feature from ``morph_validator.feature_configs`` to plot."""
+
     morphometrics_path = luigi.Parameter(default="morphometrics")
+    """str: Path to output directory (relative from ``PathConfig.result_path``)."""
+
     base_key = luigi.Parameter(default="repaired_morphology_path")
+    """str: Base key to use in the morphology DataFrame."""
+
     comp_key = luigi.Parameter(default=SYNTH_MORPHOLOGY_PATH)
+    """str: Compared key to use in the morphology DataFrame."""
+
     base_label = luigi.Parameter(default="bio")
+    """str: Label for base morphologies."""
+
     comp_label = luigi.Parameter(default="synth")
+    """str: Label for compared morphologies."""
+
     normalize = BoolParameter()
+    """bool: Normalize data if set to True."""
 
     def requires(self):
         """"""
@@ -144,17 +149,19 @@ class PlotMorphometrics(WorkflowTask):
 class PlotDensityProfiles(WorkflowTask):
     """Plot density profiles of neurites in an atlas.
 
-    Args:
-        density_profiles_path (str): path for pdf file
-        sample_distance (float): distance between sampled points along neurites
-        sample (float): number of cells to use, if None, all available
-        circuit_type (str): type of the circuit (in_vacuum, O1, etc...)
-        nb_jobs (int) : number of joblib workers
+    Attributes:
+        sample (float): Number of cells to use. if None, use all available cells.
+        nb_jobs (int) : Number of joblib workers.
     """
 
     density_profiles_path = luigi.Parameter(default="density_profiles.pdf")
+    """str: Path for pdf file."""
+
     sample_distance = luigi.FloatParameter(default=10)
+    """float: Distance between sampled points along neurites."""
+
     in_atlas = BoolParameter(default=False)
+    """bool: Trigger atlas case."""
 
     def requires(self):
         """"""
@@ -208,24 +215,25 @@ class PlotCollage(WorkflowTask):
 
     .. image:: collages-1.png
 
-    Args:
-        collage_base_path (str): path to the output folder
-        sample (float): number of cells to use, if None, all available
-        mtypes (list(str)): mtypes to plot
-        nb_jobs (int) : number of joblib workers
-        joblib_verbose (int) verbose level of joblib
-        dpi (int): dpi for pdf rendering (rasterized)
-        realistic_diameters (bool): set or unset realistic diameter when NeuroM plot neurons
-        linewidth (float): linewidth used by NeuroM to plot neurons
-        diameter_scale (float): diameter scale used by NeuroM to plot neurons
+    Attributes:
+        mtypes (list(str)): Mtypes to plot.
+        nb_jobs (int): Number of joblib workers.
+        joblib_verbose (int): Verbosity level of joblib.
+        sample (float): Number of cells to use, if None, all available.
     """
 
     collage_base_path = luigi.Parameter(default="collages")
+    """str: Path to the output folder."""
+
     dpi = luigi.IntParameter(default=1000)
+    """int: Dpi for pdf rendering (rasterized)."""
+
     realistic_diameters = BoolParameter(
         default=True,
         description="Set or unset realistic diameter when NeuroM plot neurons",
     )
+    """bool: Set or unset realistic diameter when NeuroM plot neurons."""
+
     linewidth = luigi.NumericalParameter(
         default=0.1,
         var_type=float,
@@ -234,6 +242,8 @@ class PlotCollage(WorkflowTask):
         left_op=luigi.parameter.operator.lt,
         description="Linewidth used by NeuroM to plot neurons",
     )
+    """float: Linewidth used by NeuroM to plot neurons."""
+
     diameter_scale = OptionalNumericalParameter(
         default=view._DIAMETER_SCALE,  # pylint: disable=protected-access
         var_type=float,
@@ -242,6 +252,7 @@ class PlotCollage(WorkflowTask):
         left_op=luigi.parameter.operator.lt,
         description="Diameter scale used by NeuroM to plot neurons",
     )
+    """float: Diameter scale used by NeuroM to plot neurons."""
 
     def requires(self):
         """"""
@@ -285,16 +296,19 @@ class PlotCollage(WorkflowTask):
 class PlotSingleCollage(WorkflowTask):
     """Plot collage for a single mtype.
 
-    Args:
-        collage_base_path (str): path to the output folder
-        mtype (str of list(str)): mtype(s) to plot
-        sample (float): number of cells to use, if None, all available
-        nb_jobs (int) : number of joblib workers
-        joblib_verbose (int) verbose level of joblib
-        dpi (int): dpi for pdf rendering (rasterized)
+    Attributes:
+        nb_jobs (int): Number of joblib workers.
+        joblib_verbose (int): Verbosity level of joblib.
+        collage_base_path (str): Path to the output folder.
+        sample (float): Number of cells to use, if None, all available.
+        dpi (int): Dpi for pdf rendering (rasterized).
+        realistic_diameters (bool): Set or unset realistic diameter when NeuroM plot neurons.
+        linewidth (float): Linewidth used by NeuroM to plot neurons.
+        diameter_scale (float): Diameter scale used by NeuroM to plot neurons.
     """
 
     mtype = luigi.Parameter()
+    """str or list(str): The mtype(s) to plot."""
 
     def requires(self):
         """"""
@@ -363,30 +377,35 @@ class PlotScales(WorkflowTask):
 
     .. image:: scale_statistics-5.png
 
-    Args:
-        scales_base_path (str): path to the output folder
-        log_files (str): (optional) directory containing log files to parse
-        mtypes (list(str)): mtypes to plot
-        neuron_type_position_regex (str): regex used to find neuron type and position
-        default_scale_regex (str): regex used to find default scales
-        target_scale_regex (str): regex used to find target scales
-        neurite_hard_limit_regex (str): regex used to find neurite hard limits
+    Attributes:
+        mtypes (list(str)): Mtypes to plot.
     """
 
     scales_base_path = luigi.Parameter(default="scales")
+    """str: Path to the output folder."""
+
     log_files = luigi.OptionalParameter(default=None)
+    """str: (optional) Directory containing log files to parse."""
+
     neuron_type_position_regex = luigi.Parameter(
         default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite type and position: (.*)"
     )
+    """str: Regex used to find neuron type and position."""
+
     default_scale_regex = luigi.Parameter(
         default=r".*\[WORKER TASK ID=([0-9]*)\] Default barcode scale: (.*)"
     )
+    """str: Regex used to find default scales."""
+
     target_scale_regex = luigi.Parameter(
         default=r".*\[WORKER TASK ID=([0-9]*)\] Target barcode scale: (.*)"
     )
+    """str: Regex used to find target scales."""
+
     neurite_hard_limit_regex = luigi.Parameter(
         default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite hard limit rescaling: (.*)"
     )
+    """str: Regex used to find neurite hard limits."""
 
     def requires(self):
         """"""
@@ -456,16 +475,17 @@ class PlotPathDistanceFits(WorkflowTask):
 
     .. image:: path_distance_fit-1.png
 
-    Args:
-        output_path (str): path to the output file
-        mtypes (list(str)): mtypes to plot
-        morphology_path (str): column name to use in the DF from ApplySubstitutionRules
-        outlier_percentage (int): percentage from which the outliers are removed
-        nb_jobs (int): number of jobs
+    Attributes:
+        mtypes (list(str)): Mtypes to plot.
+        morphology_path (str): Column name to use in the DF from ApplySubstitutionRules.
+        nb_jobs (int): Number of jobs.
     """
 
     output_path = luigi.Parameter(default="path_distance_fit.pdf")
+    """str: Path to the output file."""
+
     outlier_percentage = luigi.IntParameter(default=90)
+    """int: Percentage from which the outliers are removed."""
 
     def requires(self):
         """"""
@@ -501,24 +521,29 @@ class PlotPathDistanceFits(WorkflowTask):
     nb_jobs=ParamLink(RunnerConfig),
 )
 class MorphologyValidationReports(WorkflowTask):
-    """Create MorphVal reports.
+    """Create morphology validation reports.
 
-    Args:
-        output_path (str): path to the output file
-        mtypes (list(str)): mtypes to plot
-        morphology_path (str): column name to use in the DF from ApplySubstitutionRules
-        outlier_percentage (int): percentage from which the outliers are removed
-        nb_jobs (int): number of jobs
+    Attributes:
+        mtypes (list(str)): List of mtypes to plot.
+        morphology_path (str): Column name to use in the DF from ApplySubstitutionRules.
+        nb_jobs (int): Number of jobs.
     """
 
     config_path = luigi.OptionalParameter(default=None)
+    """str: (optional) Path to the configuration file. Use default configuration if not provided."""
+
     output_path = luigi.Parameter(default="morphology_validation_reports")
+    """str: Path to the output file."""
+
     cell_figure_count = luigi.IntParameter(
         default=10, description="Number of example cells to show"
     )
+    """int: Number of example cells to show"""
+
     bio_compare = BoolParameter(
         default=False, description="Use the bio compare template"
     )
+    """bool: Use the bio compare template"""
 
     def requires(self):
         """"""

@@ -18,13 +18,16 @@ from synthesis_workflow.synthesis import get_max_len
 from synthesis_workflow.utils import DisableLogger
 
 
+VACUUM_SYNTH_MORPHOLOGY_PATH = "vacuum_synth_morphologies"
+
+
 def _grow_morphology(
     gid,
     mtype,
     tmd_parameters,
     tmd_distributions,
     morphology_base_path,
-    vacuum_morphology_path="vacuum_morphology_path",
+    vacuum_morphology_path=VACUUM_SYNTH_MORPHOLOGY_PATH,
     external_diametrizer=None,
 ):
     """Grow single morphology for parallel computations."""
@@ -55,7 +58,7 @@ def grow_vacuum_morphologies(
     tmd_parameters,
     tmd_distributions,
     morphology_base_path,
-    vacuum_morphology_path="vacuum_morphology_path",
+    vacuum_morphology_path=VACUUM_SYNTH_MORPHOLOGY_PATH,
     diametrizer="external",
     joblib_verbose=0,
     nb_jobs=1,
