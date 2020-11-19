@@ -1,4 +1,5 @@
 """utils functions."""
+import glob
 import json
 import logging
 import sys
@@ -19,6 +20,8 @@ from placement_algorithm.exceptions import SkipSynthesisError
 from morph_tool.utils import neurondb_dataframe, find_morph
 from voxcell import VoxelData
 from voxcell.nexus.voxelbrain import LocalAtlas
+
+L = logging.getLogger(__name__)
 
 
 def add_mtype_taxonomy(morphs_df, mtype_taxonomy):
@@ -118,6 +121,45 @@ def load_circuit(
 def ensure_dir(file_path):
     """Creates directory to save file."""
     Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+
+
+def find_case_insensitive_file(path):
+    """Helper function to find a file ignoring case."""
+
+    def either(c):
+        return "[%s%s]" % (c.lower(), c.upper()) if c.isalpha() else c
+
+    # Return the exact path if it exists
+    exact_path = Path(path)
+    if exact_path.exists():
+        return exact_path
+
+    directory = exact_path.parent
+
+    # Try to find the file ignoring the case
+    pattern = "".join(map(either, exact_path.name))
+    complete_path = (directory / pattern).as_posix()
+
+    all_possible_files = glob.glob(complete_path)
+
+    if len(all_possible_files) == 1:
+        found_file = all_possible_files[0]
+        L.warning(
+            "The file '%s' was not found, using '%s' instead.", exact_path, found_file
+        )
+        return found_file
+    else:
+        if len(all_possible_files) == 0:
+            error_msg = (
+                f"The file '{exact_path.as_posix()}' could not be found even "
+                "ignoring case."
+            )
+        else:
+            error_msg = (
+                f"The file '{exact_path}' could not be found but several files were found "
+                f"ignoring case: {all_possible_files}"
+            )
+        raise ValueError(error_msg)
 
 
 def update_morphs_df(morphs_df_path, new_morphs_df):

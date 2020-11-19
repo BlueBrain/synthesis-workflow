@@ -36,6 +36,7 @@ from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.utils import GetSynthesisInputs
 from synthesis_workflow.tools import ensure_dir
+from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
 
 
@@ -79,11 +80,13 @@ class BuildMorphsDF(WorkflowTask):
     def run(self):
         """"""
 
-        L.debug("Build morphology dataframe from %s", self.neurondb_path)
+        neurondb_path = find_case_insensitive_file(self.neurondb_path)
+
+        L.debug("Build morphology dataframe from %s", neurondb_path)
 
         mtype_taxonomy_path = self.input().ppath / self.mtype_taxonomy_path
         morphs_df = load_neurondb_to_dataframe(
-            self.neurondb_path,
+            neurondb_path,
             self.morphology_dirs,
             mtype_taxonomy_path,
             self.apical_points_path,
@@ -323,19 +326,17 @@ class BuildAxonMorphologies(WorkflowTask):
     nb_jobs = luigi.IntParameter(default=20, description="Number of workers.")
     """int: Number of workers."""
 
-    def get_neuron_db_path(self, db_name):
+    def get_neuron_db_path(self, ext):
         """Helper function to fix neuronDB vs neurondb in file names."""
-        return (
-            Path(self.axon_cells_path) / Path(self.neurondb_basename).parent / db_name
-        ).with_suffix(".xml")
+        return (Path(self.axon_cells_path) / self.neurondb_basename).with_suffix(
+            "." + ext
+        )
 
     def requires(self):
         """"""
         tasks = {"circuit": SliceCircuit()}
 
-        neurondb_path = self.get_neuron_db_path("neurondb")
-        if not neurondb_path.exists():
-            neurondb_path = self.get_neuron_db_path("neuronDB")
+        neurondb_path = self.get_neuron_db_path("xml")
 
         tasks["axon_cells"] = BuildAxonMorphsDF(
             neurondb_path=neurondb_path,
@@ -353,9 +354,7 @@ class BuildAxonMorphologies(WorkflowTask):
             axon_cells = self.input()["axon_cells"].path
         else:
             axon_cells = None
-            neurondb_path = (
-                Path(self.axon_cells_path) / self.neurondb_basename
-            ).with_suffix(".dat")
+            neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("dat"))
 
         if any(
             [

@@ -134,6 +134,8 @@ def slice_per_mtype(cells, mtypes):
 
 def slice_n_cells(cells, n_cells, random_state=0):
     """Selects n_cells random cells per mtypes."""
+    if n_cells <= 0:
+        return cells
     sampled_cells = pd.DataFrame()
     for mtype in cells.mtype.unique():
         samples = cells[cells.mtype == mtype].sample(
