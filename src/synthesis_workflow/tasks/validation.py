@@ -1,4 +1,5 @@
 """Luigi tasks for validation of synthesis."""
+import json
 import logging
 from pathlib import Path
 
@@ -11,16 +12,6 @@ from neurom.view import view
 from voxcell import VoxelData
 
 from morphval import validation_main as morphval_validation
-from synthesis_workflow.tools import load_circuit
-from synthesis_workflow.validation import convert_mvd3_to_morphs_df
-from synthesis_workflow.validation import parse_log
-from synthesis_workflow.validation import plot_collage
-from synthesis_workflow.validation import plot_density_profiles
-from synthesis_workflow.validation import plot_morphometrics
-from synthesis_workflow.validation import plot_path_distance_fits
-from synthesis_workflow.validation import plot_scale_statistics
-from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
-from synthesis_workflow.validation import VacuumCircuit
 from synthesis_workflow.tasks.circuit import CreateAtlasLayerAnnotations
 from synthesis_workflow.tasks.circuit import CreateAtlasPlanes
 from synthesis_workflow.tasks.config import CircuitConfig
@@ -42,6 +33,18 @@ from synthesis_workflow.tasks.synthesis import BuildMorphsDF
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
 from synthesis_workflow.tasks.synthesis import Synthesize
 from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
+from synthesis_workflow.tools import load_circuit
+from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
+from synthesis_workflow.validation import convert_mvd3_to_morphs_df
+from synthesis_workflow.validation import parse_log
+from synthesis_workflow.validation import plot_collage
+from synthesis_workflow.validation import plot_density_profiles
+from synthesis_workflow.validation import plot_morphometrics
+from synthesis_workflow.validation import plot_path_distance_fits
+from synthesis_workflow.validation import plot_scale_statistics
+from synthesis_workflow.validation import plot_score_matrix
+from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
+from synthesis_workflow.validation import VacuumCircuit
 
 
 L = logging.getLogger(__name__)
@@ -597,6 +600,86 @@ class MorphologyValidationReports(WorkflowTask):
             cell_figure_count=self.cell_figure_count, nb_jobs=self.nb_jobs
         )
         validator.write_report(validation_report=(not self.bio_compare))
+
+    def output(self):
+        """"""
+        return ValidationLocalTarget(self.output_path)
+
+
+@copy_params(
+    mtypes=ParamLink(SynthesisConfig),
+    morphology_path=ParamLink(PathConfig),
+    nb_jobs=ParamLink(RunnerConfig),
+)
+class PlotScoreMatrix(WorkflowTask):
+    """Create score matrix reports.
+
+    The generated images are like the following:
+
+    .. image:: score_matrix_reports-1.png
+
+    Attributes:
+        mtypes (list(str)): List of mtypes to plot.
+        morphology_path (str): Column name to use in the DF from ApplySubstitutionRules.
+        nb_jobs (int): Number of jobs.
+    """
+
+    config_path = luigi.OptionalParameter(default=None)
+    """str: (optional) Path to the configuration file. Use default configuration if not provided."""
+
+    output_path = luigi.Parameter(default="score_matrix_reports.pdf")
+    """str: Path to the output file."""
+
+    in_atlas = BoolParameter(default=False)
+    """bool: Trigger atlas case."""
+
+    def requires(self):
+        """"""
+        if self.in_atlas:
+            test_task = ConvertMvd3()
+        else:
+            test_task = VacuumSynthesize()
+        return {
+            "ref": ApplySubstitutionRules(),
+            "test": test_task,
+        }
+
+    def run(self):
+        """"""
+        L.debug("Score matrix output path = %s", self.output().path)
+
+        ref_morphs_df = pd.read_csv(self.input()["ref"].path)
+        if self.in_atlas:
+            test_morphs_df = pd.read_csv(self.input()["test"].path)
+            file_path_col_name = SYNTH_MORPHOLOGY_PATH
+        else:
+            test_morphs_df = pd.read_csv(self.input()["test"]["out_morphs_df"].path)
+            file_path_col_name = VACUUM_SYNTH_MORPHOLOGY_PATH
+
+        if self.config_path is not None:
+            with open(self.config_path) as f:
+                config = json.load(f)
+        else:
+            with pkg_resources.resource_stream(
+                "synthesis_workflow", "defaults/score_matrix_default_config.json"
+            ) as f:
+                config = json.load(f)
+
+        ref_morphs_df = ref_morphs_df[["name", "mtype", self.morphology_path]].rename(
+            columns={self.morphology_path: "filepath"}
+        )
+        test_morphs_df = test_morphs_df[["name", "mtype", file_path_col_name]].rename(
+            columns={file_path_col_name: "filepath"}
+        )
+
+        plot_score_matrix(
+            ref_morphs_df,
+            test_morphs_df,
+            self.output().ppath,
+            config,
+            mtypes=self.mtypes,
+            nb_jobs=self.nb_jobs,
+        )
 
     def output(self):
         """"""

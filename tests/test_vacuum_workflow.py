@@ -32,6 +32,7 @@ def test_ValidateVacuumSynthesis(vacuum_working_directory):
             "synthesis/tns_input/tmd_distributions.json": {
                 "kwargs": {"precision": 2}  # weird precision issue in CI
             },
+            "validation/score_matrix_reports.pdf": {"kwargs": {"threshold": 64.5}},
             "validation/vacuum_morphologies.pdf": {"kwargs": {"threshold": 70}},
         },
     )

@@ -15,6 +15,7 @@ from synthesis_workflow.tasks.validation import PlotDensityProfiles
 from synthesis_workflow.tasks.validation import PlotMorphometrics
 from synthesis_workflow.tasks.validation import PlotPathDistanceFits
 from synthesis_workflow.tasks.validation import PlotScales
+from synthesis_workflow.tasks.validation import PlotScoreMatrix
 from synthesis_workflow.validation import plot_morphometrics
 
 
@@ -54,6 +55,11 @@ class ValidateSynthesis(WorkflowWrapperTask):
     )
     """bool: Trigger morphology validation reports."""
 
+    with_score_matrix_reports = BoolParameter(
+        default=True, description="Trigger score matrix reports."
+    )
+    """bool: Trigger score matrix reports."""
+
     def requires(self):
         """"""
         tasks = [GetSynthesisInputs()]
@@ -69,6 +75,8 @@ class ValidateSynthesis(WorkflowWrapperTask):
             tasks.append(PlotScales())
         if self.with_morphology_validation_reports:
             tasks.append(MorphologyValidationReports())
+        if self.with_score_matrix_reports:
+            tasks.append(PlotScoreMatrix())
         return tasks
 
 
@@ -95,6 +103,11 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
     )
     """bool: Trigger density profiles."""
 
+    with_score_matrix_reports = BoolParameter(
+        default=True, description="Trigger score matrix reports."
+    )
+    """bool: Trigger score matrix reports."""
+
     def requires(self):
         """"""
         tasks = [GetSynthesisInputs()]
@@ -104,6 +117,8 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
             tasks.append(PlotVacuumMorphologies())
         if self.with_density_profiles:
             tasks.append(PlotDensityProfiles(in_atlas=False))
+        if self.with_score_matrix_reports:
+            tasks.append(PlotScoreMatrix(in_atlas=False))
         return tasks
 
 

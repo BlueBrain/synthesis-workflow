@@ -18,6 +18,7 @@ import pandas as pd
 import seaborn as sns
 from joblib import delayed
 from joblib import Parallel
+from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from pyquaternion import Quaternion
 from scipy.optimize import fmin
@@ -31,7 +32,9 @@ from morph_validator.spatial import relative_depth_volume
 from morph_validator.spatial import sample_morph_voxel_values
 from morphio.mut import Morphology
 from neurom import viewer
+from neurom.apps import morph_stats
 from neurom.core.dataformat import COLS
+from neurom.io import load_neurons
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
 from tmd.io.io import load_population
@@ -884,3 +887,211 @@ def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
             with DisableLogger():
                 pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
             plt.close(fig)
+
+
+def mvs_score(data1, data2, percentile=10):
+    """Get the MED - MVS score.
+
+    The MED - MVS is equal to the absolute difference between the median of the
+    population and the median of the neuron divided by the maximum visible spread.
+
+    Args:
+        data1 (list): the first data set.
+        data2 (list): the second data set.
+        percentile (int): percentile to compute.
+    """
+    median_diff = np.abs(np.median(data1) - np.median(data2))
+    max_percentile = np.max(
+        [
+            np.percentile(data1, 100 - percentile / 2.0, axis=0),
+            np.percentile(data2, 100 - percentile / 2.0, axis=0),
+        ]
+    )
+
+    min_percentile = np.min(
+        [
+            np.percentile(data1, percentile / 2.0, axis=0),
+            np.percentile(data2, percentile / 2.0, axis=0),
+        ]
+    )
+
+    max_vis_spread = max_percentile - min_percentile
+
+    return median_diff / max_vis_spread
+
+
+def get_scores(df1, df2, percentile=5):
+    """Return scores between two data sets.
+
+    Args:
+        df1 (pandas.DataFrame): the first data set.
+        df2 (pandas.DataFrame): the second data set.
+        percentile (int): percentile to compute.
+
+    Returns:
+        The list of feature scores.
+    """
+    scores = []
+    score_names = []
+    key_names = {
+        "basal_dendrite": "Basal",
+        "apical_dendrite": "Apical",
+    }
+    for neurite_type in ["basal_dendrite", "apical_dendrite"]:
+        for k in df1.keys():
+            if k in ["name", "neurite_type"]:
+                continue
+            data1 = df1.loc[df1["neurite_type"] == neurite_type, k]
+            data2 = df2.loc[df2["neurite_type"] == neurite_type, k]
+            sc1 = mvs_score(data1, data2, percentile)
+            score_name = key_names[neurite_type] + " " + k.replace("_", " ")
+            score_names.append(score_name)
+            if sc1 is not np.nan:
+                scores.append(sc1)
+            else:
+                scores.append(0.0)
+
+    return score_names, scores
+
+
+def compute_scores(ref, test, config):
+    """Compute scores of a test population against a reference population.
+
+    Args:
+        ref (tuple(str, list)): the reference data.
+        test (tuple(str, list)): the test data.
+        config (dict): the configuration used to compute the scores.
+
+    Returns:
+        The scores and the feature list.
+    """
+    ref_mtype, ref_files = ref
+    test_mtype, test_files = test
+    assert ref_mtype == test_mtype, "The mtypes of ref and test files must be the same."
+
+    ref_pop = load_neurons(ref_files)
+    test_pop = load_neurons(test_files)
+
+    ref_features = morph_stats.extract_dataframe(ref_pop, config)
+    test_features = morph_stats.extract_dataframe(test_pop, config)
+
+    return get_scores(ref_features, test_features, 5)
+
+
+# pylint: disable=too-many-locals
+def plot_score_matrix(
+    ref_morphs_df,
+    test_morphs_df,
+    output_path,
+    config,
+    mtypes=None,
+    path_col="filepath",
+    dpi=100,
+    nb_jobs=-1,
+):
+    """Plot score matrix for a test population against a reference population."""
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+    if mtypes is None:
+        mtypes = sorted(ref_morphs_df.mtype.unique().tolist())
+
+    def build_file_list(df, mtypes, path_col):
+        return [
+            (mtype, df.loc[df.mtype == mtype, path_col].sort_values().to_list())
+            for mtype in mtypes
+        ]
+
+    # Build the file list for each mtype
+    ref_file_lists = build_file_list(ref_morphs_df, mtypes, path_col)
+    test_file_lists = build_file_list(test_morphs_df, mtypes, path_col)
+
+    # Compute scores
+    scores = []
+    keys = []
+    for key_name, score in Parallel(nb_jobs)(
+        delayed(compute_scores)(
+            ref_files,
+            test_files,
+            config,
+        )
+        for ref_files, test_files in zip(ref_file_lists, test_file_lists)
+    ):
+        keys.append(key_name)
+        scores.append(score)
+
+    n_scores = len(keys[0])
+    for k, s in zip(keys[1:], scores):
+        assert keys[0] == k, "Score names must all be the same for each feature."
+        assert len(k) == n_scores, "The number of keys must be the same for each mtype."
+        assert (
+            len(s) == n_scores
+        ), "The number of scores must be the same for each mtype."
+
+    # Plot statistics
+    with PdfPages(output_path) as pdf:
+
+        # Compute subplot ratios and figure size
+        height_ratios = [7, (1 + n_scores)]
+        fig_width = len(mtypes)
+        fig_height = sum(height_ratios) * 0.3
+
+        hspace = 0.625 / fig_height
+        wspace = 0.2 / fig_width
+
+        cbar_ratio = 0.4 / fig_width
+
+        # Create the figure and the subplots
+        fig, ((a0, a2), (a1, a3)) = plt.subplots(
+            2,
+            2,
+            gridspec_kw={
+                "height_ratios": height_ratios,
+                "width_ratios": [1 - cbar_ratio, cbar_ratio],
+                "hspace": hspace,
+                "wspace": wspace,
+            },
+            figsize=(fig_width, fig_height),
+        )
+
+        # Plot score errors
+        a0.errorbar(
+            np.arange(len(mtypes)),
+            np.nanmean(scores, axis=1),
+            yerr=np.nanstd(scores, axis=1),
+            color="black",
+            label="Synthesized",
+        )
+        a0.tick_params(bottom=False, top=True, labelbottom=False, labeltop=True)
+        a0.xaxis.set_tick_params(rotation=45)
+        a0.set_xticks(np.arange(len(mtypes)))
+        a0.set_xticklabels(mtypes)
+
+        a0.set_xlim(
+            [a0.xaxis.get_ticklocs().min() - 0.5, a0.xaxis.get_ticklocs().max() + 0.5]
+        )
+        a0.set_ylim([-0.1, 1.1])
+
+        # Plot score heatmap
+        scores_T = np.transpose(scores)
+        scores_df = pd.DataFrame(scores_T, index=keys[0], columns=mtypes)
+
+        g = sns.heatmap(
+            scores_df,
+            vmin=0,
+            vmax=1,
+            mask=np.isnan(scores_T),
+            ax=a1,
+            cmap=cm.Greys,  # pylint: disable=no-member
+            cbar_ax=a3,
+        )
+
+        g.xaxis.set_tick_params(rotation=45)
+        g.set_facecolor("xkcd:maroon")
+
+        # Remove upper right subplot
+        a2.remove()
+
+        # Export the figure
+        with DisableLogger():
+            pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
+        plt.close(fig)

@@ -1,0 +1,94 @@
+{
+    "neurite": {
+        "number_of_bifurcations": [
+            "sum"
+        ],
+        "number_of_sections_per_neurite": [
+            "mean",
+            "sum"
+        ],
+        "number_of_terminations": [
+            "sum"
+        ],
+        "partition_asymmetry": [
+            "mean",
+            "sum"
+        ],
+        "partition_asymmetry_length": [
+            "mean",
+            "sum"
+        ],
+        "remote_bifurcation_angles": [
+            "mean"
+        ],
+        "section_areas": [
+            "mean",
+            "sum"
+        ],
+        "section_bif_branch_orders": [
+            "max",
+            "mean"
+        ],
+        "section_bif_lengths": [
+            "min",
+            "max",
+            "mean"
+        ],
+        "section_bif_radial_distances": [
+            "max",
+            "mean"
+        ],
+        "section_branch_orders": [
+            "max",
+            "mean"
+        ],
+        "section_lengths": [
+            "min",
+            "max",
+            "mean",
+            "sum"
+        ],
+        "section_path_distances": [
+            "min",
+            "max",
+            "mean"
+        ],
+        "section_radial_distances": [
+            "min",
+            "max",
+            "mean"
+        ],
+        "section_strahler_orders": [
+            "mean"
+        ],
+        "section_term_branch_orders": [
+            "max",
+            "mean"
+        ],
+        "section_term_lengths": [
+            "min",
+            "max",
+            "mean"
+        ],
+        "section_term_radial_distances": [
+            "max",
+            "mean"
+        ],
+        "section_tortuosity": [
+            "min",
+            "max",
+            "mean"
+        ],
+        "section_volumes": [
+            "mean",
+            "sum"
+        ],
+        "total_length_per_neurite": [
+            "mean"
+        ]
+    },
+    "neurite_type": [
+        "APICAL_DENDRITE",
+        "BASAL_DENDRITE"
+    ]
+}

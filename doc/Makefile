@@ -24,6 +24,7 @@ help:
 	pdftocairo -png -r 300 -f 1 -l 1 ../tests/data/in_small_O1/out/validation/path_distance_fit.pdf source/autoapi/tasks/validation/path_distance_fit
 	pdftocairo -png -r 300 -f 1 -l 1 ../tests/data/in_vacuum/out/validation/morphometrics/morphometrics_basal_dendrite.pdf source/autoapi/tasks/validation/morphometrics
 	pdftocairo -png -r 300 -f 1 -l 1 ../tests/data/in_vacuum/out/validation/vacuum_morphologies.pdf source/autoapi/tasks/vacuum_synthesis/vacuum_morphologies
+	pdftocairo -png -r 300 -f 1 -l 1 ../tests/data/in_small_O1/out/validation/score_matrix_reports.pdf source/autoapi/tasks/validation/score_matrix_reports
 
 	# Generate dependency graphs
 	cd ../tests/data/in_small_O1; synthesis_workflow -dg ../../../doc/source/autoapi/tasks/workflows/ValidateSynthesis.dot ValidateSynthesis; cd ../../../doc
