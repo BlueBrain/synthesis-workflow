@@ -87,29 +87,32 @@ class PlotMorphometrics(WorkflowTask):
     .. image:: morphometrics-1.png
     """
 
-    in_atlas = BoolParameter(default=False)
-    """bool: Set to True to consider cells in an atlas."""
-
-    config_features = luigi.DictParameter(default=None)
-    """dict: The feature from ``morph_validator.feature_configs`` to plot."""
-
-    morphometrics_path = luigi.Parameter(default="morphometrics")
-    """str: Path to output directory (relative from ``PathConfig.result_path``)."""
-
-    base_key = luigi.Parameter(default="repaired_morphology_path")
-    """str: Base key to use in the morphology DataFrame."""
-
-    comp_key = luigi.Parameter(default=SYNTH_MORPHOLOGY_PATH)
-    """str: Compared key to use in the morphology DataFrame."""
-
-    base_label = luigi.Parameter(default="bio")
-    """str: Label for base morphologies."""
-
-    comp_label = luigi.Parameter(default="synth")
-    """str: Label for compared morphologies."""
-
-    normalize = BoolParameter()
-    """bool: Normalize data if set to True."""
+    in_atlas = BoolParameter(
+        default=False, description=":bool: Set to True to consider cells in an atlas."
+    )
+    config_features = luigi.DictParameter(
+        default=None,
+        description=":dict: The feature from ``morph_validator.feature_configs`` to plot.",
+    )
+    morphometrics_path = luigi.Parameter(
+        default="morphometrics",
+        description=":str: Path to output directory (relative from ``PathConfig.result_path``).",
+    )
+    base_key = luigi.Parameter(
+        default="repaired_morphology_path",
+        description=":str: Base key to use in the morphology DataFrame.",
+    )
+    comp_key = luigi.Parameter(
+        default=SYNTH_MORPHOLOGY_PATH,
+        description=":str: Compared key to use in the morphology DataFrame.",
+    )
+    base_label = luigi.Parameter(
+        default="bio", description=":str: Label for base morphologies."
+    )
+    comp_label = luigi.Parameter(
+        default="synth", description=":str: Label for compared morphologies."
+    )
+    normalize = BoolParameter(description=":bool: Normalize data if set to True.")
 
     def requires(self):
         """"""
@@ -157,14 +160,14 @@ class PlotDensityProfiles(WorkflowTask):
         nb_jobs (int) : Number of joblib workers.
     """
 
-    density_profiles_path = luigi.Parameter(default="density_profiles.pdf")
-    """str: Path for pdf file."""
-
-    sample_distance = luigi.FloatParameter(default=10)
-    """float: Distance between sampled points along neurites."""
-
-    in_atlas = BoolParameter(default=False)
-    """bool: Trigger atlas case."""
+    density_profiles_path = luigi.Parameter(
+        default="density_profiles.pdf", description=":str: Path for pdf file."
+    )
+    sample_distance = luigi.FloatParameter(
+        default=10,
+        description=":float: Distance between sampled points along neurites.",
+    )
+    in_atlas = BoolParameter(default=False, description=":bool: Trigger atlas case.")
 
     def requires(self):
         """"""
@@ -225,37 +228,32 @@ class PlotCollage(WorkflowTask):
         sample (float): Number of cells to use, if None, all available.
     """
 
-    collage_base_path = luigi.Parameter(default="collages")
-    """str: Path to the output folder."""
-
-    dpi = luigi.IntParameter(default=1000)
-    """int: Dpi for pdf rendering (rasterized)."""
-
+    collage_base_path = luigi.Parameter(
+        default="collages", description=":str: Path to the output folder."
+    )
+    dpi = luigi.IntParameter(
+        default=1000, description=":int: Dpi for pdf rendering (rasterized)."
+    )
     realistic_diameters = BoolParameter(
         default=True,
-        description="Set or unset realistic diameter when NeuroM plot neurons",
+        description=":bool: Set or unset realistic diameter when NeuroM plot neurons.",
     )
-    """bool: Set or unset realistic diameter when NeuroM plot neurons."""
-
     linewidth = luigi.NumericalParameter(
         default=0.1,
         var_type=float,
         min_value=0,
         max_value=float("inf"),
         left_op=luigi.parameter.operator.lt,
-        description="Linewidth used by NeuroM to plot neurons",
+        description=":float: Linewidth used by NeuroM to plot neurons.",
     )
-    """float: Linewidth used by NeuroM to plot neurons."""
-
     diameter_scale = OptionalNumericalParameter(
         default=view._DIAMETER_SCALE,  # pylint: disable=protected-access
         var_type=float,
         min_value=0,
         max_value=float("inf"),
         left_op=luigi.parameter.operator.lt,
-        description="Diameter scale used by NeuroM to plot neurons",
+        description=":float: Diameter scale used by NeuroM to plot neurons.",
     )
-    """float: Diameter scale used by NeuroM to plot neurons."""
 
     def requires(self):
         """"""
@@ -310,8 +308,7 @@ class PlotSingleCollage(WorkflowTask):
         diameter_scale (float): Diameter scale used by NeuroM to plot neurons.
     """
 
-    mtype = luigi.Parameter()
-    """str or list(str): The mtype(s) to plot."""
+    mtype = luigi.Parameter(description=":str: The mtype to plot.")
 
     def requires(self):
         """"""
@@ -379,36 +376,35 @@ class PlotScales(WorkflowTask):
     The generated images are like the following:
 
     .. image:: scale_statistics-5.png
+      :width: 600
 
     Attributes:
         mtypes (list(str)): Mtypes to plot.
     """
 
-    scales_base_path = luigi.Parameter(default="scales")
-    """str: Path to the output folder."""
-
-    log_files = luigi.OptionalParameter(default=None)
-    """str: (optional) Directory containing log files to parse."""
-
+    scales_base_path = luigi.Parameter(
+        default="scales", description=":str: Path to the output folder."
+    )
+    log_files = luigi.OptionalParameter(
+        default=None,
+        description=":str: Directory containing log files to parse.",
+    )
     neuron_type_position_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite type and position: (.*)"
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite type and position: (.*)",
+        description=":str: Regex used to find neuron type and position.",
     )
-    """str: Regex used to find neuron type and position."""
-
     default_scale_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Default barcode scale: (.*)"
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Default barcode scale: (.*)",
+        description=":str: Regex used to find default scales.",
     )
-    """str: Regex used to find default scales."""
-
     target_scale_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Target barcode scale: (.*)"
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Target barcode scale: (.*)",
+        description=":str: Regex used to find target scales.",
     )
-    """str: Regex used to find target scales."""
-
     neurite_hard_limit_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite hard limit rescaling: (.*)"
+        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite hard limit rescaling: (.*)",
+        description=":str: Regex used to find neurite hard limits.",
     )
-    """str: Regex used to find neurite hard limits."""
 
     def requires(self):
         """"""
@@ -484,11 +480,12 @@ class PlotPathDistanceFits(WorkflowTask):
         nb_jobs (int): Number of jobs.
     """
 
-    output_path = luigi.Parameter(default="path_distance_fit.pdf")
-    """str: Path to the output file."""
-
-    outlier_percentage = luigi.IntParameter(default=90)
-    """int: Percentage from which the outliers are removed."""
+    output_path = luigi.Parameter(
+        default="path_distance_fit.pdf", description=":str: Path to the output file."
+    )
+    outlier_percentage = luigi.IntParameter(
+        default=90, description=":int: Percentage from which the outliers are removed."
+    )
 
     def requires(self):
         """"""
@@ -532,21 +529,22 @@ class MorphologyValidationReports(WorkflowTask):
         nb_jobs (int): Number of jobs.
     """
 
-    config_path = luigi.OptionalParameter(default=None)
-    """str: (optional) Path to the configuration file. Use default configuration if not provided."""
-
-    output_path = luigi.Parameter(default="morphology_validation_reports")
-    """str: Path to the output file."""
-
+    config_path = luigi.OptionalParameter(
+        default=None,
+        description=(
+            ":str: Path to the configuration file. Use default configuration if not provided."
+        ),
+    )
+    output_path = luigi.Parameter(
+        default="morphology_validation_reports",
+        description=":str: Path to the output file.",
+    )
     cell_figure_count = luigi.IntParameter(
-        default=10, description="Number of example cells to show"
+        default=10, description=":int: Number of example cells to show."
     )
-    """int: Number of example cells to show"""
-
     bio_compare = BoolParameter(
-        default=False, description="Use the bio compare template"
+        default=False, description=":bool: Use the bio compare template."
     )
-    """bool: Use the bio compare template"""
 
     def requires(self):
         """"""
@@ -617,6 +615,7 @@ class PlotScoreMatrix(WorkflowTask):
     The generated images are like the following:
 
     .. image:: score_matrix_reports-1.png
+      :width: 400
 
     Attributes:
         mtypes (list(str)): List of mtypes to plot.
@@ -624,14 +623,16 @@ class PlotScoreMatrix(WorkflowTask):
         nb_jobs (int): Number of jobs.
     """
 
-    config_path = luigi.OptionalParameter(default=None)
-    """str: (optional) Path to the configuration file. Use default configuration if not provided."""
-
-    output_path = luigi.Parameter(default="score_matrix_reports.pdf")
-    """str: Path to the output file."""
-
-    in_atlas = BoolParameter(default=False)
-    """bool: Trigger atlas case."""
+    config_path = luigi.OptionalParameter(
+        default=None,
+        description=(
+            ":str: Path to the configuration file. Use default configuration if not provided."
+        ),
+    )
+    output_path = luigi.Parameter(
+        default="score_matrix_reports.pdf", description=":str: Path to the output file."
+    )
+    in_atlas = BoolParameter(default=False, description=":bool: Trigger atlas case.")
 
     def requires(self):
         """"""

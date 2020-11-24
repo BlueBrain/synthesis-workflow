@@ -55,23 +55,18 @@ class BuildMorphsDF(WorkflowTask):
         mtype_taxonomy_path (str): Path to the mtype_taxonomy.tsv file.
     """
 
-    neurondb_path = luigi.Parameter(description="Path to the neuronDB file (XML).")
-    """str: Path to the neuronDB file (XML)."""
-
+    neurondb_path = luigi.Parameter(
+        description=":str: Path to the neuronDB file (XML)."
+    )
     morphology_dirs = luigi.DictParameter(
         default=None,
         description=(
-            "Dict (JSON format) in which keys are column names and values are the paths to each "
-            "morphology file."
+            ":dict: mapping between column names and paths to each morphology file."
         ),
     )
-    """dict: Dict (JSON format) in which keys are column names and values are the paths to each
-    morphology file."""
-
     apical_points_path = luigi.OptionalParameter(
-        default=None, description="Path to the apical points file (JSON)."
+        default=None, description=":str: Path to the apical points file (JSON)."
     )
-    """str: Path to the apical points file (JSON)."""
 
     def requires(self):
         """"""
@@ -109,10 +104,10 @@ class ApplySubstitutionRules(WorkflowTask):
     substitution_rules_path = luigi.Parameter(
         default="substitution_rules.yaml",
         description=(
-            "Path to the file containing the rules to assign duplicated mtypes to morphologies."
+            ":str: Path to the file containing the rules to assign duplicated mtypes to "
+            "morphologies."
         ),
     )
-    """str: Path to the file containing the rules to assign duplicated mtypes to morphologies."""
 
     def requires(self):
         """"""
@@ -153,12 +148,10 @@ class BuildSynthesisParameters(WorkflowTask):
     input_tmd_parameters_path = luigi.Parameter(
         default=None,
         description=(
-            "Custom path to input tmd_parameters. If not given, take the default"
+            ":str: Custom path to input tmd_parameters. If not given, take the default"
             "parameters from TNS."
         ),
     )
-    """str: Custom path to input tmd_parameters. If not given, take the default
-    parameters from TNS."""
 
     def requires(self):
         """"""
@@ -261,9 +254,8 @@ class BuildAxonMorphsDF(BuildMorphsDF):
 
     axon_morphs_df_path = luigi.Parameter(
         default="axon_morphs_df.csv",
-        description="Path to the CSV file containing axon morphologies.",
+        description=":str: Path to the CSV file containing axon morphologies.",
     )
-    """str: Path to the CSV file containing axon morphologies."""
 
     def output(self):
         """"""
@@ -278,53 +270,38 @@ class BuildAxonMorphologies(WorkflowTask):
 
     axon_morphs_path = luigi.Parameter(
         default="axon_morphs.tsv",
-        description="Path to save .tsv file with list of morphologies for axon grafting.",
+        description=":str: Path to save .tsv file with list of morphologies for axon grafting.",
     )
-    """str: Path to save .tsv file with list of morphologies for axon grafting."""
-
     annotations_path = luigi.Parameter(
         default=None,
         description=(
-            "Path to annotations file used by ``placementAlgorithm.choose_morphologies``. "
+            ":str: Path to annotations file used by ``placementAlgorithm.choose_morphologies``. "
             "If None, random axons will be choosen."
         ),
     )
-    """str: Path to annotations file used by ``placementAlgorithm.choose_morphologies``.
-    If None, random axons will be choosen."""
-
     neurondb_basename = luigi.Parameter(
         default="neuronDB",
-        description="Base name of the neurondb file (without file extension).",
+        description=":str: Base name of the neurondb file (without file extension).",
     )
-    """str: Basename of the neurondb file for ``placementAlgorithm.choose_morphologies``."""
-
     axon_cells_path = luigi.Parameter(
-        description="Path to the directory where cells with axons are located."
+        description=":str: Path to the directory where cells with axons are located."
     )
-    """str: Path to the directory where cells with axons are located."""
-
     placement_rules_path = luigi.Parameter(
-        default=None, description="See ``placementAlgorithm.choose_morphologies``."
+        default=None,
+        description=":str: See ``placementAlgorithm.choose_morphologies``.",
     )
-    """str: See ``placementAlgorithm.choose_morphologies``."""
-
     placement_alpha = luigi.FloatParameter(
-        default=1.0, description="See ``placementAlgorithm.choose_morphologies``."
+        default=1.0,
+        description=":float: See ``placementAlgorithm.choose_morphologies``.",
     )
-    """float: See ``placementAlgorithm.choose_morphologies``."""
-
     placement_scales = luigi.ListParameter(
-        default=None, description="See ``placementAlgorithm.choose_morphologies``."
+        default=None,
+        description=":list: See ``placementAlgorithm.choose_morphologies``.",
     )
-    """list: See ``placementAlgorithm.choose_morphologies``."""
-
     placement_seed = luigi.IntParameter(
-        default=0, description="See ``placementAlgorithm.choose_morphologies``."
+        default=0, description=":int: See ``placementAlgorithm.choose_morphologies``."
     )
-    """int: See ``placementAlgorithm.choose_morphologies``."""
-
-    nb_jobs = luigi.IntParameter(default=20, description="Number of workers.")
-    """int: Number of workers."""
+    nb_jobs = luigi.IntParameter(default=20, description=":int: Number of workers.")
 
     def get_neuron_db_path(self, ext):
         """Helper function to fix neuronDB vs neurondb in file names."""
@@ -404,35 +381,27 @@ class Synthesize(WorkflowTask):
 
     out_circuit_path = luigi.Parameter(
         default="sliced_circuit_morphologies.mvd3",
-        description="Path to circuit mvd3 with morphology data.",
+        description=":str: Path to circuit mvd3 with morphology data.",
     )
-    """str: Path to circuit mvd3 with morphology data."""
-
     axon_morphs_base_dir = luigi.OptionalParameter(
-        default=None, description="Base dir for morphology used for axon (.h5 files)."
+        default=None,
+        description=":str: Base dir for morphology used for axon (.h5 files).",
     )
-    """str: Base dir for morphology used for axon (.h5 files)."""
-
     apical_points_path = luigi.Parameter(
         default="apical_points.yaml",
-        description="Path to the apical points file (YAML).",
+        description=":str: Path to the apical points file (YAML).",
     )
-    """str: Path to the apical points file (YAML)."""
-
     debug_region_grower_scales = BoolParameter(
         default=False,
-        description="Trigger the recording of scaling factors computed by region-grower.",
+        description=":bool: Trigger the recording of scaling factors computed by region-grower.",
     )
-    """bool: Trigger the recording of scaling factors computed by region-grower."""
-
     max_drop_ratio = RatioParameter(
         default=0.1,
-        description="The maximum drop ratio.",
+        description=":float: The maximum drop ratio.",
     )
-    """float: The maximum drop ratio."""
-
-    seed = luigi.IntParameter(default=0, description="Pseudo-random generator seed.")
-    """int: Pseudo-random generator seed."""
+    seed = luigi.IntParameter(
+        default=0, description=":int: Pseudo-random generator seed."
+    )
 
     def requires(self):
         """"""
@@ -527,9 +496,8 @@ class AddScalingRulesToParameters(WorkflowTask):
 
     scaling_rules_path = luigi.Parameter(
         default="scaling_rules.yaml",
-        description="Path to the file containing the scaling rules.",
+        description=":str: Path to the file containing the scaling rules.",
     )
-    """str: Path to the file containing the scaling rules."""
 
     def requires(self):
         """"""
@@ -583,40 +551,32 @@ class RescaleMorphologies(WorkflowTask):
 
     rescaled_morphology_path = luigi.Parameter(
         default="rescaled_morphology_path",
-        description="Column name with rescaled morphology paths in the morphology DataFrame.",
+        description=":str: Column name with rescaled morphology paths in the morphology DataFrame.",
     )
-    """str: Column name with rescaled morphology paths in the morphology DataFrame."""
-
     rescaled_morphology_base_path = luigi.Parameter(
         default="rescaled_morphologies",
-        description="Base path to rescaled morphologies.",
+        description=":str: Base path to rescaled morphologies.",
     )
-    """str: Base path to rescaled morphologies."""
-
     scaling_rules_path = luigi.Parameter(
         default="scaling_rules.yaml",
-        description="Path to the file containing the scaling rules.",
+        description=":str: Path to the file containing the scaling rules.",
     )
-    """str: Path to the file containing the scaling rules."""
-
     rescaled_morphs_df_path = luigi.Parameter(
-        default="rescaled_morphs_df.csv", description="Path to the CSV morphology file."
+        default="rescaled_morphs_df.csv",
+        description=":str: Path to the CSV morphology file.",
     )
-    """str: Path to the CSV morphology file."""
-
     scaling_mode = luigi.ChoiceParameter(
         default="y",
         choices=["y", "radial"],
         description=(
-            "Scaling mode used: cells are either rescaled only according the Y axis or all axes."
+            ":str: Scaling mode used: cells are either rescaled only according the Y axis or all "
+            "axes."
         ),
     )
-    """str: Scaling mode used: cells are either rescaled only according the Y axis or all axes."""
-
     skip_rescale = BoolParameter(
-        default=False, description="Just copy input cells to the output directory."
+        default=False,
+        description=":bool: Just copy input cells to the output directory.",
     )
-    """bool: Just copy input cells to the output directory."""
 
     def requires(self):
         """"""

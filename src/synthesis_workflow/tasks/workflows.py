@@ -27,38 +27,25 @@ class ValidateSynthesis(WorkflowWrapperTask):
     .. graphviz:: ValidateSynthesis.dot
     """
 
-    with_collage = BoolParameter(default=True, description="Trigger collage.")
-    """bool: Trigger collage."""
-
+    with_collage = BoolParameter(default=True, description=":bool: Trigger collage.")
     with_morphometrics = BoolParameter(
-        default=True, description="Trigger morphometrics."
+        default=True, description=":bool: Trigger morphometrics."
     )
-    """bool: Trigger morphometrics."""
-
     with_density_profiles = BoolParameter(
-        default=True, description="Trigger density profiles."
+        default=True, description=":bool: Trigger density profiles."
     )
-    """bool: Trigger density profiles."""
-
     with_path_distance_fits = BoolParameter(
-        default=True, description="Trigger path distance fits."
+        default=True, description=":bool: Trigger path distance fits."
     )
-    """bool: Trigger path distance fits."""
-
     with_scale_statistics = BoolParameter(
-        default=True, description="Trigger scale statistics."
+        default=True, description=":bool: Trigger scale statistics."
     )
-    """bool: Trigger scale statistics."""
-
     with_morphology_validation_reports = BoolParameter(
-        default=True, description="Trigger morphology validation reports."
+        default=True, description=":bool: Trigger morphology validation reports."
     )
-    """bool: Trigger morphology validation reports."""
-
     with_score_matrix_reports = BoolParameter(
-        default=True, description="Trigger score matrix reports."
+        default=True, description=":bool: Trigger score matrix reports."
     )
-    """bool: Trigger score matrix reports."""
 
     def requires(self):
         """"""
@@ -89,24 +76,17 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
     """
 
     with_vacuum_morphologies = BoolParameter(
-        default=True, description="Trigger morphologies."
+        default=True, description=":bool: Trigger morphologies."
     )
-    """bool: Trigger morphologies."""
-
     with_morphometrics = BoolParameter(
-        default=True, description="Trigger morphometrics."
+        default=True, description=":bool: Trigger morphometrics."
     )
-    """bool: Trigger morphometrics."""
-
     with_density_profiles = BoolParameter(
-        default=True, description="Trigger density profiles."
+        default=True, description=":bool: Trigger density profiles."
     )
-    """bool: Trigger density profiles."""
-
     with_score_matrix_reports = BoolParameter(
-        default=True, description="Trigger score matrix reports."
+        default=True, description=":bool: Trigger score matrix reports."
     )
-    """bool: Trigger score matrix reports."""
 
     def requires(self):
         """"""
@@ -131,37 +111,24 @@ class ValidateRescaling(WorkflowTask):
     """
 
     morphometrics_path = luigi.Parameter(
-        default="morphometrics", description="Output path."
+        default="morphometrics", description=":str: Output path."
     )
-    """str: Output path."""
-
     base_key = luigi.Parameter(
-        default="morphology_path", description="Column name in the DF."
+        default="morphology_path", description=":str: Column name in the DF."
     )
-    """str: Column name in the DF."""
-
     comp_key = luigi.Parameter(
-        default="morphology_path", description="Column name in the DF."
+        default="morphology_path", description=":str: Column name in the DF."
     )
-    """str: Column name in the DF."""
-
     base_label = luigi.Parameter(
-        default="bio", description="Label for the base morphologies."
+        default="bio", description=":str: Label for the base morphologies."
     )
-    """str: Label for the base morphologies."""
-
     comp_label = luigi.Parameter(
-        default="substituted", description="Label for the compared morphologies."
+        default="substituted", description=":str: Label for the compared morphologies."
     )
-    """str: Label for the compared morphologies."""
-
     config_features = luigi.DictParameter(
-        default=None, description="Mapping of features to plot."
+        default=None, description=":dict: Mapping of features to plot."
     )
-    """dict: Mapping of features to plot."""
-
-    normalize = BoolParameter(description="Normalize data if set to True.")
-    """bool: Normalize data if set to True."""
+    normalize = BoolParameter(description=":bool: Normalize data if set to True.")
 
     def requires(self):
         """"""

@@ -38,7 +38,7 @@ reqs = [
     "tns>=2.2.7",
     "tmd",
     "tqdm",
-    "voxcell>=2.7.3",
+    "voxcell>=2.7.3,<3",
 ]
 
 doc_reqs = [

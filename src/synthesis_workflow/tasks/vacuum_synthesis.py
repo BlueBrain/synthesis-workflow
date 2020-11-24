@@ -42,19 +42,22 @@ class VacuumSynthesize(WorkflowTask):
         joblib_verbose (int): Verbosity level of joblib.
     """
 
-    vacuum_synth_morphology_path = luigi.Parameter(default=VACUUM_SYNTH_MORPHOLOGY_PATH)
-    """str: Name of the column in the morphs_df.csv file."""
-
-    vacuum_synth_morphs_df_path = luigi.Parameter(default="vacuum_synth_morphs_df.csv")
-    """str: Path to the morphs_df.csv file."""
-
-    diametrizer = luigi.ChoiceParameter(
-        default="external", choices=["external"] + [f"M{i}" for i in range(1, 6)]
+    vacuum_synth_morphology_path = luigi.Parameter(
+        default=VACUUM_SYNTH_MORPHOLOGY_PATH,
+        description="Name of the column in the morphs_df.csv file.",
     )
-    """str: Diametrizer model to use."""
-
-    n_cells = luigi.IntParameter(default=10)
-    """int: Number of cells to synthesize."""
+    vacuum_synth_morphs_df_path = luigi.Parameter(
+        default="vacuum_synth_morphs_df.csv",
+        description="Path to the morphs_df.csv file.",
+    )
+    diametrizer = luigi.ChoiceParameter(
+        default="external",
+        choices=["external"] + [f"M{i}" for i in range(1, 6)],
+        description=":str: Diametrizer model to use.",
+    )
+    n_cells = luigi.IntParameter(
+        default=10, description=":int: Number of cells to synthesize."
+    )
 
     def requires(self):
         """"""
@@ -110,8 +113,9 @@ class PlotVacuumMorphologies(WorkflowTask):
         vacuum_synth_morphology_path (str): Column name to use from the morphlogy DataFrame.
     """
 
-    pdf_filename = luigi.Parameter(default="vacuum_morphologies.pdf")
-    """str: Path to the output file."""
+    pdf_filename = luigi.Parameter(
+        default="vacuum_morphologies.pdf", description=":str: Path to the output file."
+    )
 
     def requires(self):
         """"""

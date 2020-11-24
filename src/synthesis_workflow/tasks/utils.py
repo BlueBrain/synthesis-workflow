@@ -14,11 +14,13 @@ from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 class GitClone(WorkflowTask):
     """Task to clone a git repository."""
 
-    url = luigi.Parameter()
-    """str: Url of repository. If None, git_synthesis_input_path should be an existing folder."""
-
-    dest = luigi.Parameter()
-    """str: Path to the destination directory."""
+    url = luigi.Parameter(
+        description=(
+            ":str: Url of repository. If None, git_synthesis_input_path should be an existing "
+            "folder."
+        )
+    )
+    dest = luigi.Parameter(description=":str: Path to the destination directory.")
 
     def run(self):
         """"""
@@ -38,15 +40,20 @@ class GetSynthesisInputs(WorkflowTask):
         local_synthesis_input_path (str): Path to local folder to copy these files.
     """
 
-    url = luigi.Parameter(default=None)
-    """str: (optional) Url of repository.
-    If None, git_synthesis_input_path should be an existing folder."""
-
-    version = luigi.OptionalParameter(default=None)
-    """str: (optional) Version of repo to checkout."""
-
-    git_synthesis_input_path = luigi.Parameter(default="synthesis_input")
-    """str: Path to folder in git repo with synthesis files."""
+    url = luigi.OptionalParameter(
+        default=None,
+        description=(
+            ":str: Url of repository. If None, git_synthesis_input_path should be an "
+            "existing folder."
+        ),
+    )
+    version = luigi.OptionalParameter(
+        default=None, description=":str: Version of repo to checkout."
+    )
+    git_synthesis_input_path = luigi.Parameter(
+        default="synthesis_input",
+        description=":str: Path to folder in git repo with synthesis files.",
+    )
 
     def run(self):
         """"""

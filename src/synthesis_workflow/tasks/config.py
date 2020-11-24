@@ -66,14 +66,14 @@ class RunnerConfig(luigi.Config):
     """Runner global configuration."""
 
     nb_jobs = luigi.IntParameter(
-        default=-1, description="Number of jobs used by parallel tasks."
+        default=-1, description=":int: Number of jobs used by parallel tasks."
     )
     joblib_verbose = luigi.NumericalParameter(
         default=0,
         var_type=int,
         min_value=0,
         max_value=50,
-        description="Verbosity level used by the joblib library.",
+        description=":int: Verbosity level used by the joblib library.",
     )
 
 
@@ -82,21 +82,21 @@ class SynthesisConfig(luigi.Config):
 
     tmd_parameters_path = luigi.Parameter(
         default="tns_input/tmd_parameters.json",
-        description="The path to the TMD parameters.",
+        description=":str: The path to the TMD parameters.",
     )
     tmd_distributions_path = luigi.Parameter(
         default="tns_input/tmd_distributions.json",
-        description="The path to the TMD distributions.",
+        description=":str: The path to the TMD distributions.",
     )
     cortical_thickness = luigi.ListParameter(
         default=[165, 149, 353, 190, 525, 700],
-        description="The list of cortical thicknesses.",
+        description=":list(int): The list of cortical thicknesses.",
     )
     mtypes = luigi.ListParameter(
         default=None,
         description=(
-            "The list of mtypes to process (default is None, which means that all found "
-            "mtypes are taken)."
+            ":list(str): The list of mtypes to process (default is None, which means that all "
+            "found mtypes are taken)."
         ),
     )
 
@@ -105,10 +105,10 @@ class CircuitConfig(luigi.Config):
     """Circuit configuration."""
 
     circuit_somata_path = luigi.Parameter(
-        default="circuit_somata.mvd3", description="Path to the circuit somata."
+        default="circuit_somata.mvd3", description=":str: Path to the circuit somata."
     )
     atlas_path = luigi.Parameter(
-        default=None, description="Path to the atlas directory."
+        default=None, description=":str: Path to the atlas directory."
     )
 
 
@@ -117,58 +117,61 @@ class PathConfig(luigi.Config):
 
     # Input paths
     mtype_taxonomy_path = luigi.Parameter(
-        default="mtype_taxonomy.tsv", description="Path to the taxonomy file (TSV)."
+        default="mtype_taxonomy.tsv",
+        description=":str: Path to the taxonomy file (TSV).",
     )
     local_synthesis_input_path = luigi.Parameter(
-        default="synthesis_input", description="Path to the synthesis input directory."
+        default="synthesis_input",
+        description=":str: Path to the synthesis input directory.",
     )
 
     # Output tree
     result_path = luigi.Parameter(
-        default="out", description="Path to the output directory."
+        default="out", description=":str: Path to the output directory."
     )
     atlas_subpath = luigi.Parameter(
-        default="atlas", description="Path to output atlas subdirectory."
+        default="atlas", description=":str: Path to output atlas subdirectory."
     )
     circuit_subpath = luigi.Parameter(
-        default="circuit", description="Path to output circuit subdirectory."
+        default="circuit", description=":str: Path to output circuit subdirectory."
     )
     morphs_df_subpath = luigi.Parameter(
-        default="morphs_df", description="Path to output morphs_df subdirectory."
+        default="morphs_df", description=":str: Path to output morphs_df subdirectory."
     )
     synthesis_subpath = luigi.Parameter(
-        default="synthesis", description="Path to output synthesis subdirectory."
+        default="synthesis", description=":str: Path to output synthesis subdirectory."
     )
     validation_subpath = luigi.Parameter(
-        default="validation", description="Path to output validation subdirectory."
+        default="validation",
+        description=":str: Path to output validation subdirectory.",
     )
 
     # Default internal values
-    ext = ExtParameter(default="asc", description="Default extension used.")
+    ext = ExtParameter(default="asc", description=":str: Default extension used.")
     morphology_path = luigi.Parameter(
         default="repaired_morphology_path",
         description="Column name in the morphology dataframe to access morphology paths",
     )
     morphs_df_path = luigi.Parameter(
-        default="morphs_df.csv", description="Path to the morphology DataFrame."
+        default="morphs_df.csv", description=":str: Path to the morphology DataFrame."
     )
     substituted_morphs_df_path = luigi.Parameter(
         default="substituted_morphs_df.csv",
-        description="Path to the substituted morphology DataFrame.",
+        description=":str: Path to the substituted morphology DataFrame.",
     )
     synth_morphs_df_path = luigi.Parameter(
         default="synth_morphs_df.csv",
-        description="Path to the synthesized morphology DataFrame.",
+        description=":str: Path to the synthesized morphology DataFrame.",
     )
     synth_output_path = luigi.Parameter(
         default="synthesized_morphologies",
-        description="Path to the synthesized morphologies.",
+        description=":str: Path to the synthesized morphologies.",
     )
 
     debug_region_grower_scales_path = luigi.Parameter(
         default="region_grower_scales_logs",
         description=(
-            "Path to the log files in which the scaling factors computed in region-grower "
+            ":str: Path to the log files in which the scaling factors computed in region-grower "
             "are stored."
         ),
     )

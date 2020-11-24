@@ -106,7 +106,11 @@ def log_parameters(task):
 class ForceableTask(luigi.Task):
     """A luigi task that can be forced running again by setting the 'rerun' parameter to True."""
 
-    rerun = luigi.BoolParameter(significant=False, default=False)
+    rerun = luigi.BoolParameter(
+        significant=False,
+        default=False,
+        description=":bool: Force a task and all its parents to rerun.",
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

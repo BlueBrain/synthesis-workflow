@@ -29,6 +29,28 @@ LOGGING_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LUIGI_PARAMETERS = ["workers", "local_scheduler", "log_level"]
 
 
+_PARAM_NO_VALUE = [luigi.parameter._no_value, None]  # pylint: disable=protected-access
+
+
+def _process_param(param):
+    desc = param.description
+    choices = None
+    interval = None
+    optional = False
+    if isinstance(param, luigi.OptionalParameter):
+        optional = True
+    if isinstance(param, luigi.ChoiceParameter):
+        desc, choices = desc.rsplit("Choices: ", 1)
+    if isinstance(param, luigi.NumericalParameter):
+        desc, interval = desc.rsplit("permitted values: ", 1)
+    try:
+        param_type, param_doc = re.match("(:.*?:)? *(.*)", desc).groups()
+    except AttributeError:
+        param_type = None
+        param_doc = desc
+    return param_doc, param_type, choices, interval, optional
+
+
 class ArgParser:
     """Class to build parser and parse arguments."""
 
@@ -105,6 +127,27 @@ class ArgParser:
             help="Possible workflows", dest="workflow"
         )
 
+        def format_description(param):
+            try:
+                param_doc, param_type, choices, interval, optional = _process_param(
+                    param
+                )
+                if optional:
+                    param_doc = "(optional) " + param_doc
+                if param_type is not None:
+                    param_type = f"({param_type.replace(':', '')})"
+                    param_doc = f"{param_type} {param_doc}"
+                if choices is not None:
+                    param_doc = f"{param_doc} Choices: {choices}."
+                if interval is not None:
+                    param_doc = f"{param_doc} Permitted values: {interval}."
+                # pylint: disable=protected-access
+                if hasattr(param, "_default") and param._default not in _PARAM_NO_VALUE:
+                    param_doc = f"{param_doc} Default value: {param._default}."
+            except AttributeError:
+                param_doc = param.description
+            return param_doc
+
         for workflow_name, task in WORKFLOW_TASKS.items():
             try:
                 task_name = task.__name__
@@ -114,9 +157,9 @@ class ArgParser:
                     param_name = "--" + param.replace("_", "-")
                     subparser.add_argument(
                         param_name,
-                        help=param_obj.description,
+                        help=format_description(param_obj),
                         # pylint: disable=protected-access
-                        **param_obj._parser_kwargs(param_name, task_name)
+                        **param_obj._parser_kwargs(param_name, task_name),
                     )
                 parsers[workflow_name] = subparser
             except (AttributeError, TypeError):
@@ -215,7 +258,7 @@ def main(arguments=None):
             dot.edge(
                 parent.__class__.__name__,
                 child.__class__.__name__,
-                **default_edge_attrs
+                **default_edge_attrs,
             )
         filepath = Path(args.create_dependency_graph)
         filename = filepath.with_suffix("")
