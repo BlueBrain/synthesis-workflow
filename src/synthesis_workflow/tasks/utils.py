@@ -1,10 +1,12 @@
 """Utils luigi tasks."""
+import json
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import luigi
 from git import Repo
+from placement_algorithm.app.compact_annotations import _collect_annotations
 
 from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
@@ -75,3 +77,25 @@ class GetSynthesisInputs(WorkflowTask):
         """"""
         # TODO: it would probably be better to have a specific target for each file
         return OutputLocalTarget(PathConfig().local_synthesis_input_path)
+
+
+class CreateAnnotationsFile(WorkflowTask):
+    """Task to compact annotations into a single JSON file."""
+
+    annotation_dir = luigi.Parameter(description=(":str: Path to annotations folder."))
+    morph_db = luigi.OptionalParameter(
+        default=None, description=":str: Path to MorphDB file."
+    )
+    destination = luigi.Parameter(description=":str: Path to output JSON file.")
+
+    def run(self):
+        """"""
+        # pylint: disable=protected-access
+        annotations = _collect_annotations(self.annotation_dir, self.morph_db)
+
+        with open(self.destination, "w") as f:
+            json.dump(annotations, f, indent=4, sort_keys=True)
+
+    def output(self):
+        """"""
+        return OutputLocalTarget(self.destination)

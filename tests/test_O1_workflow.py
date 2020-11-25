@@ -36,6 +36,5 @@ def test_ValidateSynthesis(small_O1_working_directory):
             "validation/morphology_validation_reports/validation_results.json": {
                 "kwargs": {"precision": 1}  # weird precision issue in CI
             },
-            "validation/score_matrix_reports.pdf": {"kwargs": {"threshold": 64.5}},
         },
     )

@@ -63,7 +63,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
         if self.with_morphology_validation_reports:
             tasks.append(MorphologyValidationReports())
         if self.with_score_matrix_reports:
-            tasks.append(PlotScoreMatrix())
+            tasks.append(PlotScoreMatrix(in_atlas=True))
         return tasks
 
 

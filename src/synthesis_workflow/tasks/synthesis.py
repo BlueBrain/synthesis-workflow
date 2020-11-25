@@ -34,6 +34,7 @@ from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.luigi_tools import ParamLink
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.utils import CreateAnnotationsFile
 from synthesis_workflow.tasks.utils import GetSynthesisInputs
 from synthesis_workflow.tools import ensure_dir
 from synthesis_workflow.tools import find_case_insensitive_file
@@ -323,19 +324,30 @@ class BuildAxonMorphologies(WorkflowTask):
 
     def run(self):
         """"""
-
         ensure_dir(self.output().path)
         if self.annotations_path is None:
+            annotations_file = None
             neurondb_path = None
             atlas_path = None
             axon_cells = self.input()["axon_cells"].path
         else:
+            if Path(self.annotations_path).is_dir():
+                annotations_file = SynthesisLocalTarget("annotations.json").ppath
+                yield CreateAnnotationsFile(
+                    annotation_dir=self.annotations_path,
+                    destination=annotations_file,
+                )
+            else:
+                annotations_file = (
+                    Path(PathConfig().local_synthesis_input_path)
+                    / self.annotations_path
+                )
             axon_cells = None
             neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("dat"))
 
         if any(
             [
-                self.annotations_path is None,
+                annotations_file is None,
                 self.placement_rules_path is None,
                 neurondb_path is None,
                 axon_cells is not None,
@@ -349,7 +361,7 @@ class BuildAxonMorphologies(WorkflowTask):
             self.input()["circuit"].path,
             morphs_df_path=axon_cells,
             atlas_path=atlas_path,
-            annotations_path=self.annotations_path,
+            annotations_path=annotations_file,
             rules_path=self.placement_rules_path,
             morphdb_path=neurondb_path,
             alpha=self.placement_alpha,
