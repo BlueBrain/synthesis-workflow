@@ -338,10 +338,8 @@ class BuildAxonMorphologies(WorkflowTask):
                     destination=annotations_file,
                 )
             else:
-                annotations_file = (
-                    Path(PathConfig().local_synthesis_input_path)
-                    / self.annotations_path
-                )
+                input_task_target = yield GetSynthesisInputs()
+                annotations_file = input_task_target.ppath / self.annotations_path
             axon_cells = None
             neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("dat"))
 

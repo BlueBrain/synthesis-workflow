@@ -1,7 +1,10 @@
 """Functions for synthesis to be used by luigi tasks."""
+from functools import partial
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from joblib import cpu_count
 from joblib import delayed
 from joblib import Parallel
 from matplotlib.backends.backend_pdf import PdfPages
@@ -52,6 +55,15 @@ def _grow_morphology(
     return vacuum_synth_morphs_df
 
 
+def _external_diametrizer(neuron, model, neurite_type, diameter_params=None):
+    return build_diameters.build(
+        neuron,
+        model,
+        [neurite_type],
+        diameter_params,
+    )
+
+
 def grow_vacuum_morphologies(
     mtypes,
     n_cells,
@@ -75,23 +87,21 @@ def grow_vacuum_morphologies(
         tmd_distributions["mtypes"][mtype]["diameter"]["method"] = diametrizer
 
         if diametrizer == "external":
-
-            def external_diametrizer(neuron, model, neurite_type):
-                return build_diameters.build(
-                    neuron,
-                    model,
-                    [neurite_type],
-                    tmd_parameters[mtype][  # pylint: disable=cell-var-from-loop
-                        "diameter_params"
-                    ],
-                )
-
+            external_diametrizer = partial(
+                _external_diametrizer,
+                diameter_params=tmd_parameters[mtype]["diameter_params"],
+            )
         else:
             external_diametrizer = None
 
         gids = range(global_gid, global_gid + n_cells)
         global_gid += n_cells
-        for row in Parallel(nb_jobs, verbose=joblib_verbose)(
+        for row in Parallel(
+            nb_jobs,
+            verbose=joblib_verbose,
+            backend="multiprocessing",
+            batch_size=1 + int(len(gids) / (cpu_count() if nb_jobs == -1 else nb_jobs)),
+        )(
             delayed(_grow_morphology)(
                 gid,
                 mtype,
