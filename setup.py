@@ -25,6 +25,7 @@ reqs = [
     "joblib",
     "luigi",
     "matplotlib",
+    "morph_tool>=2.2.21",
     "morph_validator",
     "morphio",
     "neuroc",
