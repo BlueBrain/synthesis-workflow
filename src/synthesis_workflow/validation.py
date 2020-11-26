@@ -625,10 +625,18 @@ def _get_fit_population(
 ):
     """Get projections and path lengths of a given and a synthetic population."""
     # Load biological neurons
+    return_error = (mtype, None, None, None, None, None, None)
     if len(files) > 0:
         input_population = load_population(files)
     else:
-        return (mtype, None, None)
+        return return_error + (f"No file to load for mtype='{mtype}'",)
+    if (
+        tmd_parameters.get("context_constraints", {})
+        .get("apical", {})
+        .get("extent_to_target")
+        is None
+    ):
+        return return_error + (f"No fit for mtype='{mtype}'",)
 
     # Get X and Y from biological population
     x = get_path_distances(input_population)
@@ -648,7 +656,7 @@ def _get_fit_population(
     # Get X and Y from synthetic population
     x_synth = get_path_distances(synthetic_population)
 
-    return mtype, x, y, x_clean, y_clean, x_synth, y_synth
+    return mtype, x, y, x_clean, y_clean, x_synth, y_synth, None
 
 
 def plot_path_distance_fits(
@@ -692,9 +700,11 @@ def plot_path_distance_fits(
         for mtype in mtypes
     ]
 
+    L.debug("Number of files: %s", [(t, len(f)) for t, f in file_lists])
+
     ensure_dir(output_path)
     with PdfPages(output_path) as pdf:
-        for mtype, x, y, x_clean, y_clean, x_synth, y_synth in Parallel(nb_jobs)(
+        for mtype, x, y, x_clean, y_clean, x_synth, y_synth, msg in Parallel(nb_jobs)(
             delayed(_get_fit_population)(
                 mtype,
                 files,
@@ -704,6 +714,9 @@ def plot_path_distance_fits(
             )
             for mtype, files in file_lists
         ):
+            if all([i is None for i in [x, y, x_clean, y_clean, x_synth, y_synth]]):
+                L.warning(msg)
+                continue
             fig = plt.figure()
 
             # Plot points

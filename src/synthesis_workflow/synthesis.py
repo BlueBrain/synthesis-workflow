@@ -528,6 +528,8 @@ def add_scaling_rules_to_parameters(
         if mtype != "default"
     ]
 
+    L.debug("Number of files: %s", [(t, len(f)) for t, f in file_lists])
+
     # Fit data and update TMD parameters
     for mtype, slope, intercept in Parallel(nb_jobs)(
         delayed(_fit_population)(mtype, file_names) for mtype, file_names in file_lists
