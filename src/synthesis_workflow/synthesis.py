@@ -10,24 +10,20 @@ import numpy as np
 import pandas as pd
 from joblib import delayed
 from joblib import Parallel
-from joblib import cpu_count
 from tqdm import tqdm
 
 from morphio.mut import Morphology
 from neuroc.scale import scale_section
 from neuroc.scale import ScaleParameters
 from neurom.core.dataformat import COLS
-from placement_algorithm import files
 from placement_algorithm.app import utils
-from placement_algorithm.app import choose_morphologies
-from placement_algorithm.app.choose_morphologies import Worker as ChooseMorphologyWorker
+from placement_algorithm.app.choose_morphologies import Master as ChooseMorphologyMaster
 from placement_algorithm.app.synthesize_morphologies import (
     Master as SynthesizeMorphologiesMaster,
 )
 from tmd.io.io import load_population
 from tns import extract_input
 from voxcell import CellCollection
-from voxcell.nexus.voxelbrain import Atlas
 
 from synthesis_workflow import STR_TO_TYPES
 from synthesis_workflow.fit_utils import fit_path_distance_to_extent
@@ -159,6 +155,57 @@ def get_axon_base_dir(morphs_df, col_name="morphology_path"):
     return axon_morphs_base_dir
 
 
+def run_choose_morphologies(kwargs, nb_jobs=-1):
+    """Runs placement algorithm from python.
+
+    Args:
+        kwargs (dict): dictionary with argument from placement-algorithm CLI
+        nb_jobs (int): number of jobs
+        debug_scales_path (str): path to the directory containing the log files
+    """
+    parser_args = [
+        i.replace("-", "_")
+        for i in [
+            "mvd3",
+            "cells-path",
+            "morphdb",
+            "atlas",
+            "atlas-cache",
+            "annotations",
+            "rules",
+            "segment-type",
+            "alpha",
+            "scales",
+            "seed",
+            "output",
+            "no-mpi",
+        ]
+    ]
+
+    # Setup defaults
+    defaults = {
+        "alpha": 1.0,
+        "atlas_cache": None,
+        "mvd3": None,
+        "scales": None,
+        "seed": 0,
+        "segment-type": None,
+    }
+
+    # Set logging arguments
+    logger_kwargs = None
+
+    # Run
+    run_master(
+        ChooseMorphologyMaster,
+        kwargs,
+        parser_args,
+        defaults,
+        nb_jobs,
+        logger_kwargs=logger_kwargs,
+    )
+
+
 # pylint: disable=too-many-arguments, too-many-locals
 def create_axon_morphologies_tsv(
     circuit_path,
@@ -172,17 +219,21 @@ def create_axon_morphologies_tsv(
     seed=0,
     axon_morphs_path="axon_morphs.tsv",
     nb_jobs=-1,
-    joblib_verbose=10,
 ):
     """Create required axon_morphology tsv file for placement-algorithm to graft axons.
 
     Args:
-        circuit_path (str): path to circuit somata file
-        morphs_df_path (str): path to morphology dataframe
-        axon_morphs_path (str): name of the axon morphology list in .tsv format
-
-    Returns:
-        str: path to base directory of morphologies for axon grafting
+        circuit_path (str): Path to circuit somata file
+        morphs_df_path (str): Path to morphology dataframe
+        atlas_path (str): Path to the atlas
+        annotations_path (str): Path to annotations
+        rules_path (str): Path to rules
+        morphdb_path (str): Path to morphdb file
+        alpha (float): Use `score ** alpha` as morphology choice probability
+        scales (list(float)): Scale(s) to check
+        seed (int): Random number generator seed
+        axon_morphs_path (str): Name of the axon morphology list in .tsv format
+        nb_jobs (int): Number of jobs
     """
     check_placement_params = {
         "morphs_df_path": morphs_df_path is None,
@@ -202,47 +253,22 @@ def create_axon_morphologies_tsv(
     if all(check_placement_params.values()):
         L.info("Use placement algorithm for axons")
 
-        atlas = Atlas.open(atlas_path)
-        segment_type = "axon"
+        kwargs = {
+            "cells-path": circuit_path,
+            "morphdb": morphdb_path,
+            "atlas": atlas_path,
+            "annotations": annotations_path,
+            "rules": rules_path,
+            "segment-type": "axon",
+            "alpha": alpha,
+            "scales": scales,
+            "seed": seed,
+            "output": axon_morphs_path,
+            "no-mpi": True,
+        }
 
-        rules = files.PlacementRules(rules_path)
-        annotations = (
-            choose_morphologies._bind_annotations(  # pylint: disable=protected-access
-                utils.load_json(annotations_path),
-                files.parse_morphdb(morphdb_path),
-                rules,
-            )
-        )
+        run_choose_morphologies(kwargs, nb_jobs=nb_jobs)
 
-        # TODO: use the Master class with tools.run_master() instead of the Worker?
-        worker = ChooseMorphologyWorker(annotations, rules.layer_names, False)
-        worker.cells = CellCollection.load_mvd3(circuit_path)
-        worker.atlas = atlas
-        worker.alpha = alpha
-        worker.scales = scales
-        worker.seed = seed
-        worker.segment_type = segment_type
-        choose_morphologies._fetch_atlas_data(  # pylint: disable=protected-access
-            worker.atlas, worker.layer_names, memcache=True
-        )
-        cells_df = worker.cells.properties
-        axon_morphs = pd.DataFrame()
-
-        batch_size = 1 + int(
-            len(cells_df.index) / (nb_jobs if nb_jobs > 0 else cpu_count())
-        )
-        L.info("Using batch_size of %s", batch_size)
-
-        for gid, name in zip(
-            cells_df.index,
-            Parallel(
-                nb_jobs,
-                verbose=joblib_verbose,
-                backend="multiprocessing",
-                batch_size=batch_size,
-            )(delayed(worker)(gid) for gid in cells_df.index),
-        ):
-            axon_morphs.loc[gid, "morphology"] = name
     else:
         L.info("Do not use placement algorithm for axons (use random choice instead)")
 
@@ -262,7 +288,7 @@ def create_axon_morphologies_tsv(
                 random_state=42,
             )["name"].to_list()
 
-    axon_morphs.to_csv(axon_morphs_path, sep="\t", index=True)
+        utils.dump_morphology_list(axon_morphs, axon_morphs_path)
 
 
 def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales_path=None):

@@ -272,14 +272,15 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
                     logger.setLevel(logger_kwargs.get("log_level", logging.DEBUG))
                 res = _id, worker(_id)
             finally:
-                # Reset logger state
-                logger.setLevel(old_level)
-                logger.propagate = old_propagate
+                if logger_kwargs is not None:
+                    # Reset logger state
+                    logger.setLevel(old_level)
+                    logger.propagate = old_propagate
 
-                # Reset old handler levels
-                for i in logger.handlers:
-                    if i in handler_levels:
-                        i.setLevel(handler_levels[i])
+                    # Reset old handler levels
+                    for i in logger.handlers:
+                        if i in handler_levels:
+                            i.setLevel(handler_levels[i])
 
         return res
     except SkipSynthesisError:
