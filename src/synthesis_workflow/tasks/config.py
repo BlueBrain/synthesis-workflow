@@ -1,4 +1,4 @@
-"""config functions for luigi tasks."""
+"""Configurations for luigi tasks."""
 import logging
 import warnings
 

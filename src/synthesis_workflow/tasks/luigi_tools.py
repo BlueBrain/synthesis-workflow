@@ -1,4 +1,4 @@
-"""utils functions for luigi parameters."""
+"""Utils functions for the luigi library."""
 import logging
 import os
 import re

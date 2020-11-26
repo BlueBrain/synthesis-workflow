@@ -1,4 +1,4 @@
-"""utils functions."""
+"""Utils functions."""
 import logging
 
 

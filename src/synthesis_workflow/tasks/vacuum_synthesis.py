@@ -1,4 +1,4 @@
-"""Luigi tasks for morphology synthesis."""
+"""Luigi tasks for morphology synthesis in vacuum."""
 import json
 import logging
 from pathlib import Path

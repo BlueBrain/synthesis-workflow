@@ -1,4 +1,4 @@
-"""Functions for synthesis to be used by luigi tasks."""
+"""Functions for synthesis in vacuum to be used by luigi tasks."""
 from functools import partial
 
 import matplotlib.pyplot as plt

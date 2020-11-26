@@ -1,4 +1,4 @@
-"""Luigi tasks for morphology synthesis."""
+"""Luigi tasks for circuit and atlas processings."""
 from functools import partial
 from pathlib import Path
 import yaml

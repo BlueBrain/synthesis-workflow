@@ -1,4 +1,4 @@
-"""utils functions."""
+"""Some tool functions used in synthesis."""
 import glob
 import json
 import logging
