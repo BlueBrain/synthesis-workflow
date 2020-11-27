@@ -2,7 +2,16 @@
 ignore=version.py
 
 [MESSAGES CONTROL]
-disable=bad-continuation,fixme,invalid-name,len-as-condition,no-else-return,empty-docstring,too-many-lines
+disable=
+	bad-continuation,
+	empty-docstring,
+	fixme,
+	invalid-name,
+	len-as-condition,
+	no-else-return,
+	no-member,
+	too-many-ancestors,
+	too-many-lines,
 
 [FORMAT]
 # Maximum number of characters on a single line.

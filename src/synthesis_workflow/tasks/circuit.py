@@ -23,7 +23,7 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
-from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.utils import GetSynthesisInputs
@@ -153,7 +153,7 @@ class CreateAtlasPlanes(WorkflowTask):
 
 
 @copy_params(
-    mtype_taxonomy_path=ParamLink(PathConfig),
+    mtype_taxonomy_path=ParamRef(PathConfig),
 )
 class BuildCircuit(WorkflowTask):
     """Generate cell positions and me-types from atlas, compositions and taxonomy.
@@ -184,8 +184,8 @@ class BuildCircuit(WorkflowTask):
 
     def run(self):
         """"""
-        cell_composition_path = self.input().ppath / self.cell_composition_path
-        mtype_taxonomy_path = self.input().ppath / self.mtype_taxonomy_path
+        cell_composition_path = self.input().pathlib_path / self.cell_composition_path
+        mtype_taxonomy_path = self.input().pathlib_path / self.mtype_taxonomy_path
 
         thickness_mask_path = None
         if self.mask_path is not None:
@@ -210,7 +210,7 @@ class BuildCircuit(WorkflowTask):
 
 
 @copy_params(
-    mtypes=ParamLink(SynthesisConfig),
+    mtypes=ParamRef(SynthesisConfig),
 )
 class SliceCircuit(WorkflowTask):
     """Create a smaller circuit .mvd3 file for subsampling.

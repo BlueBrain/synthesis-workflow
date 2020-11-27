@@ -8,10 +8,10 @@ import sys
 from pathlib import Path
 
 import luigi
+from luigi_tools.utils import get_dependency_graph
 
 import synthesis_workflow
 from synthesis_workflow.tasks import workflows
-from synthesis_workflow.tasks.luigi_tools import get_dependency_graph
 from synthesis_workflow.utils import setup_logging
 
 

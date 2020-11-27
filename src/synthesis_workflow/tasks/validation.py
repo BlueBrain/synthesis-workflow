@@ -24,7 +24,7 @@ from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.luigi_tools import OptionalNumericalParameter
-from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import WorkflowError
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.synthesis import AddScalingRulesToParameters
@@ -51,7 +51,7 @@ L = logging.getLogger(__name__)
 
 
 @copy_params(
-    ext=ParamLink(PathConfig),
+    ext=ParamRef(PathConfig),
 )
 class ConvertMvd3(WorkflowTask):
     """Convert synthesize mvd3 file to morphs_df.csv file.
@@ -149,8 +149,8 @@ class PlotMorphometrics(WorkflowTask):
 
 
 @copy_params(
-    nb_jobs=ParamLink(RunnerConfig),
-    sample=ParamLink(ValidationConfig),
+    nb_jobs=ParamRef(RunnerConfig),
+    sample=ParamRef(ValidationConfig),
 )
 class PlotDensityProfiles(WorkflowTask):
     """Plot density profiles of neurites in an atlas.
@@ -207,10 +207,10 @@ class PlotDensityProfiles(WorkflowTask):
 
 
 @copy_params(
-    mtypes=ParamLink(SynthesisConfig),
-    nb_jobs=ParamLink(RunnerConfig),
-    joblib_verbose=ParamLink(RunnerConfig),
-    sample=ParamLink(ValidationConfig, default=20),
+    mtypes=ParamRef(SynthesisConfig),
+    nb_jobs=ParamRef(RunnerConfig),
+    joblib_verbose=ParamRef(RunnerConfig),
+    sample=ParamRef(ValidationConfig, default=20),
 )
 class PlotCollage(WorkflowTask):
     """Plot collage for all given mtypes.
@@ -285,14 +285,14 @@ class PlotCollage(WorkflowTask):
 
 
 @copy_params(
-    nb_jobs=ParamLink(RunnerConfig),
-    joblib_verbose=ParamLink(RunnerConfig),
-    collage_base_path=ParamLink(PlotCollage),
-    sample=ParamLink(ValidationConfig),
-    dpi=ParamLink(PlotCollage),
-    realistic_diameters=ParamLink(PlotCollage),
-    linewidth=ParamLink(PlotCollage),
-    diameter_scale=ParamLink(PlotCollage),
+    nb_jobs=ParamRef(RunnerConfig),
+    joblib_verbose=ParamRef(RunnerConfig),
+    collage_base_path=ParamRef(PlotCollage),
+    sample=ParamRef(ValidationConfig),
+    dpi=ParamRef(PlotCollage),
+    realistic_diameters=ParamRef(PlotCollage),
+    linewidth=ParamRef(PlotCollage),
+    diameter_scale=ParamRef(PlotCollage),
 )
 class PlotSingleCollage(WorkflowTask):
     """Plot collage for a single mtype.
@@ -366,7 +366,7 @@ class PlotSingleCollage(WorkflowTask):
 
 
 @copy_params(
-    mtypes=ParamLink(SynthesisConfig),
+    mtypes=ParamRef(SynthesisConfig),
 )
 class PlotScales(WorkflowTask):
     """Plot scales.
@@ -463,9 +463,9 @@ class PlotScales(WorkflowTask):
 
 
 @copy_params(
-    mtypes=ParamLink(SynthesisConfig),
-    morphology_path=ParamLink(PathConfig),
-    nb_jobs=ParamLink(RunnerConfig),
+    mtypes=ParamRef(SynthesisConfig),
+    morphology_path=ParamRef(PathConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class PlotPathDistanceFits(WorkflowTask):
     """Plot fits of path distances as functions of their projection.
@@ -516,9 +516,9 @@ class PlotPathDistanceFits(WorkflowTask):
 
 
 @copy_params(
-    mtypes=ParamLink(SynthesisConfig),
-    morphology_path=ParamLink(PathConfig),
-    nb_jobs=ParamLink(RunnerConfig),
+    mtypes=ParamRef(SynthesisConfig),
+    morphology_path=ParamRef(PathConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class MorphologyValidationReports(WorkflowTask):
     """Create morphology validation reports.
@@ -590,7 +590,7 @@ class MorphologyValidationReports(WorkflowTask):
             config,
             test_morphs_df,
             ref_morphs_df,
-            self.output().ppath,
+            self.output().pathlib_path,
             create_timestamp_dir=False,
             notebook=False,
         )
@@ -605,9 +605,9 @@ class MorphologyValidationReports(WorkflowTask):
 
 
 @copy_params(
-    mtypes=ParamLink(SynthesisConfig),
-    morphology_path=ParamLink(PathConfig),
-    nb_jobs=ParamLink(RunnerConfig),
+    mtypes=ParamRef(SynthesisConfig),
+    morphology_path=ParamRef(PathConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class PlotScoreMatrix(WorkflowTask):
     """Create score matrix reports.
@@ -676,7 +676,7 @@ class PlotScoreMatrix(WorkflowTask):
         plot_score_matrix(
             ref_morphs_df,
             test_morphs_df,
-            self.output().ppath,
+            self.output().pathlib_path,
             config,
             mtypes=self.mtypes,
             nb_jobs=self.nb_jobs,

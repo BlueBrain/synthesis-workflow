@@ -24,6 +24,7 @@ reqs = [
     "jinja2",
     "joblib",
     "luigi",
+    "luigi-tools>=0.0.2",
     "matplotlib",
     "morph_tool>=2.2.21",
     "morph_validator",

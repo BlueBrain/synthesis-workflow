@@ -24,7 +24,7 @@ from synthesis_workflow.tasks.config import OutputLocalTarget
 from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import copy_params
-from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tools import update_morphs_df
 
@@ -67,7 +67,7 @@ def _plot_models(models_params, models_data, fig_folder="figures", ext=".png"):
 
 
 @copy_params(
-    nb_jobs=ParamLink(RunnerConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class BuildDiameterModels(WorkflowTask):
     """Task to build diameter models from set of cells.

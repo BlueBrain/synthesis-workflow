@@ -31,7 +31,7 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import copy_params
-from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.utils import CreateAnnotationsFile
@@ -47,7 +47,7 @@ L = logging.getLogger(__name__)
 
 
 @copy_params(
-    mtype_taxonomy_path=ParamLink(PathConfig),
+    mtype_taxonomy_path=ParamRef(PathConfig),
 )
 class BuildMorphsDF(WorkflowTask):
     """Generate the list of morphologies with their mtypes and paths.
@@ -80,7 +80,7 @@ class BuildMorphsDF(WorkflowTask):
 
         L.debug("Build morphology dataframe from %s", neurondb_path)
 
-        mtype_taxonomy_path = self.input().ppath / self.mtype_taxonomy_path
+        mtype_taxonomy_path = self.input().pathlib_path / self.mtype_taxonomy_path
         morphs_df = load_neurondb_to_dataframe(
             neurondb_path,
             self.morphology_dirs,
@@ -120,7 +120,7 @@ class ApplySubstitutionRules(WorkflowTask):
     def run(self):
         """"""
         substitution_rules_path = (
-            self.input()["synthesis_input"].ppath / self.substitution_rules_path
+            self.input()["synthesis_input"].pathlib_path / self.substitution_rules_path
         )
         with open(substitution_rules_path, "rb") as sub_file:
             substitution_rules = yaml.full_load(sub_file)
@@ -137,7 +137,7 @@ class ApplySubstitutionRules(WorkflowTask):
 
 
 @copy_params(
-    tmd_parameters_path=ParamLink(SynthesisConfig),
+    tmd_parameters_path=ParamRef(SynthesisConfig),
 )
 class BuildSynthesisParameters(WorkflowTask):
     """Build the tmd_parameter.json for synthesis.
@@ -170,7 +170,8 @@ class BuildSynthesisParameters(WorkflowTask):
         if self.input_tmd_parameters_path is not None:
             L.info("Using custom tmd parameters")
             input_tmd_parameters_path = (
-                self.input()["synthesis_input"].ppath / self.input_tmd_parameters_path
+                self.input()["synthesis_input"].pathlib_path
+                / self.input_tmd_parameters_path
             )
             with open(input_tmd_parameters_path, "r") as f:
                 custom_tmd_parameters = json.load(f)
@@ -202,8 +203,8 @@ class BuildSynthesisParameters(WorkflowTask):
 
 
 @copy_params(
-    morphology_path=ParamLink(PathConfig),
-    nb_jobs=ParamLink(RunnerConfig),
+    morphology_path=ParamRef(PathConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class BuildSynthesisDistributions(WorkflowTask):
     """Build the tmd_distribution.json for synthesis.
@@ -332,14 +333,16 @@ class BuildAxonMorphologies(WorkflowTask):
             axon_cells = self.input()["axon_cells"].path
         else:
             if Path(self.annotations_path).is_dir():
-                annotations_file = SynthesisLocalTarget("annotations.json").ppath
+                annotations_file = SynthesisLocalTarget("annotations.json").pathlib_path
                 yield CreateAnnotationsFile(
                     annotation_dir=self.annotations_path,
                     destination=annotations_file,
                 )
             else:
                 input_task_target = yield GetSynthesisInputs()
-                annotations_file = input_task_target.ppath / self.annotations_path
+                annotations_file = (
+                    input_task_target.pathlib_path / self.annotations_path
+                )
             axon_cells = None
             neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("dat"))
 
@@ -375,9 +378,9 @@ class BuildAxonMorphologies(WorkflowTask):
 
 
 @copy_params(
-    ext=ParamLink(PathConfig),
-    morphology_path=ParamLink(PathConfig),
-    nb_jobs=ParamLink(RunnerConfig),
+    ext=ParamRef(PathConfig),
+    morphology_path=ParamRef(PathConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class Synthesize(WorkflowTask):
     """Run placement-algorithm to synthesize morphologies.
@@ -490,9 +493,9 @@ class Synthesize(WorkflowTask):
 
 
 @copy_params(
-    morphology_path=ParamLink(PathConfig),
-    tmd_parameters_path=ParamLink(SynthesisConfig),
-    nb_jobs=ParamLink(RunnerConfig),
+    morphology_path=ParamRef(PathConfig),
+    tmd_parameters_path=ParamRef(SynthesisConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class AddScalingRulesToParameters(WorkflowTask):
     """Add scaling rules to tmd_parameter.json.
@@ -523,7 +526,7 @@ class AddScalingRulesToParameters(WorkflowTask):
 
         if self.scaling_rules_path is not None:
             scaling_rules_path = (
-                self.input()["synthesis_input"].ppath / self.scaling_rules_path
+                self.input()["synthesis_input"].pathlib_path / self.scaling_rules_path
             )
             L.debug("Load scaling rules from %s", scaling_rules_path)
             scaling_rules = yaml.full_load(open(scaling_rules_path, "r"))
@@ -547,8 +550,8 @@ class AddScalingRulesToParameters(WorkflowTask):
 
 
 @copy_params(
-    morphology_path=ParamLink(PathConfig),
-    nb_jobs=ParamLink(RunnerConfig),
+    morphology_path=ParamRef(PathConfig),
+    nb_jobs=ParamRef(RunnerConfig),
 )
 class RescaleMorphologies(WorkflowTask):
     """Rescale morphologies.

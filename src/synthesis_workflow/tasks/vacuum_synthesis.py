@@ -13,7 +13,7 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.luigi_tools import copy_params
-from synthesis_workflow.tasks.luigi_tools import ParamLink
+from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
 from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
@@ -29,9 +29,9 @@ L = logging.getLogger(__name__)
 
 
 @copy_params(
-    mtypes=ParamLink(SynthesisConfig),
-    nb_jobs=ParamLink(RunnerConfig),
-    joblib_verbose=ParamLink(RunnerConfig),
+    mtypes=ParamRef(SynthesisConfig),
+    nb_jobs=ParamRef(RunnerConfig),
+    joblib_verbose=ParamRef(RunnerConfig),
 )
 class VacuumSynthesize(WorkflowTask):
     """Grow cells in vacuum, for annotation tasks.
@@ -100,7 +100,7 @@ class VacuumSynthesize(WorkflowTask):
 
 
 @copy_params(
-    vacuum_synth_morphology_path=ParamLink(VacuumSynthesize),
+    vacuum_synth_morphology_path=ParamRef(VacuumSynthesize),
 )
 class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations.
