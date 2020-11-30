@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", module="neurom.io")
 warnings.filterwarnings("ignore", module="neurom.features")
 warnings.filterwarnings("ignore", module="scipy")
 
-# Disable matplotlib logger
+# Disable some loggers
 logging.getLogger("matplotlib").propagate = False
 logging.getLogger("numexpr").propagate = False
 logging.getLogger("tns").propagate = False

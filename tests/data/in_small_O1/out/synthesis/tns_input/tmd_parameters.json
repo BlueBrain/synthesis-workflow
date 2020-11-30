@@ -110,7 +110,7 @@
                     "fraction": 0.8,
                     "intercept": 0,
                     "layer": 1,
-                    "slope": 1.045982836676422
+                    "slope": 1.0459828761132874
                 },
                 "hard_limit_max": {
                     "fraction": 0.99,

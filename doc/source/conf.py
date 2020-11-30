@@ -1,4 +1,4 @@
-# Configuration file for the Sphinx documentation builder.
+"""Configuration file for the Sphinx documentation builder."""
 #
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
@@ -10,11 +10,19 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+# pylint: disable=protected-access
 
+import importlib
+import re
 from pkg_resources import get_distribution
+
+import luigi
+
+import morphval
+import synthesis_workflow
+import synthesis_workflow.tasks
+from synthesis_workflow.tasks.cli import _PARAM_NO_VALUE
+from synthesis_workflow.tasks.cli import _process_param
 
 
 # -- Project information -----------------------------------------------------
@@ -109,17 +117,7 @@ intersphinx_mapping = {
     "luigi": ("https://luigi.readthedocs.io/en/stable", None),
 }
 
-
-import importlib
-import luigi
-import re
-
-import morphval
-import synthesis_workflow
-import synthesis_workflow.tasks
-from synthesis_workflow.tasks.cli import _PARAM_NO_VALUE
-from synthesis_workflow.tasks.cli import _process_param
-
+# Auto-API customization
 
 SKIP = [
     r".*\.L$",
@@ -136,7 +134,9 @@ IMPORT_MAPPING = {
 }
 
 
+# pylint: disable=unused-argument
 def maybe_skip_member(app, what, name, obj, skip, options):
+    """Skip and update documented objects."""
     skip = None
     for pattern in SKIP:
         if re.match(pattern, name) is not None:
@@ -167,11 +167,12 @@ def maybe_skip_member(app, what, name, obj, skip, options):
                     ):
                         help_str += f"\n\n:default value: {actual_obj._default}"
                     obj.docstring = help_str
-        except:
+        except Exception:  # pylint: disable=broad-except
             pass
 
     return skip
 
 
 def setup(app):
+    """Sphinx events setup."""
     app.connect("autoapi-skip-member", maybe_skip_member)

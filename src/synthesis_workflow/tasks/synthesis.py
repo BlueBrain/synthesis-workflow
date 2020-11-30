@@ -267,7 +267,8 @@ class BuildAxonMorphologies(WorkflowTask):
     annotations_path = luigi.Parameter(
         default=None,
         description=(
-            ":str: Path to annotations file used by ``placementAlgorithm.choose_morphologies``. "
+            ":str: Path to annotations file used by "
+            "``placementAlgorithm.app.choose_morphologies``. "
             "If None, random axons will be choosen."
         ),
     )
@@ -280,18 +281,36 @@ class BuildAxonMorphologies(WorkflowTask):
     )
     placement_rules_path = luigi.Parameter(
         default=None,
-        description=":str: See ``placementAlgorithm.choose_morphologies``.",
+        description=":str: See ``placementAlgorithm.app.choose_morphologies``.",
     )
     placement_alpha = luigi.FloatParameter(
         default=1.0,
-        description=":float: See ``placementAlgorithm.choose_morphologies``.",
+        description=":float: See ``placementAlgorithm.app.choose_morphologies``.",
     )
     placement_scales = luigi.ListParameter(
         default=None,
-        description=":list: See ``placementAlgorithm.choose_morphologies``.",
+        description=":list: See ``placementAlgorithm.app.choose_morphologies``.",
     )
     placement_seed = luigi.IntParameter(
-        default=0, description=":int: See ``placementAlgorithm.choose_morphologies``."
+        default=0,
+        description=":int: See ``placementAlgorithm.app.choose_morphologies``.",
+    )
+    with_scores = BoolParameter(default=False, description=":bool: Export morphology scores.")
+    filter_axons = BoolParameter(
+        default=False,
+        description=(
+            ":bool: Read the neuronDB.xml file, filter cell with use_axon=True and generate a new "
+            "neurondb.dat that is then read by ``placementAlgorithm.app.choose_morphologies``."
+        ),
+    )
+    bias_kind = luigi.ChoiceParameter(
+        choices=["uniform", "linear", "gaussian"],
+        default="linear",
+        description=":str: Kind of bias used to penalize scores of rescaled morphologies.",
+    )
+    with_optional_scores = BoolParameter(
+        default=True,
+        description=":bool: Use or ignore optional rules for morphology choice.",
     )
     nb_jobs = luigi.IntParameter(default=20, description=":int: Number of workers.")
 
@@ -329,7 +348,15 @@ class BuildAxonMorphologies(WorkflowTask):
                 input_task_target = yield GetSynthesisInputs()
                 annotations_file = input_task_target.pathlib_path / self.annotations_path
             axon_cells = None
-            neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("dat"))
+            if self.filter_axons:
+                neurondb_path = self.output()["axons_neurondb"].path
+                input_neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("xml"))
+                morphs_df = load_neurondb_to_dataframe(input_neurondb_path)
+                morphs_df.drop(morphs_df.loc[~morphs_df["use_axon"]].index, inplace=True)
+                morphs_df.drop(columns=["use_axon"], inplace=True)
+                morphs_df.to_csv(neurondb_path, sep=" ", header=False, index=False)
+            else:
+                neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("dat"))
 
         if any(
             [
@@ -343,6 +370,12 @@ class BuildAxonMorphologies(WorkflowTask):
         else:
             atlas_path = CircuitConfig().atlas_path
 
+        with_scores = self.with_scores
+        if with_scores:
+            scores_output_folder = self.output()["scores"].path
+        else:
+            scores_output_folder = None
+
         create_axon_morphologies_tsv(
             self.input()["circuit"].path,
             morphs_df_path=axon_cells,
@@ -353,13 +386,24 @@ class BuildAxonMorphologies(WorkflowTask):
             alpha=self.placement_alpha,
             scales=self.placement_scales,
             seed=self.placement_seed,
-            axon_morphs_path=self.output().path,
+            axon_morphs_path=self.output()["morphs"].path,
+            scores_output_path=scores_output_folder,
+            bias_kind=self.bias_kind,
+            with_optional_scores=self.with_optional_scores,
             nb_jobs=self.nb_jobs,
         )
 
     def output(self):
         """"""
-        return MorphsDfLocalTarget(self.axon_morphs_path)
+        targets = {
+            "morphs": MorphsDfLocalTarget(self.axon_morphs_path),
+        }
+        if self.with_scores:
+            scores_output_folder = Path(self.axon_morphs_path).with_suffix("")
+            targets["scores"] = MorphsDfLocalTarget(scores_output_folder)
+        if self.filter_axons:
+            targets["axons_neurondb"] = MorphsDfLocalTarget("axons_neurondb.dat")
+        return targets
 
 
 @copy_params(
@@ -397,6 +441,9 @@ class Synthesize(WorkflowTask):
         default=0.1,
         description=":float: The maximum drop ratio.",
     )
+    apply_jitter = BoolParameter(
+        default=False, description=":bool: Apply jitter to all sections of axons."
+    )
     seed = luigi.IntParameter(default=0, description=":int: Pseudo-random generator seed.")
 
     def requires(self):
@@ -413,7 +460,7 @@ class Synthesize(WorkflowTask):
     def run(self):
         """"""
 
-        axon_morphs_path = self.input()["axons"].path
+        axon_morphs_path = self.input()["axons"]["morphs"].path
         out_mvd3 = self.output()["out_mvd3"]
         out_morphologies = self.output()["out_morphologies"]
         out_apical_points = self.output()["apical_points"]
@@ -441,7 +488,7 @@ class Synthesize(WorkflowTask):
             "tmd_parameters": self.input()["tmd_parameters"].path,
             "tmd_distributions": self.input()["tmd_distributions"].path,
             "atlas": CircuitConfig().atlas_path,
-            "out_mvd3": out_mvd3.path,
+            "out_cells_path": out_mvd3.path,
             "out_apical": out_apical_points.path,
             "out_morph_ext": [str(self.ext)],
             "out_morph_dir": out_morphologies.path,
@@ -450,6 +497,7 @@ class Synthesize(WorkflowTask):
             "morph-axon": axon_morphs_path,
             "base-morph-dir": axon_morphs_base_dir,
             "max_drop_ratio": self.max_drop_ratio,
+            "apply_jitter": self.apply_jitter,
             "seed": self.seed,
         }
 

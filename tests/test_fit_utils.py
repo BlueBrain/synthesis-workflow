@@ -8,7 +8,7 @@ from tmd.Neuron import Neuron
 from tmd.Population.Population import Population
 from tmd.Soma import Soma
 from tmd.Tree import Tree
-from tmd.utils import tree_type as td
+from tmd.utils import TREE_TYPE_DICT as td
 
 from synthesis_workflow import fit_utils
 

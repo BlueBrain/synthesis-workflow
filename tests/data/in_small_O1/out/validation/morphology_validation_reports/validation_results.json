@@ -3,10 +3,10 @@
     "basal_dendrite": {
       "local_bifurcation_angles": {
         "ref_summary_statistics": {
-          "mean": 1.3730488483703718,
-          "median": 1.3334056421878058,
+          "mean": 1.373048851063482,
+          "median": 1.3334056494614468,
           "sample_size": 51,
-          "std": 0.5085789934971152
+          "std": 0.5085789905510887
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -18,10 +18,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 0.18496451960163865,
-          "median": 0.18658731573902204,
+          "mean": 0.18496414986111762,
+          "median": 0.1865866884836614,
           "sample_size": 304,
-          "std": 0.08676391661020444
+          "std": 0.08676389572825792
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -148,10 +148,10 @@
       },
       "principal_direction_extents": {
         "ref_summary_statistics": {
-          "mean": 304.43736292410887,
-          "median": 255.87916414890168,
+          "mean": 304.4373636694816,
+          "median": 255.8791691672127,
           "sample_size": 10,
-          "std": 229.0973399066166
+          "std": 229.09733782694772
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -163,10 +163,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 314.29234919201605,
-          "median": 280.31317465119,
+          "mean": 312.1887029203935,
+          "median": 280.66116735826347,
           "sample_size": 50,
-          "std": 215.61433844001905
+          "std": 213.19555986846834
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -177,10 +177,10 @@
       },
       "remote_bifurcation_angles": {
         "ref_summary_statistics": {
-          "mean": 1.3540538730756315,
-          "median": 1.3469781938811527,
+          "mean": 1.3540538725357798,
+          "median": 1.3469781542810741,
           "sample_size": 51,
-          "std": 0.4891080520190678
+          "std": 0.48910805149243924
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -192,10 +192,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 0.8995288875521622,
-          "median": 0.8203357211504545,
+          "mean": 0.8995288920810249,
+          "median": 0.8203359017009229,
           "sample_size": 304,
-          "std": 0.5181137795943569
+          "std": 0.5181138072753165
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -235,10 +235,10 @@
       },
       "section_lengths": {
         "ref_summary_statistics": {
-          "mean": 52.6704512515463,
-          "median": 30.265891389630777,
+          "mean": 52.67045211791992,
+          "median": 30.265892028808594,
           "sample_size": 118,
-          "std": 61.4787723795821
+          "std": 61.47877502441406
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -250,10 +250,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 51.32292682515325,
-          "median": 23.934462591973784,
+          "mean": 51.32292938232422,
+          "median": 23.934457778930664,
           "sample_size": 658,
-          "std": 70.2311024830656
+          "std": 70.2311019897461
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -264,10 +264,10 @@
       },
       "section_path_distances": {
         "ref_summary_statistics": {
-          "mean": 126.87977465259459,
-          "median": 109.46813873410767,
+          "mean": 126.87977421485772,
+          "median": 109.46813923120499,
           "sample_size": 118,
-          "std": 98.12285799962557
+          "std": 98.12285801652193
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -279,10 +279,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 129.03601050191224,
-          "median": 96.18889954835299,
+          "mean": 129.03600912271662,
+          "median": 96.18890058994293,
           "sample_size": 658,
-          "std": 109.51550228392655
+          "std": 109.51550204718832
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -293,10 +293,10 @@
       },
       "section_radial_distances": {
         "ref_summary_statistics": {
-          "mean": 103.84144279062889,
-          "median": 87.16923823642546,
+          "mean": 103.84144592285156,
+          "median": 87.16923522949219,
           "sample_size": 118,
-          "std": 80.7402802642098
+          "std": 80.74027252197266
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -308,10 +308,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 103.28231673567055,
-          "median": 74.66841809295963,
+          "mean": 103.28231811523438,
+          "median": 74.66841888427734,
           "sample_size": 658,
-          "std": 88.7593941935768
+          "std": 88.7593994140625
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -322,10 +322,10 @@
       },
       "section_tortuosity": {
         "ref_summary_statistics": {
-          "mean": 1.0387425846940774,
-          "median": 1.0138186437274346,
+          "mean": 1.0387425422668457,
+          "median": 1.0138185024261475,
           "sample_size": 118,
-          "std": 0.06635974876935244
+          "std": 0.066359743475914
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -337,10 +337,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 1.0660266280023758,
-          "median": 1.0615351188321296,
+          "mean": 1.0660266876220703,
+          "median": 1.0615348815917969,
           "sample_size": 658,
-          "std": 0.04427678727254404
+          "std": 0.044276751577854156
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -351,10 +351,10 @@
       },
       "total_length": {
         "ref_summary_statistics": {
-          "mean": 3107.556623841233,
-          "median": 3107.556623841233,
+          "mean": 3107.556620001793,
+          "median": 3107.556620001793,
           "sample_size": 2,
-          "std": 248.52154110995548
+          "std": 248.52151930332184
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -366,10 +366,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 3377.0485850950836,
-          "median": 2825.0983240193254,
+          "mean": 3377.048570072651,
+          "median": 2825.098333120346,
           "sample_size": 10,
-          "std": 1927.113812663493
+          "std": 1927.1137955818074
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -380,10 +380,10 @@
       },
       "total_length_per_neurite": {
         "ref_summary_statistics": {
-          "mean": 621.5113247682464,
-          "median": 399.546938488466,
+          "mean": 621.5113240003586,
+          "median": 399.5469403862953,
           "sample_size": 10,
-          "std": 570.6574960802358
+          "std": 570.6574952427962
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -395,10 +395,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 675.4097170190166,
-          "median": 622.1031003352778,
+          "mean": 675.4097140145302,
+          "median": 622.1031119823456,
           "sample_size": 50,
-          "std": 534.4479044248726
+          "std": 534.4479040159101
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -413,10 +413,10 @@
     "basal_dendrite": {
       "local_bifurcation_angles": {
         "ref_summary_statistics": {
-          "mean": 1.0780959614448404,
-          "median": 1.075610284920847,
+          "mean": 1.0780959638624028,
+          "median": 1.0756102660339555,
           "sample_size": 32,
-          "std": 0.38898292724548283
+          "std": 0.3889829240447025
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -428,10 +428,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 0.14493869937996415,
-          "median": 0.12431417902337326,
+          "mean": 0.14493877202533087,
+          "median": 0.1243142213463198,
           "sample_size": 177,
-          "std": 0.08199198574377978
+          "std": 0.08199202340013624
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -558,10 +558,10 @@
       },
       "principal_direction_extents": {
         "ref_summary_statistics": {
-          "mean": 253.2175542138902,
-          "median": 281.8604519251691,
+          "mean": 253.2175576487396,
+          "median": 281.860465890194,
           "sample_size": 7,
-          "std": 66.44416337505362
+          "std": 66.44416189566039
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -573,10 +573,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 148.95741470308414,
-          "median": 157.51900144527426,
+          "mean": 148.89572756125222,
+          "median": 154.0945529404251,
           "sample_size": 35,
-          "std": 38.79487869856409
+          "std": 36.354438629112295
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -587,10 +587,10 @@
       },
       "remote_bifurcation_angles": {
         "ref_summary_statistics": {
-          "mean": 0.9755464490473402,
-          "median": 0.9454921502257028,
+          "mean": 0.9755464434028234,
+          "median": 0.9454921812528907,
           "sample_size": 32,
-          "std": 0.45801760478653225
+          "std": 0.45801761512262507
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -602,10 +602,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 0.6635282472372146,
-          "median": 0.5729979465621247,
+          "mean": 0.6635282526835062,
+          "median": 0.5729980742469589,
           "sample_size": 177,
-          "std": 0.4099248395505485
+          "std": 0.4099248689937594
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -645,10 +645,10 @@
       },
       "section_lengths": {
         "ref_summary_statistics": {
-          "mean": 55.41016397870401,
-          "median": 40.412881023061026,
+          "mean": 55.41016387939453,
+          "median": 40.412879943847656,
           "sample_size": 71,
-          "std": 43.529427298281405
+          "std": 43.529422760009766
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -660,10 +660,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 33.11021315982164,
-          "median": 23.143700554922656,
+          "mean": 33.11021423339844,
+          "median": 23.143701553344727,
           "sample_size": 389,
-          "std": 28.406104046913615
+          "std": 28.406103134155273
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -674,10 +674,10 @@
       },
       "section_path_distances": {
         "ref_summary_statistics": {
-          "mean": 96.63562539404855,
-          "median": 95.21088801777034,
+          "mean": 96.63562459341237,
+          "median": 95.21088981628418,
           "sample_size": 71,
-          "std": 57.267282594234004
+          "std": 57.267282346349155
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -689,10 +689,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 57.48862622010042,
-          "median": 61.95485319302097,
+          "mean": 57.488626170280966,
+          "median": 61.95485019683838,
           "sample_size": 389,
-          "std": 33.79678106648739
+          "std": 33.79678110558682
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -703,10 +703,10 @@
       },
       "section_radial_distances": {
         "ref_summary_statistics": {
-          "mean": 86.05349280542663,
-          "median": 89.79406891290454,
+          "mean": 86.05349731445312,
+          "median": 89.7940673828125,
           "sample_size": 71,
-          "std": 51.49331449235975
+          "std": 51.493316650390625
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -718,10 +718,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 51.103121269419475,
-          "median": 52.66233000227883,
+          "mean": 51.10312271118164,
+          "median": 52.66232681274414,
           "sample_size": 389,
-          "std": 30.199510351400146
+          "std": 30.19951057434082
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -732,10 +732,10 @@
       },
       "section_tortuosity": {
         "ref_summary_statistics": {
-          "mean": 1.0250878423658523,
-          "median": 1.0106230636622933,
+          "mean": 1.025087833404541,
+          "median": 1.0106230974197388,
           "sample_size": 71,
-          "std": 0.030512394049629913
+          "std": 0.030512364581227303
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -747,10 +747,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 1.0518309180702397,
-          "median": 1.0482083882294373,
+          "mean": 1.0518308877944946,
+          "median": 1.048208475112915,
           "sample_size": 389,
-          "std": 0.02998504056807634
+          "std": 0.029985036700963974
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -761,10 +761,10 @@
       },
       "total_length": {
         "ref_summary_statistics": {
-          "mean": 1967.060821243992,
-          "median": 1967.060821243992,
+          "mean": 1967.060796380043,
+          "median": 1967.060796380043,
           "sample_size": 2,
-          "std": 307.9745816645328
+          "std": 307.9745796918869
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -776,10 +776,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 1287.9872919170618,
-          "median": 1388.0820321663969,
+          "mean": 1287.9872979044915,
+          "median": 1388.082046866417,
           "sample_size": 10,
-          "std": 367.88666917991867
+          "std": 367.8866786469761
         },
         "validation_criterion": {
           "criterion": "dist",
@@ -790,10 +790,10 @@
       },
       "total_length_per_neurite": {
         "ref_summary_statistics": {
-          "mean": 562.0173774982834,
-          "median": 597.9754835872384,
+          "mean": 562.017370394298,
+          "median": 597.9755086898804,
           "sample_size": 7,
-          "std": 239.10427471175853
+          "std": 239.10426708520833
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -805,10 +805,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 367.9963691191605,
-          "median": 364.49764550913545,
+          "mean": 367.9963708298547,
+          "median": 364.4976463317871,
           "sample_size": 35,
-          "std": 139.14166199385028
+          "std": 139.14166486333545
         },
         "validation_criterion": {
           "criterion": "dist",

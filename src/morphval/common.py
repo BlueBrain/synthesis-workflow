@@ -127,12 +127,15 @@ def get_components_population(population, component):
         return population
 
     def filtered_neurites(n):
-        return list(iter_neurites(n, filt=is_type(COMP_MAP[component])))
+        return iter_neurites(n, filt=is_type(COMP_MAP[component]))
 
     morphs = []
     for n in population:
         nrn = deepcopy(n)
-        nrn.neurites = filtered_neurites(n)
+        for neurite in filtered_neurites(n):
+            if neurite not in nrn.neurites:
+                nrn.delete_section(neurite, recursive=True)
+
         nrn.name = n.name + "_" + component
         morphs.append(nrn)
 

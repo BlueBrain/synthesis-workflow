@@ -911,18 +911,24 @@ def get_scores(df1, df2, percentile=5):
         "apical_dendrite": "Apical",
     }
     for neurite_type in ["basal_dendrite", "apical_dendrite"]:
-        for k in df1.keys():
-            if k in ["name", "neurite_type"]:
-                continue
-            data1 = df1.loc[df1["neurite_type"] == neurite_type, k]
-            data2 = df2.loc[df2["neurite_type"] == neurite_type, k]
-            sc1 = mvs_score(data1, data2, percentile)
-            score_name = key_names[neurite_type] + " " + k.replace("_", " ")
-            score_names.append(score_name)
-            if sc1 is not np.nan:
-                scores.append(sc1)
-            else:
-                scores.append(0.0)
+        if neurite_type in df1.columns and neurite_type in df2.columns:
+            _df1 = df1[neurite_type]
+            _df2 = df2[neurite_type]
+            for k in _df1.columns:
+                data1 = _df1[k]
+                data2 = _df2[k]
+                data1 = data1[~data1.isna()]
+                data2 = data2[~data2.isna()]
+                score_name = key_names[neurite_type] + " " + k.replace("_", " ")
+                score_names.append(score_name)
+                if len(data1.index) > 0 and len(data2.index) > 0:
+                    sc1 = mvs_score(data1, data2, percentile)
+                    if sc1 is not np.nan:
+                        scores.append(sc1)
+                    else:
+                        scores.append(0.0)
+                else:
+                    scores.append(0.0)
 
     return score_names, scores
 

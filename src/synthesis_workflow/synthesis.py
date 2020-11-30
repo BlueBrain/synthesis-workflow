@@ -177,6 +177,9 @@ def run_choose_morphologies(kwargs, nb_jobs=-1):
             "seed",
             "output",
             "no-mpi",
+            "scores-output-path",
+            "bias-kind",
+            "no-optional-scores",
         ]
     ]
 
@@ -188,6 +191,9 @@ def run_choose_morphologies(kwargs, nb_jobs=-1):
         "scales": None,
         "seed": 0,
         "segment-type": None,
+        "scores-output-path": None,
+        "bias-kind": "linear",
+        "no-optional-scores": False,
     }
 
     # Set logging arguments
@@ -216,6 +222,9 @@ def create_axon_morphologies_tsv(
     scales=None,
     seed=0,
     axon_morphs_path="axon_morphs.tsv",
+    scores_output_path=None,
+    bias_kind="linear",
+    with_optional_scores=True,
     nb_jobs=-1,
 ):
     """Create required axon_morphology tsv file for placement-algorithm to graft axons.
@@ -231,6 +240,11 @@ def create_axon_morphologies_tsv(
         scales (list(float)): Scale(s) to check
         seed (int): Random number generator seed
         axon_morphs_path (str): Name of the axon morphology list in .tsv format
+        scores_output_path (str): Make ``placement_algorithm.app.choose_morphologies`` export scores
+            into files in this folder
+        bias_kind (str): Kind of bias used to penalize scores of rescaled morphologies
+            (can be "linear" or "gaussian")
+        with_optional_scores (bool): Use or ignore optional rules for morphology choice
         nb_jobs (int): Number of jobs
     """
     check_placement_params = {
@@ -260,6 +274,9 @@ def create_axon_morphologies_tsv(
             "scales": scales,
             "seed": seed,
             "output": axon_morphs_path,
+            "scores-output-path": scores_output_path,
+            "bias-kind": bias_kind,
+            "no-optional-scores": not bool(with_optional_scores),
             "no-mpi": True,
         }
 
@@ -308,12 +325,15 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales_path=None):
             "atlas-cache",
             "seed",
             "out-mvd3",
+            "out-cells-path",
             "out-apical",
             "out-morph-dir",
             "out-morph-ext",
             "max-files-per-dir",
             "overwrite",
             "max-drop-ratio",
+            "scaling-jitter-std",
+            "rotational-jitter-std",
             "no-mpi",
         ]
     ]
@@ -326,10 +346,17 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales_path=None):
         "max_files_per_dir": None,
         "morph_axon": None,
         "mvd3": None,
+        "out_mvd3": None,
         "out_morph_dir": "out",
         "out_morph_ext": ["swc"],
+        "scaling_jitter_std": None,
+        "rotational_jitter_std": None,
         "seed": 0,
     }
+
+    if kwargs.pop("apply_jitter", False):
+        kwargs["scaling_jitter_std"] = 0.2
+        kwargs["rotational_jitter_std"] = 10
 
     # Set logging arguments
     logger_kwargs = None

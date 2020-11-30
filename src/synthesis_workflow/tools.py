@@ -346,12 +346,13 @@ def run_master(
         task_ids = np.random.permutation(master.task_ids)
 
         # Run the worker
-        L.info("Using batch size of %d tasks", int(len(task_ids) / cpu_count()))
+        batch_size = 1 + int(len(task_ids) / (cpu_count() if nb_jobs == -1 else nb_jobs))
+        L.info("Using batch size of %d tasks", batch_size)
         results = Parallel(
             n_jobs=nb_jobs,
             verbose=verbose,
             backend="multiprocessing",
-            batch_size=1 + int(len(task_ids) / (cpu_count() if nb_jobs == -1 else nb_jobs)),
+            batch_size=batch_size,
         )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in task_ids)
 
         # Gather the results
