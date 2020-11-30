@@ -4,26 +4,26 @@ import logging
 
 import luigi
 
-from luigi_tools import tasks
-from luigi_tools.parameters import BoolParameter
-from luigi_tools.parameters import ExtParameter
-from luigi_tools.parameters import OptionalFloatParameter
-from luigi_tools.parameters import OptionalIntParameter
-from luigi_tools.parameters import OptionalNumericalParameter
-from luigi_tools.parameters import OptionalParameter
-from luigi_tools.parameters import OptionalRatioParameter
-from luigi_tools.parameters import RatioParameter
-from luigi_tools.targets import OutputLocalTarget
-from luigi_tools.tasks import copy_params
-from luigi_tools.tasks import ParamRef
-from luigi_tools.tasks import WorkflowWrapperTask
-from luigi_tools.utils import WorkflowError
+from luigi_tools import task
+from luigi_tools.parameter import BoolParameter
+from luigi_tools.parameter import ExtParameter
+from luigi_tools.parameter import OptionalFloatParameter
+from luigi_tools.parameter import OptionalIntParameter
+from luigi_tools.parameter import OptionalNumericalParameter
+from luigi_tools.parameter import OptionalParameter
+from luigi_tools.parameter import OptionalRatioParameter
+from luigi_tools.parameter import RatioParameter
+from luigi_tools.target import OutputLocalTarget
+from luigi_tools.task import copy_params
+from luigi_tools.task import ParamRef
+from luigi_tools.task import WorkflowWrapperTask
+from luigi_tools.util import WorkflowError
 
 
 L = logging.getLogger(__name__)
 
 
-class WorkflowTask(tasks.LogTargetMixin, tasks.WorkflowTask):
+class WorkflowTask(task.LogTargetMixin, task.WorkflowTask):
     """Default task used in workflows.
 
     This task can be forced running again by setting the 'rerun' parameter to True.

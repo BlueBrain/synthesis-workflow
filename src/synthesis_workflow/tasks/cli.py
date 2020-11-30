@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 import luigi
-from luigi_tools.utils import get_dependency_graph
+from luigi_tools.util import get_dependency_graph
 
 import synthesis_workflow
 from synthesis_workflow.tasks import workflows
