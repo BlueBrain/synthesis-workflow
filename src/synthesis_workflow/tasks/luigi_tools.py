@@ -24,7 +24,7 @@ L = logging.getLogger(__name__)
 
 
 class WorkflowTask(task.LogTargetMixin, task.WorkflowTask):
-    """Default task used in workflows.
+    """Default :class:`luigi.Task` used in workflows.
 
     This task can be forced running again by setting the 'rerun' parameter to True.
     It can also use copy and link parameters from other tasks.

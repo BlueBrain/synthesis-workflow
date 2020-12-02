@@ -36,6 +36,7 @@ release = version
 extensions = [
     "autoapi.extension",
     "sphinx.ext.graphviz",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
 ]
 
@@ -102,6 +103,11 @@ autodoc_default_options = {
 autoclass_content = "both"
 
 add_module_names = False
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "luigi": ("https://luigi.readthedocs.io/en/stable", None),
+}
 
 
 import importlib

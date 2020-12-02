@@ -7,7 +7,7 @@ It is devided into two packages:
 	* **synthesis-workflow**, which contains the workflow tasks and tools.
 	* **MorphVal**, which is a library used for morphology validation and can be used as a standalone.
 
-The complete documentation of this project is available here:`<https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow/latest/index.html>`_
+The complete documentation of this project is available here: `<https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow/latest/index.html>`_
 
 
 Installation

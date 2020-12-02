@@ -1,5 +1,11 @@
 .. include:: ../../README.rst
 
+Scientific methodology for synthesis
+------------------------------------
+
+The :doc:`./synthesis_methodology` page contains detailed documentation of the methodology
+on which this package is based.
+
 
 Workflows
 ---------
@@ -39,6 +45,7 @@ The :doc:`./api_ref` page contains detailed documentation of:
    :maxdepth: 2
 
    Home <self>
+   synthesis_methodology
    config_files
    changelog
    api_ref
