@@ -38,7 +38,7 @@ The calibration step should create the two parameter files used by
     * ``tmd_parameters.json`` which contains the model parameters for each ``mtype``.
     * ``tmd_distributions.json`` which contains the distribution properties of each ``mtype``.
 
-Details on the content of these files can be found here: <URL>
+Details on the content of these files can be found here: <URL> (does not exist yet)
 
 Synthesis in atlas
 ------------------
@@ -100,6 +100,6 @@ Here is an example of such ``context_constraints`` entry:
 
 More details on the models can be found here:
 
-    * <TNS doc URL> (does not exist for now)
-    * <region-grower doc URL> (does not exist for now)
-    * <placement-algorithm.app.synthesis doc URL> (does not exist for now)
+    * `TNS <https://bbpteam.epfl.ch/documentation/projects/TNS/latest/index.html>`_
+    * <region-grower doc URL> (does not exist yet)
+    * <placement-algorithm.app.synthesis doc URL> (does not exist yet)
