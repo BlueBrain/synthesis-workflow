@@ -36,7 +36,6 @@ from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.utils import CreateAnnotationsFile
 from synthesis_workflow.tasks.utils import GetSynthesisInputs
-from synthesis_workflow.tools import ensure_dir
 from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
 
@@ -91,7 +90,6 @@ class BuildMorphsDF(WorkflowTask):
         # Remove duplicated morphologies in L23
         morphs_df.drop_duplicates(subset=["name"], inplace=True)
 
-        ensure_dir(self.output().path)
         morphs_df.to_csv(self.output().path)
 
     def output(self):
@@ -128,7 +126,6 @@ class ApplySubstitutionRules(WorkflowTask):
         substituted_morphs_df = apply_substitutions(
             pd.read_csv(self.input()["morphs_df"].path), substitution_rules
         )
-        ensure_dir(self.output().path)
         substituted_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
@@ -325,7 +322,6 @@ class BuildAxonMorphologies(WorkflowTask):
 
     def run(self):
         """"""
-        ensure_dir(self.output().path)
         if self.annotations_path is None:
             annotations_file = None
             neurondb_path = None
@@ -435,15 +431,11 @@ class Synthesize(WorkflowTask):
         out_morphologies = self.output()["out_morphologies"]
         out_apical_points = self.output()["apical_points"]
         debug_scales = self.output().get("debug_scales")
+
         if debug_scales is not None:
             debug_scales_path = debug_scales.path
         else:
             debug_scales_path = None
-
-        ensure_dir(axon_morphs_path)
-        ensure_dir(out_mvd3.path)
-        ensure_dir(out_apical_points.path)
-        ensure_dir(out_morphologies.path)
 
         # Get base-morph-dir argument value
         if self.axon_morphs_base_dir is None:

@@ -27,7 +27,6 @@ from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.utils import GetSynthesisInputs
-from synthesis_workflow.tools import ensure_dir
 from synthesis_workflow.tools import get_layer_tags
 
 
@@ -61,11 +60,9 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
             )
 
         annotation_path = self.output()["annotations"].path
-        ensure_dir(annotation_path)
         annotation.save_nrrd(annotation_path)
 
         layer_mapping_path = self.output()["layer_mapping"].path
-        ensure_dir(layer_mapping_path)
         yaml.dump(
             layer_mapping,
             open(
@@ -201,7 +198,6 @@ class BuildCircuit(WorkflowTask):
             mask=thickness_mask_path,
             seed=self.seed,
         )
-        ensure_dir(self.output().path)
         cells.save(self.output().path)
 
     def output(self):
@@ -251,7 +247,6 @@ class SliceCircuit(WorkflowTask):
             hemisphere=self.hemisphere,
         )
 
-        ensure_dir(self.output().path)
         cells = slice_circuit(self.input()["circuit"].path, self.output().path, _slicer)
 
         if len(cells.index) == 0:

@@ -1,7 +1,6 @@
 """Luigi tasks for morphology synthesis in vacuum."""
 import json
 import logging
-from pathlib import Path
 
 import luigi
 import morphio
@@ -17,7 +16,6 @@ from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
 from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
-from synthesis_workflow.tools import ensure_dir
 from synthesis_workflow.vacuum_synthesis import grow_vacuum_morphologies
 from synthesis_workflow.vacuum_synthesis import plot_vacuum_morphologies
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
@@ -76,14 +74,14 @@ class VacuumSynthesize(WorkflowTask):
         else:
             mtypes = self.mtypes
 
-        Path(self.output()["out_morphologies"].path).mkdir(parents=True, exist_ok=True)
-        morphology_base_path = Path(self.output()["out_morphologies"].path).absolute()
+        morphology_base_path = self.output()["out_morphologies"].pathlib_path
+        morphology_base_path.mkdir(parents=True, exist_ok=True)
         vacuum_synth_morphs_df = grow_vacuum_morphologies(
             mtypes,
             self.n_cells,
             tmd_parameters,
             tmd_distributions,
-            morphology_base_path,
+            morphology_base_path.absolute(),
             vacuum_morphology_path=self.vacuum_synth_morphology_path,
             diametrizer=self.diametrizer,
             joblib_verbose=self.joblib_verbose,
@@ -124,7 +122,6 @@ class PlotVacuumMorphologies(WorkflowTask):
     def run(self):
         """"""
         vacuum_synth_morphs_df = pd.read_csv(self.input()["out_morphs_df"].path)
-        ensure_dir(self.output().path)
         plot_vacuum_morphologies(
             vacuum_synth_morphs_df,
             self.output().path,

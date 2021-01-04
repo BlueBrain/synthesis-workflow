@@ -1,6 +1,26 @@
 Changelog
 =========
 
+Version 0.0.11
+--------------
+
+Improvements
+~~~~~~~~~~~~
+- Use luigi-tools>=0.0.5
+
+Version 0.0.10
+--------------
+
+Improvements
+~~~~~~~~~~~~
+- Add methodology in the doc
+- Use luigi-tools package
+
+Bug Fixes
+~~~~~~~~~
+- Fix BuildAxonMorphologies to use worker from placement_algorithm
+- Fix PlotPathDistanceFits for mtypes with no fit
+
 Version 0.0.9
 -------------
 
