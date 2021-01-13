@@ -134,7 +134,7 @@ IMPORT_MAPPING = {
 }
 
 
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,protected-access
 def maybe_skip_member(app, what, name, obj, skip, options):
     """Skip and update documented objects."""
     skip = None

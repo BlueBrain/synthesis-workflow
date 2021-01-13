@@ -21,7 +21,7 @@ PyYAML
 region_grower>=0.1.10
 scipy
 seaborn
-tns>=2.2.7,<2.3
+tns>=2.3.0
 tmd
 tqdm
 voxcell>=3

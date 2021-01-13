@@ -37,9 +37,9 @@ matplotlib.use("Agg")
 def get_neurite_types(morphs_df, mtypes):
     """Get the neurite types to consider for PC or IN cells."""
     return {
-        mtype: ["basal"]
+        mtype: ["basal", "axon"]
         if morphs_df.loc[morphs_df.mtype == mtype, "morph_class"].tolist()[0] == "IN"
-        else ["basal", "apical"]
+        else ["basal", "apical", "axon"]
         for mtype in mtypes
     }
 
@@ -335,6 +335,8 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales_path=None):
             "scaling-jitter-std",
             "rotational-jitter-std",
             "no-mpi",
+            "out-apical-NRN-sections",
+            "out-apical-sections",
         ]
     ]
 
@@ -352,6 +354,8 @@ def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales_path=None):
         "scaling_jitter_std": None,
         "rotational_jitter_std": None,
         "seed": 0,
+        "out-apical-NRN-sections": None,
+        "out-apical-sections": None,
     }
 
     if kwargs.pop("apply_jitter", False):

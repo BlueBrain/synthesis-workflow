@@ -343,6 +343,8 @@ def run_master(
                 handlers.add(i)
 
         # shuffle ids to speed up computation with uneven cell complexities
+        if hasattr(args, "seed"):
+            np.random.seed(args.seed)
         task_ids = np.random.permutation(master.task_ids)
 
         # Run the worker
