@@ -55,14 +55,10 @@ class BuildMorphsDF(WorkflowTask):
         mtype_taxonomy_path (str): Path to the mtype_taxonomy.tsv file.
     """
 
-    neurondb_path = luigi.Parameter(
-        description=":str: Path to the neuronDB file (XML)."
-    )
+    neurondb_path = luigi.Parameter(description=":str: Path to the neuronDB file (XML).")
     morphology_dirs = luigi.DictParameter(
         default=None,
-        description=(
-            ":dict: mapping between column names and paths to each morphology file."
-        ),
+        description=(":dict: mapping between column names and paths to each morphology file."),
     )
     apical_points_path = luigi.OptionalParameter(
         default=None, description=":str: Path to the apical points file (JSON)."
@@ -167,8 +163,7 @@ class BuildSynthesisParameters(WorkflowTask):
         if self.input_tmd_parameters_path is not None:
             L.info("Using custom tmd parameters")
             input_tmd_parameters_path = (
-                self.input()["synthesis_input"].pathlib_path
-                / self.input_tmd_parameters_path
+                self.input()["synthesis_input"].pathlib_path / self.input_tmd_parameters_path
             )
             with open(input_tmd_parameters_path, "r") as f:
                 custom_tmd_parameters = json.load(f)
@@ -186,9 +181,7 @@ class BuildSynthesisParameters(WorkflowTask):
                 except KeyError:
                     L.error("%s is not in the given tmd_parameter.json", mtype)
                     tmd_parameters[mtype] = {}
-                tmd_parameters[mtype][
-                    "diameter_params"
-                ] = DiametrizerConfig().config_diametrizer
+                tmd_parameters[mtype]["diameter_params"] = DiametrizerConfig().config_diametrizer
                 tmd_parameters[mtype]["diameter_params"]["method"] = "external"
 
         with self.output().open("w") as f:
@@ -304,9 +297,7 @@ class BuildAxonMorphologies(WorkflowTask):
 
     def get_neuron_db_path(self, ext):
         """Helper function to fix neuronDB vs neurondb in file names."""
-        return (Path(self.axon_cells_path) / self.neurondb_basename).with_suffix(
-            "." + ext
-        )
+        return (Path(self.axon_cells_path) / self.neurondb_basename).with_suffix("." + ext)
 
     def requires(self):
         """"""
@@ -336,9 +327,7 @@ class BuildAxonMorphologies(WorkflowTask):
                 )
             else:
                 input_task_target = yield GetSynthesisInputs()
-                annotations_file = (
-                    input_task_target.pathlib_path / self.annotations_path
-                )
+                annotations_file = input_task_target.pathlib_path / self.annotations_path
             axon_cells = None
             neurondb_path = find_case_insensitive_file(self.get_neuron_db_path("dat"))
 
@@ -408,9 +397,7 @@ class Synthesize(WorkflowTask):
         default=0.1,
         description=":float: The maximum drop ratio.",
     )
-    seed = luigi.IntParameter(
-        default=0, description=":int: Pseudo-random generator seed."
-    )
+    seed = luigi.IntParameter(default=0, description=":int: Pseudo-random generator seed.")
 
     def requires(self):
         """"""

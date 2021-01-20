@@ -53,9 +53,7 @@ class VacuumSynthesize(WorkflowTask):
         choices=["external"] + [f"M{i}" for i in range(1, 6)],
         description=":str: Diametrizer model to use.",
     )
-    n_cells = luigi.IntParameter(
-        default=10, description=":int: Number of cells to synthesize."
-    )
+    n_cells = luigi.IntParameter(default=10, description=":int: Number of cells to synthesize.")
 
     def requires(self):
         """"""

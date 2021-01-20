@@ -111,9 +111,7 @@ def get_agg_fig():
 
 def center_population(population):
     """Return a new population where all cells have been translated to their soma origins."""
-    morphs = [
-        geom.transform.translate(n, -np.asarray(n.soma.center)) for n in population
-    ]
+    morphs = [geom.transform.translate(n, -np.asarray(n.soma.center)) for n in population]
     return Population(morphs, name=population.name)
 
 
@@ -218,18 +216,10 @@ def plot_normalized_neurons(
         test_comp_pop = get_components_population(test_population, comp)
         xlim, ylim = compute_bounding_box(ref_comp_pop, test_comp_pop)
 
-        desc = progress_bar_label(
-            "Reference {}", pretty_name(comp_dict[comp]), notebook_desc
-        )
-        ref_plot_paths[comp] = plot_population(
-            ref_output_dir, ref_comp_pop, xlim, ylim, desc
-        )
-        desc = progress_bar_label(
-            "Test {}", pretty_name(comp_dict[comp]), notebook_desc
-        )
-        test_plot_paths[comp] = plot_population(
-            test_output_dir, test_comp_pop, xlim, ylim, desc
-        )
+        desc = progress_bar_label("Reference {}", pretty_name(comp_dict[comp]), notebook_desc)
+        ref_plot_paths[comp] = plot_population(ref_output_dir, ref_comp_pop, xlim, ylim, desc)
+        desc = progress_bar_label("Test {}", pretty_name(comp_dict[comp]), notebook_desc)
+        test_plot_paths[comp] = plot_population(test_output_dir, test_comp_pop, xlim, ylim, desc)
 
     return ref_plot_paths, test_plot_paths
 

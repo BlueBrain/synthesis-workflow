@@ -69,9 +69,7 @@ class GetSynthesisInputs(WorkflowTask):
                 if self.version is not None:
                     r = Repo(dest)
                     r.git.checkout(self.version)
-                shutil.copytree(
-                    dest / self.git_synthesis_input_path, self.output().path
-                )
+                shutil.copytree(dest / self.git_synthesis_input_path, self.output().path)
 
     def output(self):
         """"""
@@ -83,9 +81,7 @@ class CreateAnnotationsFile(WorkflowTask):
     """Task to compact annotations into a single JSON file."""
 
     annotation_dir = luigi.Parameter(description=(":str: Path to annotations folder."))
-    morph_db = luigi.OptionalParameter(
-        default=None, description=":str: Path to MorphDB file."
-    )
+    morph_db = luigi.OptionalParameter(default=None, description=":str: Path to MorphDB file.")
     destination = luigi.Parameter(description=":str: Path to output JSON file.")
 
     def run(self):

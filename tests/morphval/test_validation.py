@@ -61,18 +61,14 @@ def test_extract_hist():
 
 
 def test_stat_test():
-    results, res = validation.stat_test(
-        [1, 2, 3, 4], [1, 2, 3, 4], stats.StatTests.ks, fargs=0.1
-    )
+    results, res = validation.stat_test([1, 2, 3, 4], [1, 2, 3, 4], stats.StatTests.ks, fargs=0.1)
     assert results.dist == 0.0
     assert results.pvalue == 1.0
     assert res == "PASS"
 
 
 def test_write_hist(test_single):
-    results = validation.write_hist(
-        [1, 2, 3, 4], feature="feature_test", name="mtype_test", bins=4
-    )
+    results = validation.write_hist([1, 2, 3, 4], feature="feature_test", name="mtype_test", bins=4)
     assert results.keys() == test_single.keys()
     for i in results.keys():
         assert results[i] == test_single[i]

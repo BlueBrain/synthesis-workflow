@@ -146,16 +146,12 @@ def maybe_skip_member(app, what, name, obj, skip, options):
         try:
             package, module, *path = name.split(".")
             root_package = IMPORT_MAPPING[package]
-            actual_module = importlib.import_module(
-                root_package.__name__ + "." + module
-            )
+            actual_module = importlib.import_module(root_package.__name__ + "." + module)
             task = getattr(actual_module, path[-2])
             actual_obj = getattr(task, path[-1])
             if isinstance(actual_obj, luigi.Parameter):
                 if hasattr(actual_obj, "description") and actual_obj.description:
-                    help_str, param_type, choices, interval, optional = _process_param(
-                        actual_obj
-                    )
+                    help_str, param_type, choices, interval, optional = _process_param(actual_obj)
                     if optional:
                         help_str = "(optional) " + help_str
                     if param_type is not None:

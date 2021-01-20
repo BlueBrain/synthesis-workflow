@@ -25,9 +25,7 @@ def get_parser():
         required=True,
         help="full path to directory for the validation results",
     )
-    parser.add_argument(
-        "-c", "--config", required=True, help="full path to yaml config file"
-    )
+    parser.add_argument("-c", "--config", required=True, help="full path to yaml config file")
     parser.add_argument(
         "--example-config",
         action="store_true",

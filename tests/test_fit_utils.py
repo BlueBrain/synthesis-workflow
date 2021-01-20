@@ -82,9 +82,7 @@ def test_fit(soma_test, apical_test):
     assert_almost_equal(slope, 1.4211942434528873)
     assert_almost_equal(intercept, 0.0)
 
-    assert_almost_equal(
-        fit_utils.get_path_distance_from_extent(slope, intercept, 0), intercept
-    )
+    assert_almost_equal(fit_utils.get_path_distance_from_extent(slope, intercept, 0), intercept)
     assert_almost_equal(
         fit_utils.get_path_distance_from_extent(slope, intercept, 1), intercept + slope
     )

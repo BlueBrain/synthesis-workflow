@@ -55,9 +55,7 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
         annotation, layer_mapping = get_layer_tags(CircuitConfig().atlas_path)
 
         if self.use_half:
-            annotation.raw = halve_atlas(
-                annotation.raw, axis=self.half_axis, side=self.half_side
-            )
+            annotation.raw = halve_atlas(annotation.raw, axis=self.half_axis, side=self.half_side)
 
         annotation_path = self.output()["annotations"].path
         annotation.save_nrrd(annotation_path)
@@ -171,9 +169,7 @@ class BuildCircuit(WorkflowTask):
     mask_path = luigi.Parameter(
         default=None, description=":str: Path to save thickness mask (NCx only)."
     )
-    seed = luigi.IntParameter(
-        default=None, description=":int: Pseudo-random generator seed."
-    )
+    seed = luigi.IntParameter(default=None, description=":int: Pseudo-random generator seed.")
 
     def requires(self):
         """"""

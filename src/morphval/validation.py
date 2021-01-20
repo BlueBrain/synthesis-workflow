@@ -11,9 +11,7 @@ from neurom.core.types import NeuriteType
 
 DICTDATA = dict.fromkeys(["name", "data_type", "data", "labels"])
 
-DICTALLDATA = dict.fromkeys(
-    ["datasets", "description", "charts", "version", "result", "type"]
-)
+DICTALLDATA = dict.fromkeys(["datasets", "description", "charts", "version", "result", "type"])
 
 DESCR = (
     "Morphology validation against reference morphologies. "
@@ -39,9 +37,7 @@ def extract_hist(data, bins=20):
     """
     bin_data, edges = np.histogram(data, bins, normed=True)
 
-    edges_centers = [
-        float(Decimal("%.2f" % e)) for e in list((edges[1:] + edges[:-1]) / 2)
-    ]
+    edges_centers = [float(Decimal("%.2f" % e)) for e in list((edges[1:] + edges[:-1]) / 2)]
 
     return list(bin_data), list(edges_centers)
 
@@ -107,13 +103,9 @@ def write_all(validation_data, reference_data, component, feature, name, config)
         config=config, name=name, component=component, feature=feature
     )
 
-    valid = write_hist(
-        data=validation_data, feature=feature, name=name + "-test", bins=bins
-    )
+    valid = write_hist(data=validation_data, feature=feature, name=name + "-test", bins=bins)
 
-    refer = write_hist(
-        data=reference_data, feature=feature, name=name + "-reference", bins=bins
-    )
+    refer = write_hist(data=reference_data, feature=feature, name=name + "-reference", bins=bins)
 
     results, status = stat_test(
         validation_data, reference_data, test=test, fargs=thresh, val_crit=val_crit

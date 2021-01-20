@@ -42,9 +42,7 @@ def halve_atlas(annotated_volume, axis=0, side=LEFT):
     for coord in range(3):
         if axis == coord:
             slices_[coord] = (
-                slice(0, middle)
-                if side == RIGHT
-                else slice(middle, annotated_volume.shape[axis])
+                slice(0, middle) if side == RIGHT else slice(middle, annotated_volume.shape[axis])
             )
         else:
             slices_[coord] = slice(0, annotated_volume.shape[coord])
@@ -72,9 +70,7 @@ def create_atlas_thickness_mask(atlas_dir):
     for i, max_thickness in enumerate(max_thicknesses, 1):
         ph = atlas.load_data(f"[PH]{i}", memcache=True)
         with np.errstate(invalid="ignore"):
-            invalid_thickness = (ph.raw[..., 1] - ph.raw[..., 0]) > (
-                max_thickness + tolerance
-            )
+            invalid_thickness = (ph.raw[..., 1] - ph.raw[..., 0]) > (max_thickness + tolerance)
         too_thick = np.logical_or(too_thick, invalid_thickness)
 
         L.info(
@@ -88,9 +84,7 @@ def create_atlas_thickness_mask(atlas_dir):
         np.round(100 * too_thick[isocortex_mask].mean(), 3),
     )
 
-    return brain_regions.with_data(
-        np.logical_and(~too_thick, isocortex_mask).astype(np.uint8)
-    )
+    return brain_regions.with_data(np.logical_and(~too_thick, isocortex_mask).astype(np.uint8))
 
 
 def build_circuit(
@@ -167,9 +161,7 @@ def circuit_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
         # between each pair of planes, select n_cells
         return pd.concat(
             [
-                slice_n_cells(
-                    get_cells_between_planes(cells, plane_left, plane_right), n_cells
-                )
+                slice_n_cells(get_cells_between_planes(cells, plane_left, plane_right), n_cells)
                 for plane_left, plane_right in tqdm(
                     zip(planes[:-1:3], planes[2::3]), total=int(len(planes) / 3)
                 )
@@ -240,9 +232,7 @@ def create_planes(
             _n_points,
         )
     else:
-        raise Exception(
-            f"Please set plane_type to 'aligned' or 'centerline', not {plane_type}."
-        )
+        raise Exception(f"Please set plane_type to 'aligned' or 'centerline', not {plane_type}.")
 
     # create all planes to match slice_thickness between every two planes
     centerline_len = np.linalg.norm(np.diff(centerline, axis=0), axis=1).sum()

@@ -106,9 +106,7 @@ class PlotMorphometrics(WorkflowTask):
         default=SYNTH_MORPHOLOGY_PATH,
         description=":str: Compared key to use in the morphology DataFrame.",
     )
-    base_label = luigi.Parameter(
-        default="bio", description=":str: Label for base morphologies."
-    )
+    base_label = luigi.Parameter(default="bio", description=":str: Label for base morphologies.")
     comp_label = luigi.Parameter(
         default="synth", description=":str: Label for compared morphologies."
     )
@@ -231,9 +229,7 @@ class PlotCollage(WorkflowTask):
     collage_base_path = luigi.Parameter(
         default="collages", description=":str: Path to the output folder."
     )
-    dpi = luigi.IntParameter(
-        default=1000, description=":int: Dpi for pdf rendering (rasterized)."
-    )
+    dpi = luigi.IntParameter(default=1000, description=":int: Dpi for pdf rendering (rasterized).")
     realistic_diameters = BoolParameter(
         default=True,
         description=":bool: Set or unset realistic diameter when NeuroM plot neurons.",
@@ -542,9 +538,7 @@ class MorphologyValidationReports(WorkflowTask):
     cell_figure_count = luigi.IntParameter(
         default=10, description=":int: Number of example cells to show."
     )
-    bio_compare = BoolParameter(
-        default=False, description=":bool: Use the bio compare template."
-    )
+    bio_compare = BoolParameter(default=False, description=":bool: Use the bio compare template.")
 
     def requires(self):
         """"""
@@ -562,9 +556,7 @@ class MorphologyValidationReports(WorkflowTask):
 
         if self.mtypes is not None:
             ref_morphs_df = ref_morphs_df.loc[ref_morphs_df["mtype"].isin(self.mtypes)]
-            test_morphs_df = test_morphs_df.loc[
-                test_morphs_df["mtype"].isin(self.mtypes)
-            ]
+            test_morphs_df = test_morphs_df.loc[test_morphs_df["mtype"].isin(self.mtypes)]
 
         if self.config_path is not None:
             with open(self.config_path) as f:
@@ -582,9 +574,9 @@ class MorphologyValidationReports(WorkflowTask):
         ref_morphs_df = ref_morphs_df[["name", "mtype", self.morphology_path]].rename(
             columns={self.morphology_path: "filepath"}
         )
-        test_morphs_df = test_morphs_df[
-            ["name", "mtype", SYNTH_MORPHOLOGY_PATH]
-        ].rename(columns={SYNTH_MORPHOLOGY_PATH: "filepath"})
+        test_morphs_df = test_morphs_df[["name", "mtype", SYNTH_MORPHOLOGY_PATH]].rename(
+            columns={SYNTH_MORPHOLOGY_PATH: "filepath"}
+        )
 
         validator = morphval_validation.Validation(
             config,
@@ -594,9 +586,7 @@ class MorphologyValidationReports(WorkflowTask):
             create_timestamp_dir=False,
             notebook=False,
         )
-        validator.validate_features(
-            cell_figure_count=self.cell_figure_count, nb_jobs=self.nb_jobs
-        )
+        validator.validate_features(cell_figure_count=self.cell_figure_count, nb_jobs=self.nb_jobs)
         validator.write_report(validation_report=(not self.bio_compare))
 
     def output(self):

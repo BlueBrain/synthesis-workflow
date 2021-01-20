@@ -24,12 +24,8 @@ def test_ValidateSynthesis(small_O1_working_directory):
             "morphs_df/substituted_morphs_df.csv": {
                 "kwargs": {"ignore_columns": ["repaired_morphology_path"]}
             },
-            "morphs_df/morphs_df.csv": {
-                "kwargs": {"ignore_columns": ["repaired_morphology_path"]}
-            },
-            "morphs_df/axon_morphs_df.csv": {
-                "kwargs": {"ignore_columns": ["clone_path"]}
-            },
+            "morphs_df/morphs_df.csv": {"kwargs": {"ignore_columns": ["repaired_morphology_path"]}},
+            "morphs_df/axon_morphs_df.csv": {"kwargs": {"ignore_columns": ["clone_path"]}},
             "synthesis/tns_input/tmd_distributions.json": {
                 "kwargs": {"precision": 2}  # weird precision issue in CI
             },

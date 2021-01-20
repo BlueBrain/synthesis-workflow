@@ -28,9 +28,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
     """
 
     with_collage = BoolParameter(default=True, description=":bool: Trigger collage.")
-    with_morphometrics = BoolParameter(
-        default=True, description=":bool: Trigger morphometrics."
-    )
+    with_morphometrics = BoolParameter(default=True, description=":bool: Trigger morphometrics.")
     with_density_profiles = BoolParameter(
         default=True, description=":bool: Trigger density profiles."
     )
@@ -78,9 +76,7 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
     with_vacuum_morphologies = BoolParameter(
         default=True, description=":bool: Trigger morphologies."
     )
-    with_morphometrics = BoolParameter(
-        default=True, description=":bool: Trigger morphometrics."
-    )
+    with_morphometrics = BoolParameter(default=True, description=":bool: Trigger morphometrics.")
     with_density_profiles = BoolParameter(
         default=True, description=":bool: Trigger density profiles."
     )
@@ -110,9 +106,7 @@ class ValidateRescaling(WorkflowTask):
     .. graphviz:: ValidateRescaling.dot
     """
 
-    morphometrics_path = luigi.Parameter(
-        default="morphometrics", description=":str: Output path."
-    )
+    morphometrics_path = luigi.Parameter(default="morphometrics", description=":str: Output path.")
     base_key = luigi.Parameter(
         default="morphology_path", description=":str: Column name in the DF."
     )

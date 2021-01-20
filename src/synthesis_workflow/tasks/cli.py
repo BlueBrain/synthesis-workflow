@@ -123,15 +123,11 @@ class ArgParser:
 
         parsers = {"root": parser}
 
-        workflow_parser = parser.add_subparsers(
-            help="Possible workflows", dest="workflow"
-        )
+        workflow_parser = parser.add_subparsers(help="Possible workflows", dest="workflow")
 
         def format_description(param):
             try:
-                param_doc, param_type, choices, interval, optional = _process_param(
-                    param
-                )
+                param_doc, param_type, choices, interval, optional = _process_param(param)
                 if optional:
                     param_doc = "(optional) " + param_doc
                 if param_type is not None:
@@ -192,9 +188,7 @@ def main(arguments=None):
 
     # Check that one workflow is in arguments
     if args is None or args.workflow is None:
-        L.critical(
-            "Arguments must contain one workflow. Check help with -h/--help argument."
-        )
+        L.critical("Arguments must contain one workflow. Check help with -h/--help argument.")
         parser.parser.print_help()
         sys.exit()
 
@@ -246,14 +240,10 @@ def main(arguments=None):
         base_f = Path(inspect.getfile(synthesis_workflow)).parent
         for parent, child in g:
             url = (
-                Path(inspect.getfile(child.__class__))
-                .relative_to(base_f)
-                .with_suffix("")
+                Path(inspect.getfile(child.__class__)).relative_to(base_f).with_suffix("")
                 / "index.html"
             )
-            anchor = "#" + ".".join(
-                child.__module__.split(".")[1:] + [child.__class__.__name__]
-            )
+            anchor = "#" + ".".join(child.__module__.split(".")[1:] + [child.__class__.__name__])
             dot.node(child.__class__.__name__, URL="../../" + url.as_posix() + anchor)
             dot.edge(
                 parent.__class__.__name__,

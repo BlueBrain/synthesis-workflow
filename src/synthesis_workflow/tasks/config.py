@@ -107,9 +107,7 @@ class CircuitConfig(luigi.Config):
     circuit_somata_path = luigi.Parameter(
         default="circuit_somata.mvd3", description=":str: Path to the circuit somata."
     )
-    atlas_path = luigi.Parameter(
-        default=None, description=":str: Path to the atlas directory."
-    )
+    atlas_path = luigi.Parameter(default=None, description=":str: Path to the atlas directory.")
 
 
 class PathConfig(luigi.Config):
@@ -126,9 +124,7 @@ class PathConfig(luigi.Config):
     )
 
     # Output tree
-    result_path = luigi.Parameter(
-        default="out", description=":str: Path to the output directory."
-    )
+    result_path = luigi.Parameter(default="out", description=":str: Path to the output directory.")
     atlas_subpath = luigi.Parameter(
         default="atlas", description=":str: Path to output atlas subdirectory."
     )

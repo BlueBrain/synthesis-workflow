@@ -38,9 +38,7 @@ def _build_diameter_model(
     mtype, morphs_df=None, config_model=None, morphology_path="morphology_path"
 ):
     """Internal model builder for parallelisation."""
-    morphologies = load_neurons(
-        morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
-    )
+    morphologies = load_neurons(morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
     return mtype, build_diameter_model(morphologies, config_model, with_data=True)
 
 
@@ -140,9 +138,9 @@ def _diametrizer(
         neuron = Morphology(morphs_df.loc[gid, morphology_path])
         build_diameters(neuron, model_params, config["neurite_types"], config)
 
-        new_path = (
-            Path(new_morphology_path).absolute() / morphs_df.loc[gid, "name"]
-        ).with_suffix(".asc")
+        new_path = (Path(new_morphology_path).absolute() / morphs_df.loc[gid, "name"]).with_suffix(
+            ".asc"
+        )
         neuron.write(new_path)
         exception = None
     except Exception:  # pylint: disable=broad-except
@@ -196,9 +194,7 @@ class Diametrize(WorkflowTask):
                 exception_count += 1
         L.info("Diametrization terminated, with %s exceptions.", exception_count)
 
-        update_morphs_df(self.morphs_df_path, morphs_df).to_csv(
-            self.output().path, index=False
-        )
+        update_morphs_df(self.morphs_df_path, morphs_df).to_csv(self.output().path, index=False)
 
     def output(self):
         """"""

@@ -123,12 +123,8 @@ def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_filename, morphology_pa
         for mtype in tqdm(sorted(vacuum_synth_morphs_df.mtype.unique())):
             plt.figure()
             ax = plt.gca()
-            for gid in vacuum_synth_morphs_df[
-                vacuum_synth_morphs_df.mtype == mtype
-            ].index:
-                morphology = load_neuron(
-                    vacuum_synth_morphs_df.loc[gid, morphology_path]
-                )
+            for gid in vacuum_synth_morphs_df[vacuum_synth_morphs_df.mtype == mtype].index:
+                morphology = load_neuron(vacuum_synth_morphs_df.loc[gid, morphology_path])
                 viewer.plot_neuron(ax, morphology, plane="zy")
                 morph = Morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
                 for neurite in morph.root_sections:

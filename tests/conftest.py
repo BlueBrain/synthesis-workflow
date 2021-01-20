@@ -102,9 +102,7 @@ def vacuum_params():
 def set_param_paths(params, tmp_working_dir, atlas_path=None):
     if atlas_path is not None:
         params["CircuitConfig"]["atlas_path"] = atlas_path.as_posix()
-    params["BuildMorphsDF"]["neurondb_path"] = (
-        DATA / "input_cells" / "neuronDB.xml"
-    ).as_posix()
+    params["BuildMorphsDF"]["neurondb_path"] = (DATA / "input_cells" / "neuronDB.xml").as_posix()
     params["BuildMorphsDF"]["morphology_dirs"] = json.dumps(
         {
             "repaired_morphology_path": (DATA / "input_cells").as_posix(),
@@ -167,9 +165,7 @@ def small_O1_working_directory(tmp_working_dir, small_O1_params, small_O1):
     # Setup config
     params = small_O1_params
     set_param_paths(params, tmp_working_dir, small_O1)
-    params["BuildAxonMorphologies"]["axon_cells_path"] = (
-        DATA / "input_cells"
-    ).as_posix()
+    params["BuildAxonMorphologies"]["axon_cells_path"] = (DATA / "input_cells").as_posix()
 
     # Export config
     export_config(params, "luigi.cfg")

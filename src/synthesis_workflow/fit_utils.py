@@ -66,12 +66,8 @@ def clean_outliers(
 
     # Detect outliers
     errs = np.array([np.abs(p(ix) - y[i]) for i, ix in enumerate(x)])
-    x_clean = np.delete(
-        x, [np.where(errs > np.percentile(np.sort(errs), outlier_percentage))][0]
-    )
-    y_clean = np.delete(
-        y, [np.where(errs > np.percentile(np.sort(errs), outlier_percentage))][0]
-    )
+    x_clean = np.delete(x, [np.where(errs > np.percentile(np.sort(errs), outlier_percentage))][0])
+    y_clean = np.delete(y, [np.where(errs > np.percentile(np.sort(errs), outlier_percentage))][0])
 
     return x_clean, y_clean
 
@@ -106,9 +102,7 @@ def fit_path_distance_to_extent(
     return popt[0], 0
 
 
-def get_path_distance_from_extent(
-    slope: float, intercept: float, extent: float
-) -> float:
+def get_path_distance_from_extent(slope: float, intercept: float, extent: float) -> float:
     """Returns a path distance for an input extent according to fitted function.
 
     The function is given by the equation:

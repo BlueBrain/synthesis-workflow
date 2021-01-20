@@ -18,9 +18,7 @@ from morphval import validation
 
 
 _distribution = pkg_resources.get_distribution("synthesis-workflow")
-TEMPLATES = (
-    Path(_distribution.get_resource_filename("morphval", "morphval")) / "templates"
-)
+TEMPLATES = Path(_distribution.get_resource_filename("morphval", "morphval")) / "templates"
 TEMPLATE_FILE = (TEMPLATES / "report_template.jinja2").as_posix()
 SUMMARY_TEMPLATE_FILE = (TEMPLATES / "report_summary_template.jinja2").as_posix()
 
@@ -48,9 +46,7 @@ def count_passing_validations(features):
     Returns:
         returns tuple(feature_pass, features_total)
     """
-    num_pass = sum(
-        v["validation_criterion"]["status"] == "PASS" for v in features.values()
-    )
+    num_pass = sum(v["validation_criterion"]["status"] == "PASS" for v in features.values())
     return num_pass, len(features)
 
 
@@ -91,9 +87,7 @@ def do_validation(validation_config, ref_population, test_population):
         results[component_name] = component_results = collections.OrderedDict()
         morphometrics[component_name] = component_metrics = {}
         for feature_name, feature_config in features.items():
-            component_results[
-                feature_name
-            ] = feature_results = collections.OrderedDict()
+            component_results[feature_name] = feature_results = collections.OrderedDict()
 
             test_data, ref_data = validation.extract_feature(
                 test_population, ref_population, component_name, feature_name
@@ -104,18 +98,12 @@ def do_validation(validation_config, ref_population, test_population):
                 "ref": ref_data,
             }
 
-            feature_results["test_summary_statistics"] = compute_summary_statistics(
-                test_data
-            )
-            feature_results["ref_summary_statistics"] = compute_summary_statistics(
-                ref_data
-            )
+            feature_results["test_summary_statistics"] = compute_summary_statistics(test_data)
+            feature_results["ref_summary_statistics"] = compute_summary_statistics(ref_data)
 
             test_name = feature_config["stat_test"]
 
-            feature_results[
-                "statistical_tests"
-            ] = test_results = compute_statistical_tests(
+            feature_results["statistical_tests"] = test_results = compute_statistical_tests(
                 test_data,
                 ref_data,
                 feature_config["stat_test"],
@@ -134,19 +122,13 @@ def write_morphometrics(output_dir, morphometrics):
     for component_name, features in morphometrics.items():
         for feature_name, feature_metrics in features.items():
             for kind in ("test", "ref"):
-                dir_name = os.path.join(
-                    output_dir, component_name, "morphometrics", kind
-                )
+                dir_name = os.path.join(output_dir, component_name, "morphometrics", kind)
                 save_csv(dir_name, feature_name, feature_metrics[kind])
 
 
-def create_morphometrics_histograms(
-    output_dir, morphometrics, config, notebook_desc=None
-):
+def create_morphometrics_histograms(output_dir, morphometrics, config, notebook_desc=None):
     """Create histograms based on morphometrics."""
-    m_items = common.add_progress_bar(
-        morphometrics.items(), "[{}] Histograms", notebook_desc
-    )
+    m_items = common.add_progress_bar(morphometrics.items(), "[{}] Histograms", notebook_desc)
     for component_name, features in m_items:
         figure_dir = os.path.join(output_dir, component_name, "figures")
 
@@ -279,9 +261,7 @@ class Validation:
         """Validate all features."""
         self.results = results = collections.OrderedDict()
 
-        batch_size = 1 + int(
-            len(self.config) / (nb_jobs if nb_jobs > 0 else cpu_count())
-        )
+        batch_size = 1 + int(len(self.config) / (nb_jobs if nb_jobs > 0 else cpu_count()))
 
         for res_mtype, res, ref_p, test_p in Parallel(
             nb_jobs,
@@ -293,12 +273,8 @@ class Validation:
                 mtype,
                 config,
                 self.output_dir / mtype,
-                self.ref_files.loc[
-                    self.ref_files["mtype"] == mtype, "filepath"
-                ].tolist(),
-                self.test_files.loc[
-                    self.test_files["mtype"] == mtype, "filepath"
-                ].tolist(),
+                self.ref_files.loc[self.ref_files["mtype"] == mtype, "filepath"].tolist(),
+                self.test_files.loc[self.test_files["mtype"] == mtype, "filepath"].tolist(),
                 cell_figure_count,
                 False,
             )
@@ -308,9 +284,7 @@ class Validation:
             self.ref_plots[res_mtype] = ref_p
             self.test_plots[res_mtype] = test_p
 
-        self.results_file = common.dump2json(
-            self.output_dir, "validation_results", results
-        )
+        self.results_file = common.dump2json(self.output_dir, "validation_results", results)
         return self.results_file
 
     def generate_report_data(self, mtype):
@@ -349,16 +323,12 @@ class Validation:
 
         tt["num_pass"] = total_num_pass
         tt["num_features"] = total_num_features
-        tt["pass_percentage"] = "{:5.2f}".format(
-            (100.0 * total_num_pass) / total_num_features
-        )
+        tt["pass_percentage"] = "{:5.2f}".format((100.0 * total_num_pass) / total_num_features)
 
         return tt
 
     @staticmethod
-    def merge_results_features(
-        mtype, component, feature_name, feature_config, feature_results
-    ):
+    def merge_results_features(mtype, component, feature_name, feature_config, feature_results):
         """Merge result features."""
         stat_test = feature_config["stat_test"]
         stat_test_results = feature_results["statistical_tests"][stat_test]["results"]
@@ -393,9 +363,7 @@ class Validation:
 
         return ret
 
-    def write_report(
-        self, validation_report=True, template_file=TEMPLATE_FILE, prefix="report-"
-    ):
+    def write_report(self, validation_report=True, template_file=TEMPLATE_FILE, prefix="report-"):
         """For each mtype in the results, write out its report.
 
         Args:
@@ -410,9 +378,7 @@ class Validation:
 
         output_files = []
         for mtype in self.results:
-            output_text = self.render_mtype_report(
-                template_file, mtype, validation_report
-            )
+            output_text = self.render_mtype_report(template_file, mtype, validation_report)
             output_files.append(os.path.join(report_dir, prefix + mtype + ".html"))
             with open(output_files[-1], "w") as outputFile:
                 outputFile.write(output_text)
@@ -436,9 +402,7 @@ class Validation:
         template = load_template(template_file)
         templateText = self.generate_report_data(mtype)
 
-        config_file = common.dump2json(
-            self.output_dir, "validation_config", self.config
-        )
+        config_file = common.dump2json(self.output_dir, "validation_config", self.config)
 
         templateVars = {
             "output_title": "Validation report: " + mtype,

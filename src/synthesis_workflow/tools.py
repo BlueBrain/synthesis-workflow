@@ -32,9 +32,7 @@ def add_mtype_taxonomy(morphs_df, mtype_taxonomy):
         mtype_taxonomy (pandas.DataFrame): with columns mtype and mClass
     """
     morphs_df["morph_class"] = morphs_df["mtype"].map(
-        lambda mtype: mtype_taxonomy.loc[
-            mtype_taxonomy.mtype == mtype, "mClass"
-        ].to_list()[0]
+        lambda mtype: mtype_taxonomy.loc[mtype_taxonomy.mtype == mtype, "mClass"].to_list()[0]
     )
     return morphs_df
 
@@ -144,15 +142,12 @@ def find_case_insensitive_file(path):
 
     if len(all_possible_files) == 1:
         found_file = all_possible_files[0]
-        L.warning(
-            "The file '%s' was not found, using '%s' instead.", exact_path, found_file
-        )
+        L.warning("The file '%s' was not found, using '%s' instead.", exact_path, found_file)
         return found_file
     else:
         if len(all_possible_files) == 0:
             error_msg = (
-                f"The file '{exact_path.as_posix()}' could not be found even "
-                "ignoring case."
+                f"The file '{exact_path.as_posix()}' could not be found even " "ignoring case."
             )
         else:
             error_msg = (
@@ -222,9 +217,7 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
 
             # Save current logger state
             old_level = (
-                logger.level
-                if logger.level != logging.NOTSET
-                else logging.getLogger().level
+                logger.level if logger.level != logging.NOTSET else logging.getLogger().level
             )
             old_propagate = logger.propagate
 
@@ -355,8 +348,7 @@ def run_master(
             n_jobs=nb_jobs,
             verbose=verbose,
             backend="multiprocessing",
-            batch_size=1
-            + int(len(task_ids) / (cpu_count() if nb_jobs == -1 else nb_jobs)),
+            batch_size=1 + int(len(task_ids) / (cpu_count() if nb_jobs == -1 else nb_jobs)),
         )(delayed(_wrap_worker)(i, worker, logger_kwargs) for i in task_ids)
 
         # Gather the results

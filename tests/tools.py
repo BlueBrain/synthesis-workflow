@@ -165,9 +165,7 @@ COMPARATORS = {
 }
 
 
-def compare_tree(
-    ref_path, comp_path, comparators=None, specific_args=None, verbose=False
-):
+def compare_tree(ref_path, comp_path, comparators=None, specific_args=None, verbose=False):
     """Compare all files from 2 different directory trees"""
     if comparators is None:
         comparators = COMPARATORS
@@ -191,9 +189,7 @@ def compare_tree(
         if comp_file.exists():
             if suffix in COMPARATORS:
                 args = specific_args.get(relative_path.as_posix(), {}).get("args", [])
-                kwargs = specific_args.get(relative_path.as_posix(), {}).get(
-                    "kwargs", {}
-                )
+                kwargs = specific_args.get(relative_path.as_posix(), {}).get("kwargs", {})
                 try:
                     res = COMPARATORS[suffix](ref_file, comp_file, *args, **kwargs)
                     if res is not True:

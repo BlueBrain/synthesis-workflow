@@ -76,9 +76,7 @@ def _build_distributions_single_mtype(
     morphology_path=None,
 ):
     """Internal function for multiprocessing of tmd_distribution building."""
-    morphology_paths = morphs_df.loc[
-        morphs_df.mtype == mtype, morphology_path
-    ].to_list()
+    morphology_paths = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
     return (
         mtype,
         extract_input.distributions(
@@ -242,9 +240,7 @@ def create_axon_morphologies_tsv(
         "rules_path": rules_path is not None,
         "morphdb_path": morphdb_path is not None,
     }
-    if any(check_placement_params.values()) and not all(
-        check_placement_params.values()
-    ):
+    if any(check_placement_params.values()) and not all(check_placement_params.values()):
         raise ValueError(
             "Either 'morphs_df_path' or all the following parameter should be None: %s"
             % [k for k in check_placement_params if k != "morphs_df_path"]
@@ -417,11 +413,7 @@ def rescale_morphologies(
     for mtype in tqdm(morphs_df.mtype.unique()):
         gids = morphs_df[morphs_df.mtype == mtype].index
 
-        if (
-            not skip_rescale
-            and mtype in scaling_rules
-            and scaling_rules[mtype] is not None
-        ):
+        if not skip_rescale and mtype in scaling_rules and scaling_rules[mtype] is not None:
             for neurite_type, target_layer in scaling_rules[mtype].items():
                 soma_layer = int(mtype[1])
                 target_layer = int(target_layer[1])
@@ -432,21 +424,17 @@ def rescale_morphologies(
                 )
                 for gid in gids:
                     morphology = Morphology(morphs_df.loc[gid, morphology_path])
-                    scale = rescale_neurites(
-                        morphology, neurite_type, target_length, scaling_mode
+                    scale = rescale_neurites(morphology, neurite_type, target_length, scaling_mode)
+                    path = (rescaled_morphology_base_path / morphs_df.loc[gid, "name"]).with_suffix(
+                        ext
                     )
-                    path = (
-                        rescaled_morphology_base_path / morphs_df.loc[gid, "name"]
-                    ).with_suffix(ext)
                     morphology.write(path)
                     morphs_df.loc[gid, rescaled_morphology_path] = path
                     morphs_df.loc[gid, neurite_type + "_scale"] = scale
         else:
             for gid in gids:
                 morphology = Morphology(morphs_df.loc[gid, morphology_path])
-                path = (
-                    rescaled_morphology_base_path / morphs_df.loc[gid, "name"]
-                ).with_suffix(ext)
+                path = (rescaled_morphology_base_path / morphs_df.loc[gid, "name"]).with_suffix(ext)
                 morphology.write(path)
                 morphs_df.loc[gid, rescaled_morphology_path] = path
     return morphs_df

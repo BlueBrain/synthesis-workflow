@@ -81,15 +81,11 @@ def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext="asc"):
 
 def _get_features_df_all_mtypes(morphs_df, features_config, morphology_path):
     """Wrapper for morph-validator functions."""
-    morphs_df_dict = {
-        mtype: df[morphology_path] for mtype, df in morphs_df.groupby("mtype")
-    }
+    morphs_df_dict = {mtype: df[morphology_path] for mtype, df in morphs_df.groupby("mtype")}
     with warnings.catch_warnings():
         # Ignore some Numpy warnings
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        return get_features_df(
-            morphs_df_dict, features_config, n_workers=os.cpu_count()
-        )
+        return get_features_df(morphs_df_dict, features_config, n_workers=os.cpu_count())
 
 
 def plot_morphometrics(
@@ -120,13 +116,9 @@ def plot_morphometrics(
         config_features = get_feature_configs(config_types="synthesis")
         # config_features["neurite"].update({"y_distances": ["min", "max"]})
 
-    base_features_df = _get_features_df_all_mtypes(
-        base_morphs_df, config_features, base_key
-    )
+    base_features_df = _get_features_df_all_mtypes(base_morphs_df, config_features, base_key)
     base_features_df["label"] = base_label
-    comp_features_df = _get_features_df_all_mtypes(
-        comp_morphs_df, config_features, comp_key
-    )
+    comp_features_df = _get_features_df_all_mtypes(comp_morphs_df, config_features, comp_key)
     comp_features_df["label"] = comp_label
 
     base_features_df = base_features_df[
@@ -163,11 +155,7 @@ def _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance):
             point_depths[neurite_type.name] += data.tolist()
 
     df = pd.DataFrame.from_dict(point_depths, orient="index").T
-    return (
-        df.melt(var_name="neurite_type", value_name="y")
-        .dropna()
-        .sort_values("neurite_type")
-    )
+    return df.melt(var_name="neurite_type", value_name="y").dropna().sort_values("neurite_type")
 
 
 def _get_vacuum_depths_df(circuit, mtype):
@@ -182,11 +170,7 @@ def _get_vacuum_depths_df(circuit, mtype):
             point_depths[i.type.name] += i.points[COLS.Y].tolist()
 
     df = pd.DataFrame.from_dict(point_depths, orient="index").T
-    return (
-        df.melt(var_name="neurite_type", value_name="y")
-        .dropna()
-        .sort_values("neurite_type")
-    )
+    return df.melt(var_name="neurite_type", value_name="y").dropna().sort_values("neurite_type")
 
 
 def _plot_layers(x_pos, atlas, ax):
@@ -245,9 +229,7 @@ def _plot_density_profile(
     return fig
 
 
-def plot_density_profiles(
-    circuit, sample, region, sample_distance, output_path, nb_jobs=-1
-):
+def plot_density_profiles(circuit, sample, region, sample_distance, output_path, nb_jobs=-1):
     """Plot density profiles for all mtypes.
 
     WIP function, waiting on complete atlas to update.
@@ -255,9 +237,7 @@ def plot_density_profiles(
     if not region or region == "in_vacuum":
         voxeldata = None
     else:
-        voxeldata = relative_depth_volume(
-            circuit.atlas, in_region=region, relative=False
-        )
+        voxeldata = relative_depth_volume(circuit.atlas, in_region=region, relative=False)
     x_pos = 0
 
     ensure_dir(output_path)
@@ -270,9 +250,7 @@ def plot_density_profiles(
             voxeldata=voxeldata,
             sample_distance=sample_distance,
         )
-        for fig in Parallel(nb_jobs)(
-            delayed(f)(mtype) for mtype in sorted(circuit.cells.mtypes)
-        ):
+        for fig in Parallel(nb_jobs)(delayed(f)(mtype) for mtype in sorted(circuit.cells.mtypes)):
             with DisableLogger():
                 pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
@@ -306,9 +284,7 @@ def get_plane_rotation_matrix(plane, target=None):
 
     def _cost(angle):
         return np.linalg.norm(
-            rotation_matrix.dot(
-                _get_rot_matrix(angle).dot(np.array([0, 1, 0])) - target
-            )
+            rotation_matrix.dot(_get_rot_matrix(angle).dot(np.array([0, 1, 0])) - target)
         )
 
     angle = fmin(_cost, 1.0, disp=False)
@@ -381,15 +357,11 @@ def get_y_info(atlas, plane_origin, rotation_matrix, n_pixels=64):
     for i, x_plane in enumerate(xs_plane):
         for j, y_plane in enumerate(ys_plane):
             # transform plane coordinates into real coordinates (coordinates of VoxelData)
-            point = (
-                rot_T.dot([x_plane, 0, 0]) + rot_T.dot([0, y_plane, 0]) + plane_origin
-            )
+            point = rot_T.dot([x_plane, 0, 0]) + rot_T.dot([0, y_plane, 0]) + plane_origin
             try:
                 orientation = atlas.lookup_orientation(point)
                 if orientation[0] != 0.0 and orientation[1] != 1.0:
-                    orientation_u[i, j], orientation_v[i, j] = rotation_matrix.dot(
-                        orientation
-                    )[:2]
+                    orientation_u[i, j], orientation_v[i, j] = rotation_matrix.dot(orientation)[:2]
             except VoxcellError:
                 pass
     return X, Y, orientation_u, orientation_v
@@ -428,12 +400,8 @@ def plot_cells(
         all_pos_final = all_pos_orig + all_lookups * 300
         all_dist_plane_orig = all_pos_orig - plane_left.point
         all_dist_plane_final = all_pos_final - plane_left.point
-        all_pos_orig_plane_coord = np.tensordot(
-            all_dist_plane_orig, rotation_matrix.T, axes=1
-        )
-        all_pos_final_plane_coord = np.tensordot(
-            all_dist_plane_final, rotation_matrix.T, axes=1
-        )
+        all_pos_orig_plane_coord = np.tensordot(all_dist_plane_orig, rotation_matrix.T, axes=1)
+        all_pos_final_plane_coord = np.tensordot(all_dist_plane_final, rotation_matrix.T, axes=1)
 
     for num, gid in enumerate(gids):
         morphology = circuit.morph.get(gid, transform=True, source="ascii")
@@ -475,9 +443,7 @@ def _plot_collage(
 
     left_plane, right_plane = planes
     rotation_matrix = get_plane_rotation_matrix(left_plane)
-    X, Y, layers = get_layer_info(
-        layer_annotation, left_plane.point, rotation_matrix, n_pixels
-    )
+    X, Y, layers = get_layer_info(layer_annotation, left_plane.point, rotation_matrix, n_pixels)
 
     fig = plt.figure()
     plt.imshow(
@@ -591,17 +557,13 @@ def _generate_synthetic_random_population(
     files = []
     y_synth = []
     slope = tmd_parameters["context_constraints"]["apical"]["extent_to_target"]["slope"]
-    intercept = tmd_parameters["context_constraints"]["apical"]["extent_to_target"][
-        "intercept"
-    ]
+    intercept = tmd_parameters["context_constraints"]["apical"]["extent_to_target"]["intercept"]
     for i in range(nb):
         tmp_name = str((Path(dir_path) / str(i)).with_suffix(".h5"))
         files.append(tmp_name)
         projection = np.random.randint(proj_min, proj_max)
         y_synth.append(projection)
-        target_path_distance = get_path_distance_from_extent(
-            slope, intercept, projection
-        )
+        target_path_distance = get_path_distance_from_extent(slope, intercept, projection)
         tmd_parameters["apical"].update(
             {
                 "modify": {
@@ -620,9 +582,7 @@ def _generate_synthetic_random_population(
     return files, y_synth
 
 
-def _get_fit_population(
-    mtype, files, outlier_percentage, tmd_parameters, tmd_distributions
-):
+def _get_fit_population(mtype, files, outlier_percentage, tmd_parameters, tmd_distributions):
     """Get projections and path lengths of a given and a synthetic population."""
     # Load biological neurons
     return_error = (mtype, None, None, None, None, None, None)
@@ -631,9 +591,7 @@ def _get_fit_population(
     else:
         return return_error + (f"No file to load for mtype='{mtype}'",)
     if (
-        tmd_parameters.get("context_constraints", {})
-        .get("apical", {})
-        .get("extent_to_target")
+        tmd_parameters.get("context_constraints", {}).get("apical", {}).get("extent_to_target")
         is None
     ):
         return return_error + (f"No fit for mtype='{mtype}'",)
@@ -800,9 +758,7 @@ def parse_log(
     neurite_hard_limit_df = pd.DataFrame(neurite_hard_limit_data)
 
     def _pos_to_xyz(df, drop=True):
-        df[["x", "y", "z"]] = pd.DataFrame(
-            df["position"].values.tolist(), index=df.index
-        )
+        df[["x", "y", "z"]] = pd.DataFrame(df["position"].values.tolist(), index=df.index)
         if drop:
             df.drop(columns=["position"], inplace=True)
 
@@ -1010,8 +966,7 @@ def plot_score_matrix(
 
     def build_file_list(df, mtypes, path_col):
         return [
-            (mtype, df.loc[df.mtype == mtype, path_col].sort_values().to_list())
-            for mtype in mtypes
+            (mtype, df.loc[df.mtype == mtype, path_col].sort_values().to_list()) for mtype in mtypes
         ]
 
     # Build the file list for each mtype
@@ -1036,9 +991,7 @@ def plot_score_matrix(
     for k, s in zip(keys[1:], scores):
         assert keys[0] == k, "Score names must all be the same for each feature."
         assert len(k) == n_scores, "The number of keys must be the same for each mtype."
-        assert (
-            len(s) == n_scores
-        ), "The number of scores must be the same for each mtype."
+        assert len(s) == n_scores, "The number of scores must be the same for each mtype."
 
     # Plot statistics
     with PdfPages(output_path) as pdf:
@@ -1079,9 +1032,7 @@ def plot_score_matrix(
         a0.set_xticks(np.arange(len(mtypes)))
         a0.set_xticklabels(mtypes)
 
-        a0.set_xlim(
-            [a0.xaxis.get_ticklocs().min() - 0.5, a0.xaxis.get_ticklocs().max() + 0.5]
-        )
+        a0.set_xlim([a0.xaxis.get_ticklocs().min() - 0.5, a0.xaxis.get_ticklocs().max() + 0.5])
         a0.set_ylim([-0.1, 1.1])
 
         # Plot score heatmap
