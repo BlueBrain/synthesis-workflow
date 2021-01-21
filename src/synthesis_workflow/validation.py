@@ -319,19 +319,21 @@ def get_layer_info(
     Y = np.repeat(ys_plane.reshape((1, -1)), n_pixels, axis=0)
     rot_T = rotation_matrix.T
 
+    xs_plane_size = xs_plane.size
+    ys_plane_size = ys_plane.size
     x_vec = xs_plane.copy()
-    x_vec.resize((3, xs_plane.size))
+    x_vec.resize((3, xs_plane_size), refcheck=False)
     x_vec = x_vec.T
 
     y_vec = ys_plane.copy()
-    y_vec.resize((3, ys_plane.size))
+    y_vec.resize((3, ys_plane_size), refcheck=False)
     y_vec = y_vec.T[:, [1, 0, 2]]  # pylint: disable=unsubscriptable-object
 
     x_rot = np.einsum("ij, kj", rot_T, x_vec).T
     y_rot = np.einsum("ij, kj", rot_T, y_vec).T
 
-    y_final = np.repeat(y_rot[np.newaxis, ...], xs_plane.size, axis=0)
-    x_final = np.repeat(x_rot, ys_plane.size, axis=0).reshape(y_final.shape)
+    y_final = np.repeat(y_rot[np.newaxis, ...], xs_plane_size, axis=0)
+    x_final = np.repeat(x_rot, ys_plane_size, axis=0).reshape(y_final.shape)
 
     points = x_final + y_final + plane_origin
 
@@ -385,7 +387,7 @@ def plot_cells(
         cells = circuit.cells.get()
 
     if len(cells) == 0:
-        raise Exception("no cells of that mtype")
+        raise Exception(f"No cell of that mtype ({mtype})")
 
     if plot_neuron_kwargs is None:
         plot_neuron_kwargs = {}

@@ -14,11 +14,6 @@ DATA = Path(__file__).parent / "data"
 TEST_DIR = DATA / "test"
 REF_DIR = DATA / "reference"
 OUTPUT_DIR = DATA / "reports"
-TEMPLATE_FILE = (
-    Path(_distribution.get_resource_filename("morphval", "morphval"))
-    / "templates"
-    / "report_template.jinja2"
-)
 CONFIGS = Path(__file__).parent.parent.parent / "examples/morphval_config"
 
 
@@ -29,7 +24,10 @@ def test_import_config():
 
 def test_import_morphval():
     """Check if morphval loads the TEMPLATE correctly"""
-    assert morphval.validation_main.TEMPLATE_FILE == TEMPLATE_FILE.as_posix()
+    assert morphval.validation_main.TEMPLATE_FILE.endswith(
+        "morphval/templates/report_template.jinja2"
+    )
+    assert Path(morphval.validation_main.TEMPLATE_FILE).exists()
 
 
 def test_validation_conf():

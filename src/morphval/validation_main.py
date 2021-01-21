@@ -17,10 +17,10 @@ from morphval import common
 from morphval import validation
 
 
-_distribution = pkg_resources.get_distribution("synthesis-workflow")
-TEMPLATES = Path(_distribution.get_resource_filename("morphval", "morphval")) / "templates"
-TEMPLATE_FILE = (TEMPLATES / "report_template.jinja2").as_posix()
-SUMMARY_TEMPLATE_FILE = (TEMPLATES / "report_summary_template.jinja2").as_posix()
+TEMPLATE_FILE = pkg_resources.resource_filename("morphval", "templates/report_template.jinja2")
+SUMMARY_TEMPLATE_FILE = pkg_resources.resource_filename(
+    "morphval", "templates/report_summary_template.jinja2"
+)
 
 
 def save_csv(dir_name, feature, data):
