@@ -69,6 +69,7 @@ def test_ValidateVacuumSynthesis(vacuum_working_directory):
             tmd_distributions["mtypes"]["L3_TPC:A"]["diameter"]["diameter_power_relation"]["basal"][
                 "params"
             ]["scale"] = new_scale_diameter_L3_TPC_A_basal
+
             json.dump(tmd_distributions, f)
 
     # Check the results
