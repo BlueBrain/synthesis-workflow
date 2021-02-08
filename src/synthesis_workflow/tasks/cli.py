@@ -9,6 +9,8 @@ from pathlib import Path
 
 import luigi
 from luigi_tools.util import get_dependency_graph
+from luigi_tools.util import graphviz_dependency_graph
+from luigi_tools.util import render_dependency_graph
 
 import synthesis_workflow
 from synthesis_workflow.tasks import workflows
@@ -205,60 +207,21 @@ def main(arguments=None):
 
     # Export the dependency graph of the workflow instead of running it
     if args.create_dependency_graph is not None:
-        try:
-            from graphviz import Digraph  # pylint: disable=import-outside-toplevel
-        except ImportError:
-            print("Could not import GraphViz, please install it.")
-            sys.exit()
         task = WORKFLOW_TASKS[args.workflow](**args_dict)
         g = get_dependency_graph(task)
-        default_graph_attrs = {
-            "rankdir": "TB",
-            "size": "7.0, 15.0",
-            "bgcolor": "transparent",
-        }
-        default_node_attrs = {
-            "shape": "box",
-            "fontsize": "9",
-            "height": "0.25",
-            "fontname": '"Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans"',
-            "style": "setlinewidth(0.5),filled",
-            "fillcolor": "white",
-        }
-        default_edge_attrs = {
-            "arrowsize": "0.5",
-            "style": "setlinewidth(0.5)",
-        }
-        dot = Digraph(
-            comment="Dependency graph",
-            strict=True,
-            graph_attr=default_graph_attrs,
-            node_attr=default_node_attrs,
-            edge_attr=default_edge_attrs,
-        )
-        dot.node(task.__class__.__name__, color="red", penwidth="1.5")
+
+        # Create URLs
         base_f = Path(inspect.getfile(synthesis_workflow)).parent
-        for parent, child in g:
+        node_kwargs = {}
+        for _, child in g:
             url = (
                 Path(inspect.getfile(child.__class__)).relative_to(base_f).with_suffix("")
                 / "index.html"
             )
             anchor = "#" + ".".join(child.__module__.split(".")[1:] + [child.__class__.__name__])
-            dot.node(child.__class__.__name__, URL="../../" + url.as_posix() + anchor)
-            dot.edge(
-                parent.__class__.__name__,
-                child.__class__.__name__,
-                **default_edge_attrs,
-            )
-        filepath = Path(args.create_dependency_graph)
-        filename = filepath.with_suffix("")
-        pattern = re.compile(r"\.?(.*)")
-        match = re.match(pattern, filepath.suffix)
-        dot.render(
-            filename=filename,
-            format=match.group(1),
-            cleanup=True,
-        )
+            node_kwargs[child] = {"URL": "../../" + url.as_posix() + anchor}
+        dot = graphviz_dependency_graph(g, node_kwargs=node_kwargs)
+        render_dependency_graph(dot, args.create_dependency_graph)
         sys.exit()
 
     # Run the luigi task

@@ -122,7 +122,7 @@ from synthesis_workflow.tasks.cli import _process_param
 
 
 SKIP = [
-    r".*\.L",
+    r".*\.L$",
     r".*tasks\..*\.requires$",
     r".*tasks\..*\.run$",
     r".*tasks\..*\.output$",
