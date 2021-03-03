@@ -674,7 +674,7 @@ def plot_path_distance_fits(
             )
             for mtype, files in file_lists
         ):
-            if all([i is None for i in [x, y, x_clean, y_clean, x_synth, y_synth]]):
+            if all(i is None for i in [x, y, x_clean, y_clean, x_synth, y_synth]):
                 L.warning(msg)
                 continue
             fig = plt.figure()

@@ -5,6 +5,8 @@ from configparser import ConfigParser
 from pathlib import Path
 from subprocess import call
 
+import dir_content_diff.pandas
+import dir_content_diff.voxcell
 import luigi
 import numpy as np
 import pytest
@@ -13,7 +15,12 @@ from synthesis_workflow.tasks import config
 from synthesis_workflow.tools import get_layer_tags
 
 
-DATA = Path(__file__).parent / "data"
+dir_content_diff.pandas.register_pandas()
+dir_content_diff.voxcell.register_voxcell()
+
+
+TEST_ROOT = Path(__file__).parent
+DATA = TEST_ROOT / "data"
 
 
 def export_config(params, filepath):
@@ -33,6 +40,16 @@ def reset_luigi_config(filepath):
 
     # Reset luigi config
     luigi_config.clear()
+
+
+@pytest.fixture
+def root_dir():
+    return TEST_ROOT
+
+
+@pytest.fixture
+def data_dir():
+    return DATA
 
 
 @pytest.fixture

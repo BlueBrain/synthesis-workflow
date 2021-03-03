@@ -18,8 +18,9 @@ warnings.filterwarnings("ignore", module="neurom.features")
 warnings.filterwarnings("ignore", module="scipy")
 
 # Disable matplotlib logger
-mpl_logger = logging.getLogger("matplotlib")
-mpl_logger.propagate = False
+logging.getLogger("matplotlib").propagate = False
+logging.getLogger("numexpr").propagate = False
+logging.getLogger("tns").propagate = False
 
 
 class DiametrizerConfig(luigi.Config):

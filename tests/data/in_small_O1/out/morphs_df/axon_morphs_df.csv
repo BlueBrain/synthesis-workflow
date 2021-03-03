@@ -1,5 +1,5 @@
-,name,layer,mtype,use_axon,clone_path,morph_class
-0,C270106A,1,L1_DAC,True,synthesis-workflow/tests/data/input_cells/C270106A.h5,INT
-1,C170797A-P2,3,L3_TPC:A,False,synthesis-workflow/tests/data/input_cells/C170797A-P2.h5,PYR
-2,rat_20160908_E3_LH2_cell2,3,L3_TPC:A,True,synthesis-workflow/tests/data/input_cells/rat_20160908_E3_LH2_cell2.h5,PYR
-3,sm080625a1-6_idD,1,L1_DAC,True,synthesis-workflow/tests/data/input_cells/sm080625a1-6_idD.h5,INT
+,name,layer,mtype,use_axon,path,clone_path,morph_class
+0,C270106A,1,L1_DAC,True,input_cells/C270106A.h5,input_cells/C270106A.h5,INT
+1,C170797A-P2,3,L3_TPC:A,False,input_cells/C170797A-P2.h5,input_cells/C170797A-P2.h5,PYR
+2,rat_20160908_E3_LH2_cell2,3,L3_TPC:A,True,input_cells/rat_20160908_E3_LH2_cell2.h5,input_cells/rat_20160908_E3_LH2_cell2.h5,PYR
+3,sm080625a1-6_idD,1,L1_DAC,True,input_cells/sm080625a1-6_idD.h5,input_cells/sm080625a1-6_idD.h5,INT

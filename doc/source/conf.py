@@ -123,9 +123,10 @@ from synthesis_workflow.tasks.cli import _process_param
 
 SKIP = [
     r".*\.L",
-    r".*tasks\..*\.requires",
-    r".*tasks\..*\.run",
-    r".*tasks\..*\.output",
+    r".*tasks\..*\.requires$",
+    r".*tasks\..*\.run$",
+    r".*tasks\..*\.output$",
+    r".*tasks\.config.propagate$",
 ]
 
 IMPORT_MAPPING = {

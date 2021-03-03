@@ -17,7 +17,8 @@ from joblib import cpu_count
 
 from bluepy.v2 import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
-from morph_tool.utils import neurondb_dataframe, find_morph
+from morph_tool.morphdb import MorphDB
+from morph_tool.utils import find_morph
 from voxcell import VoxelData
 from voxcell.nexus.voxelbrain import LocalAtlas
 
@@ -78,7 +79,9 @@ def load_neurondb_to_dataframe(
         pc_in_types_path (str): path to mtype_taxonomy.tsv file
         apical_points_path (str): path to JSON file containing apical points
     """
-    morphs_df = neurondb_dataframe(Path(neurondb_path))
+    morphs_df = MorphDB.from_neurondb(neurondb_path).df[
+        ["name", "layer", "mtype", "use_axon", "path"]
+    ]
 
     if morphology_dirs is not None:
         morphs_df = add_morphology_paths(morphs_df, morphology_dirs)

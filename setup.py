@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# JUST TESTING THE CI
+
 import imp
 import sys
 
@@ -18,16 +20,16 @@ reqs = [
     "bluepyefe",
     "bluepyopt",
     "bluepymm",
-    "diameter_synthesis==0.1.7",
+    "diameter_synthesis>=0.1.7",
     "gitpython",
     "jinja2",
     "joblib",
     "luigi",
     "luigi-tools>=0.0.5",
     "matplotlib",
-    "morph_tool>=2.2.21",
+    "morph_tool>=2.3.1",
     "morph_validator",
-    "morphio",
+    "morphio>=2.7",
     "neuroc",
     "neurom!=2.0.1.dev4,!=1.7.0",
     "pandas",
@@ -50,7 +52,7 @@ doc_reqs = [
 ]
 
 test_reqs = [
-    "diff_pdf_visually>=1.5.1",
+    "dir-content-diff>=0.0.2",
     "pytest",
     "pytest-cov",
     "pytest-html",
