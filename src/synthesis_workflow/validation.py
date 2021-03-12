@@ -305,7 +305,6 @@ def get_layer_info(
         rotation_matrix (3*3 np.ndarray): rotation matrix to transform from real coordinates
             to plane coordinates
         n_pixels (int): number of pixel on each axis of the plane for plotting layers
-        atlas (AtlasHelper): if atlas is provided, we will plot arrows with orientations
     """
     bbox = layer_annotation.bbox
     bbox_min = rotation_matrix.dot(bbox[0] - plane_origin)
@@ -510,6 +509,7 @@ def plot_collage(
     with_y_field=True,
     n_pixels_y=64,
     plot_neuron_kwargs=None,
+    with_cells=True,
 ):
     """Plot collage of an mtype and a list of planes.
 
@@ -527,6 +527,7 @@ def plot_collage(
         with_y_field (bool): plot y field
         n_pixels_y (int): number of pixels for plotting y field
         plot_neuron_kwargs (dict): dict given to ``neurom.viewer.plot_neuron`` as kwargs
+        with_cells (bool): plot cells or not
     """
     atlas = AtlasHelper(circuit.atlas)
 
@@ -543,6 +544,7 @@ def plot_collage(
             n_pixels_y=n_pixels_y,
             with_y_field=with_y_field,
             plot_neuron_kwargs=plot_neuron_kwargs,
+            with_cells=with_cells,
         )
         for fig in Parallel(nb_jobs, verbose=joblib_verbose)(
             delayed(f)(planes) for planes in zip(planes[:-1:3], planes[2::3])
