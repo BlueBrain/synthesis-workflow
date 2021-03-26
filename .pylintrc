@@ -12,6 +12,7 @@ disable=
 	no-member,
 	too-many-ancestors,
 	too-many-lines,
+    unsubscriptable-object,
 
 [FORMAT]
 # Maximum number of characters on a single line.

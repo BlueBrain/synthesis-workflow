@@ -6,12 +6,14 @@ import yaml
 import luigi
 
 from voxcell import VoxelData
+from voxcell.nexus.voxelbrain import LocalAtlas
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
 
 from synthesis_workflow.circuit import build_circuit
 from synthesis_workflow.circuit import circuit_slicer
 from synthesis_workflow.circuit import create_planes
+from synthesis_workflow.circuit import get_centerline_bounds
 from synthesis_workflow.circuit import halve_atlas
 from synthesis_workflow.circuit import slice_circuit
 from synthesis_workflow.circuit import create_atlas_thickness_mask
@@ -61,13 +63,8 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
         annotation.save_nrrd(annotation_path)
 
         layer_mapping_path = self.output()["layer_mapping"].path
-        yaml.dump(
-            layer_mapping,
-            open(
-                layer_mapping_path,
-                "w",
-            ),
-        )
+        with open(layer_mapping_path, "w") as f:
+            yaml.dump(layer_mapping, f)
 
     def output(self):
         """ """
@@ -102,14 +99,14 @@ class CreateAtlasPlanes(WorkflowTask):
         default=100, description=":float: Thickness of slices (in micrometer)."
     )
     centerline_first_bound = luigi.ListParameter(
-        default=[126, 181, 220],
+        default=None,
         description=(
             ":list(int): (only for plane_type == centerline) Location of first bound for "
             "centerline (in voxcell index)."
         ),
     )
     centerline_last_bound = luigi.ListParameter(
-        default=[407, 110, 66],
+        default=None,
         description=(
             ":list(int): (only for plane_type == centerline) Location of last bound for "
             "centerline (in voxcell index)."
@@ -122,6 +119,10 @@ class CreateAtlasPlanes(WorkflowTask):
     atlas_planes_path = luigi.Parameter(
         default="atlas_planes", description=":str: Path to save atlas planes."
     )
+    region = luigi.Parameter(default=None, description=":str: Name of region to consider")
+    hemisphere = luigi.Parameter(
+        default=None, description=":str: Hemisphere to considere (left/right)"
+    )
 
     def requires(self):
         """ """
@@ -130,6 +131,12 @@ class CreateAtlasPlanes(WorkflowTask):
     def run(self):
         """ """
         layer_annotation = VoxelData.load_nrrd(self.input()["annotations"].path)
+
+        atlas = LocalAtlas(CircuitConfig().atlas_path)
+        if self.centerline_first_bound is None and self.centerline_last_bound is None:
+            self.centerline_first_bound, self.centerline_last_bound = get_centerline_bounds(
+                atlas, layer_annotation, self.region, hemisphere=self.hemisphere
+            )
         planes, centerline = create_planes(
             layer_annotation,
             self.plane_type,
@@ -144,7 +151,7 @@ class CreateAtlasPlanes(WorkflowTask):
 
     def output(self):
         """ """
-        return AtlasLocalTarget(self.atlas_planes_path + ".npz")
+        return AtlasLocalTarget(f"{self.atlas_planes_path}_{self.region}.npz")
 
 
 @copy_params(

@@ -7,8 +7,6 @@ from voxcell.nexus.voxelbrain import LocalAtlas
 import numpy as np
 
 from atlas_analysis.planes.planes import create_planes as _create_planes
-from atlas_analysis.planes.planes import create_centerline as _create_centerline
-from atlas_analysis.planes.planes import _smoothing
 from brainbuilder.app.cells import _place as place
 
 L = logging.getLogger(__name__)
@@ -186,6 +184,44 @@ def slice_circuit(input_mvd3, output_mvd3, slicer):
     return sliced_cells
 
 
+def _get_principal_direction(points):
+    """Return the principal direction of a point cloud.
+
+    It is the eigen vector of the covariance matrix with the highest eigen value.
+    Taken from neuror.unravel.
+    """
+    X = np.copy(np.asarray(points))
+    X -= np.mean(X, axis=0)
+    C = np.dot(X.T, X)
+    w, v = np.linalg.eig(C)
+    return v[:, w.argmax()]
+
+
+def get_centerline_bounds(atlas, layer, region=None, central_layer=5, hemisphere=None):
+    """Find centerline bounds using PCA of the voxell position of a given layer in the region."""
+    if region is not None:
+        mask = atlas.get_region_mask(region)
+        mask.raw = np.array(mask.raw, dtype=int)
+        layer.raw = layer.raw * mask.raw
+
+    _ids = np.where(layer.raw == central_layer)
+    ids = np.column_stack(_ids)
+    points = layer.indices_to_positions(ids)
+
+    ids = np.array(ids)
+    points = np.array(points)
+    if hemisphere is not None:
+        if hemisphere == "left":
+            point_mask = points[:, 2] < points[:, 2].mean()
+        if hemisphere == "right":
+            point_mask = points[:, 2] > points[:, 2].mean()
+        ids = ids[point_mask]
+        points = points[point_mask]
+    direction = _get_principal_direction(points)
+    _align = points.dot(direction)
+    return ids[_align.argmin()], ids[_align.argmax()]
+
+
 def create_planes(
     layer_annotation,
     plane_type="aligned",
@@ -217,10 +253,12 @@ def create_planes(
         centerline_axis (str): (for plane_type = aligned) axis along which to create planes
     """
     if plane_type == "centerline":
-        centerline = _create_centerline(
-            layer_annotation, [centerline_first_bound, centerline_last_bound]
+        centerline = np.array(
+            [
+                layer_annotation.indices_to_positions(centerline_first_bound),
+                layer_annotation.indices_to_positions(centerline_last_bound),
+            ]
         )
-        centerline = _smoothing(centerline)
 
     elif plane_type == "aligned":
         _n_points = 10

@@ -24,7 +24,6 @@ from scipy.ndimage import correlate
 from scipy.optimize import fmin
 
 import neurom
-from atlas_analysis.constants import CANONICAL
 from bluepy import Circuit
 from morphio.mut import Morphology
 from neurom import load_neurons
@@ -37,7 +36,7 @@ from region_grower.modify import scale_target_barcode
 from tmd.io.io import load_population
 from tns import NeuronGrower
 from voxcell import CellCollection
-from voxcell.exceptions import VoxcellError
+from voxcell import VoxelData
 
 from synthesis_workflow.circuit import get_cells_between_planes
 from synthesis_workflow.fit_utils import clean_outliers
@@ -549,7 +548,7 @@ def plot_density_profiles(circuit, sample, region, sample_distance, output_path,
             plt.close(fig)
 
 
-def get_plane_rotation_matrix(plane, target=None):
+def get_plane_rotation_matrix(plane, current_rotation, target=None):
     """Get basis vectors best aligned to target direction.
 
     We define a direct orthonormal basis of the plane (e_1, e_2) such
@@ -559,6 +558,7 @@ def get_plane_rotation_matrix(plane, target=None):
 
     Args:
         plane (atlas_analysis.plane.maths.Plane): plane object
+        current_rotation (ndarray): rotation matrix at the location
         target (list): target vector to align each plane
 
     Return:
@@ -568,100 +568,90 @@ def get_plane_rotation_matrix(plane, target=None):
         target = [0, 1, 0]
     target /= np.linalg.norm(target)
 
-    quaternion = plane.get_quaternion(CANONICAL[2])
-    rotation_matrix = quaternion.rotation_matrix
+    current_direction = current_rotation.dot(target)
+
+    rotation_matrix = plane.get_quaternion().rotation_matrix
 
     def _get_rot_matrix(angle):
         """Get rotation matrix for a given angle along [0, 0, 1]."""
         return Quaternion(axis=[0, 0, 1], angle=angle).rotation_matrix
 
     def _cost(angle):
-        return np.linalg.norm(
-            rotation_matrix.dot(_get_rot_matrix(angle).dot(np.array([0, 1, 0])) - target)
-        )
+        return 1 - (_get_rot_matrix(angle).dot(rotation_matrix).dot(current_direction)).dot(target)
 
-    angle = fmin(_cost, 1.0, disp=False)
+    angle = fmin(_cost, 1.0, disp=False)[0]
     return _get_rot_matrix(angle).dot(rotation_matrix)
 
 
-def get_layer_info(
-    layer_annotation,
+def get_annotation_info(
+    annotation,
     plane_origin,
     rotation_matrix,
     n_pixels=1024,
+    bbox=None,
 ):
-    """Get information to plot layers on a plane.
+    """Get information to plot annotation on a plane.
 
     Args:
-        layer_annotation (VoxelData): atlas annotations with layers
+        annotation (VoxelData): atlas annotations
         plane_origin (np.ndarray): origin of plane (Plane.point)
         rotation_matrix (3*3 np.ndarray): rotation matrix to transform from real coordinates
             to plane coordinates
         n_pixels (int): number of pixel on each axis of the plane for plotting layers
+        bbox (ndarray): bbox to use, is None, annotation.bbox is used
     """
-    bbox = layer_annotation.bbox
+    if bbox is None:
+        bbox = annotation.bbox
+
     bbox_min = rotation_matrix.dot(bbox[0] - plane_origin)
     bbox_max = rotation_matrix.dot(bbox[1] - plane_origin)
-    xs_plane = np.linspace(bbox_min[0], bbox_max[0], n_pixels)
-    ys_plane = np.linspace(bbox_min[1], bbox_max[1], n_pixels)
 
-    layers = np.empty([n_pixels, n_pixels])
+    xs_plane = np.linspace(min(bbox_min[0], bbox_max[0]), max(bbox_min[0], bbox_max[0]), n_pixels)
+    ys_plane = np.linspace(min(bbox_min[1], bbox_max[1]), max(bbox_min[1], bbox_max[1]), n_pixels)
 
-    X = np.repeat(xs_plane.reshape((1, -1)), n_pixels, axis=0).T
-    Y = np.repeat(ys_plane.reshape((1, -1)), n_pixels, axis=0)
+    X, Y = np.meshgrid(xs_plane, ys_plane)
     rot_T = rotation_matrix.T
+    points = [rot_T.dot([x, y, 0]) + plane_origin for x, y in zip(X.flatten(), Y.flatten())]
 
-    xs_plane_size = xs_plane.size
-    ys_plane_size = ys_plane.size
-    x_vec = xs_plane.copy()
-    x_vec.resize((3, xs_plane_size), refcheck=False)
-    x_vec = x_vec.T
-
-    y_vec = ys_plane.copy()
-    y_vec.resize((3, ys_plane_size), refcheck=False)
-    y_vec = y_vec.T[:, [1, 0, 2]]  # pylint: disable=unsubscriptable-object
-
-    x_rot = np.einsum("ij, kj", rot_T, x_vec).T
-    y_rot = np.einsum("ij, kj", rot_T, y_vec).T
-
-    y_final = np.repeat(y_rot[np.newaxis, ...], xs_plane_size, axis=0)
-    x_final = np.repeat(x_rot, ys_plane_size, axis=0).reshape(y_final.shape)
-
-    points = x_final + y_final + plane_origin
-
-    layers = layer_annotation.lookup(points, outer_value=-1).astype(float)
-    layers[layers < 1] = np.nan
-    return X, Y, layers
+    data = annotation.lookup(points, outer_value=-1).astype(float).reshape(n_pixels, n_pixels)
+    data[data < 1] = np.nan
+    return X, Y, data
 
 
-def get_y_info(atlas, plane_origin, rotation_matrix, n_pixels=64):
+def get_y_info(atlas, plane_origin, rotation_matrix, n_pixels=64, bbox=None):
     """Get direction of y axis on a grid on the atlas planes."""
-    bbox = atlas.orientations.bbox
+    if bbox is None:
+        bbox = atlas.orientations.bbox
+
     bbox_min = rotation_matrix.dot(bbox[0] - plane_origin)
     bbox_max = rotation_matrix.dot(bbox[1] - plane_origin)
-    xs_plane = np.linspace(bbox_min[0], bbox_max[0], n_pixels)
-    ys_plane = np.linspace(bbox_min[1], bbox_max[1], n_pixels)
 
-    orientation_u = np.zeros([n_pixels, n_pixels])
-    orientation_v = np.zeros([n_pixels, n_pixels])
+    xs_plane = np.linspace(min(bbox_min[0], bbox_max[0]), max(bbox_min[0], bbox_max[0]), n_pixels)
+    ys_plane = np.linspace(min(bbox_min[1], bbox_max[1]), max(bbox_min[1], bbox_max[1]), n_pixels)
 
-    X = np.repeat(xs_plane.reshape((1, -1)), n_pixels, axis=0).T
-    Y = np.repeat(ys_plane.reshape((1, -1)), n_pixels, axis=0)
+    X, Y = np.meshgrid(xs_plane, ys_plane)
+
     rot_T = rotation_matrix.T
+    points = np.array(
+        [rot_T.dot([x, y, 0]) + plane_origin for x, y in zip(X.flatten(), Y.flatten())]
+    )
+    # create a mask of outer voxels so it can lookup orientations safely
+    voxel_idx = atlas.orientations.positions_to_indices(points, strict=False)
+    outer_mask = np.any(voxel_idx == VoxelData.OUT_OF_BOUNDS, axis=-1)
+    points[outer_mask] = plane_origin
 
-    for i, x_plane in enumerate(xs_plane):
-        for j, y_plane in enumerate(ys_plane):
-            # Transform plane coordinates into real coordinates (coordinates of VoxelData)
-            point = rot_T.dot([x_plane, 0, 0]) + rot_T.dot([0, y_plane, 0]) + plane_origin
-            try:
-                orientation = np.dot(atlas.orientations.lookup(point), [0, 1, 0])[0]
-                if orientation[0] != 0.0 and orientation[1] != 1.0:
-                    orientation_u[i, j], orientation_v[i, j] = rotation_matrix.dot(orientation)[:2]
-            except VoxcellError:
-                pass
+    orientations = np.dot(atlas.orientations.lookup(points), [0.0, 1.0, 0.0]).dot(rotation_matrix.T)
+
+    if len(outer_mask[outer_mask]) > 0:
+        orientations[outer_mask] = len(outer_mask[outer_mask]) * [np.zeros(3)]
+
+    orientation_u = orientations[:, 0].reshape(n_pixels, n_pixels)
+    orientation_v = orientations[:, 1].reshape(n_pixels, n_pixels)
+
     return X, Y, orientation_u, orientation_v
 
 
+# pylint: disable=too-many-locals
 def plot_cells(
     ax,
     circuit,
@@ -670,8 +660,9 @@ def plot_cells(
     rotation_matrix=None,
     mtype=None,
     sample=10,
-    atlas=None,
     plot_neuron_kwargs=None,
+    region=None,
+    hemisphere=None,
 ):
     """Plot cells for collage."""
     if mtype is not None:
@@ -685,18 +676,29 @@ def plot_cells(
     if plot_neuron_kwargs is None:
         plot_neuron_kwargs = {}
 
-    gids = get_cells_between_planes(cells, plane_left, plane_right).index[:sample]
+    if region is not None:
+        if hemisphere is None:
+            cells = cells[(cells.region == f"{region}@left") & (cells.region == f"{region}@right")]
+        else:
+            cells = cells[cells.region == f"{region}@{hemisphere}"]
+    _cells = get_cells_between_planes(cells, plane_left, plane_right)
 
-    if atlas is not None:
-        vec = [0, 1, 0]
-        all_pos_orig = cells.loc[gids, ["x", "y", "z"]].values
-        all_orientations = atlas.orientations.lookup(all_pos_orig)
-        all_lookups = np.einsum("ijk, k", all_orientations, vec)
-        all_pos_final = all_pos_orig + all_lookups * 300
-        all_dist_plane_orig = all_pos_orig - plane_left.point
-        all_dist_plane_final = all_pos_final - plane_left.point
-        all_pos_orig_plane_coord = np.tensordot(all_dist_plane_orig, rotation_matrix.T, axes=1)
-        all_pos_final_plane_coord = np.tensordot(all_dist_plane_final, rotation_matrix.T, axes=1)
+    if len(_cells.index) > 0:
+        _cells = _cells.sample(n=min(sample, len(_cells.index)))
+        gids = _cells.index
+    else:
+        gids = []
+
+    atlas = AtlasHelper(circuit.atlas)
+    vec = [0, 1, 0]
+    all_pos_orig = cells.loc[gids, ["x", "y", "z"]].values
+    all_orientations = atlas.orientations.lookup(all_pos_orig)
+    all_lookups = np.einsum("ijk, k", all_orientations, vec)
+    all_pos_final = all_pos_orig + all_lookups * 300
+    all_dist_plane_orig = all_pos_orig - plane_left.point
+    all_dist_plane_final = all_pos_final - plane_left.point
+    all_pos_orig_plane_coord = np.tensordot(all_dist_plane_orig, rotation_matrix.T, axes=1)
+    all_pos_final_plane_coord = np.tensordot(all_dist_plane_final, rotation_matrix.T, axes=1)
 
     for num, gid in enumerate(gids):
         morphology = neurom.core.Neuron(circuit.morph.get(gid, transform=True, source="ascii"))
@@ -707,50 +709,85 @@ def plot_cells(
         # transform morphology in the plane coordinates
         morphology = morphology.transform(_to_plane_coord)
 
-        if atlas is not None:
-            plt.plot(
-                [all_pos_orig_plane_coord[num, 0], all_pos_final_plane_coord[num, 0]],
-                [all_pos_orig_plane_coord[num, 1], all_pos_final_plane_coord[num, 1]],
-                c="0.5",
-                lw=0.2,
-            )
-
+        plt.plot(
+            [all_pos_orig_plane_coord[num, 0], all_pos_final_plane_coord[num, 0]],
+            [all_pos_orig_plane_coord[num, 1], all_pos_final_plane_coord[num, 1]],
+            c="0.5",
+            lw=0.1,
+        )
         viewer.plot_neuron(ax, morphology, plane="xy", **plot_neuron_kwargs)
 
 
-# pylint: disable=too-many-arguments
+def _get_region_mask(region, atlas, hemisphere=None):
+    """Get a region mask with hemisphere filter."""
+    region_mask = atlas.get_region_mask(region)
+    region_mask.raw = np.array(region_mask.raw, dtype=float)
+
+    if hemisphere is not None:
+        ids = np.array(np.where(region_mask.raw == 1)).T
+        pos = region_mask.indices_to_positions(ids)
+        if hemisphere == "left":
+            ids = ids[pos[:, 2] > pos[:, 2].mean()]
+        if hemisphere == "right":
+            ids = ids[pos[:, 2] < pos[:, 2].mean()]
+        region_mask.raw[tuple(ids.T.tolist())] = 0
+    return region_mask
+
+
+# pylint: disable=too-many-arguments,too-many-locals
 def _plot_collage(
     planes,
     layer_annotation=None,
     circuit=None,
     mtype=None,
     sample=None,
-    n_pixels=1024,
-    atlas=None,
-    n_pixels_y=64,
+    n_pixels=200,
+    n_pixels_y=20,
     with_y_field=True,
     with_cells=True,
     plot_neuron_kwargs=None,
+    region=None,
+    hemisphere="right",
+    figsize=(20, 20),
 ):
     """Internal plot collage for multiprocessing."""
-    if with_y_field and atlas is None:
-        raise Exception("Please provide an atlas with option with_y_field=True")
-
     left_plane, right_plane = planes
-    rotation_matrix = get_plane_rotation_matrix(left_plane)
-    X, Y, layers = get_layer_info(layer_annotation, left_plane.point, rotation_matrix, n_pixels)
-
-    fig = plt.figure()
-    plt.imshow(
-        layers.T,
-        extent=[X[0, 0], X[-1, 0], Y[0, 0], Y[0, -1]],
-        aspect="auto",
-        origin="lower",
-        cmap=matplotlib.colors.ListedColormap(["C0", "C1", "C2", "C3", "C4", "C5"]),
-        alpha=0.3,
+    plane_point = left_plane.point
+    rotation_matrix = get_plane_rotation_matrix(
+        left_plane, AtlasHelper(circuit.atlas).orientations.lookup(plane_point)[0]
     )
 
+    fig = plt.figure(figsize=figsize)
+
+    if region is not None:
+        region_mask = _get_region_mask(region, circuit.atlas, hemisphere=hemisphere)
+
+        # get the bbox of the region
+        _pos = region_mask.indices_to_positions(np.array(np.where(region_mask.raw == 1)).T)
+        bbox = np.array([0.9 * np.min(_pos, axis=0), 1.1 * np.max(_pos, axis=0)])
+
+        # get the data to plot the mask
+        region_mask.raw = 1 - region_mask.raw
+        region_mask.raw[layer_annotation.raw < 1] = np.nan  # so that it is white outside atlas
+        X, Y, region_mask = get_annotation_info(
+            region_mask, plane_point, rotation_matrix, n_pixels, bbox=bbox
+        )
+
+        cmap = matplotlib.colors.ListedColormap(["k"])
+        plt.pcolormesh(X, Y, region_mask, shading="nearest", cmap=cmap, alpha=0.8)
+    else:
+        bbox = None
+
+    # get the data to plot the layers
+    X, Y, layers = get_annotation_info(
+        layer_annotation, plane_point, rotation_matrix, n_pixels, bbox=bbox
+    )
+
+    cmap = matplotlib.colors.ListedColormap(["C0", "C1", "C2", "C3", "C4", "C5"])
+    plt.pcolormesh(X, Y, layers, shading="nearest", cmap=cmap, alpha=0.3)
+
     plt.colorbar()
+
     if with_cells:
         plot_cells(
             plt.gca(),
@@ -760,21 +797,22 @@ def _plot_collage(
             rotation_matrix=rotation_matrix,
             mtype=mtype,
             sample=sample,
-            atlas=atlas,
             plot_neuron_kwargs=plot_neuron_kwargs,
+            region=region,
+            hemisphere=hemisphere,
         )
 
     if with_y_field:
-        # note: some of these parameters are harcoded for NCx plot, adjust as needed
         X_y, Y_y, orientation_u, orientation_v = get_y_info(
-            atlas, left_plane.point, rotation_matrix, n_pixels_y
+            AtlasHelper(circuit.atlas), left_plane.point, rotation_matrix, n_pixels_y, bbox=bbox
         )
+        arrow_len = abs(X_y[0, 1] - X_y[0, 0]) * 0.5
         plt.quiver(
             X_y,
             Y_y,
-            orientation_u * 100,
-            orientation_v * 100,
-            width=0.0002,
+            orientation_u * arrow_len,
+            orientation_v * arrow_len,
+            width=0.0005,
             angles="xy",
             scale_units="xy",
             scale=1,
@@ -783,7 +821,8 @@ def _plot_collage(
     ax = plt.gca()
     ax.set_aspect("equal")
     ax.set_rasterized(True)
-    ax.set_title("")
+    ax.set_title(f"plane coord: {left_plane.point}")
+    plt.axis([X[0, 0], X[0, -1], Y[0, 0], Y[-1, 0]])
 
     return fig
 
@@ -798,12 +837,14 @@ def plot_collage(
     sample=10,
     nb_jobs=-1,
     joblib_verbose=10,
-    dpi=1000,
-    n_pixels=1024,
+    dpi=100,
+    n_pixels=200,
     with_y_field=True,
-    n_pixels_y=64,
+    n_pixels_y=20,
     plot_neuron_kwargs=None,
     with_cells=True,
+    region=None,
+    hemisphere=None,
 ):
     """Plot collage of an mtype and a list of planes.
 
@@ -822,9 +863,9 @@ def plot_collage(
         n_pixels_y (int): number of pixels for plotting y field
         plot_neuron_kwargs (dict): dict given to ``neurom.viewer.plot_neuron`` as kwargs
         with_cells (bool): plot cells or not
+        region (str): region to consider, if None, all atlas will be used
+        hemisphere (str): left/right hemisphere to consider
     """
-    atlas = AtlasHelper(circuit.atlas)
-
     ensure_dir(pdf_filename)
     with PdfPages(pdf_filename) as pdf:
         f = partial(
@@ -833,12 +874,13 @@ def plot_collage(
             circuit=circuit,
             mtype=mtype,
             sample=sample,
-            atlas=atlas,
             n_pixels=n_pixels,
             n_pixels_y=n_pixels_y,
             with_y_field=with_y_field,
             plot_neuron_kwargs=plot_neuron_kwargs,
             with_cells=with_cells,
+            region=region,
+            hemisphere=hemisphere,
         )
         for fig in Parallel(nb_jobs, verbose=joblib_verbose)(
             delayed(f)(planes) for planes in zip(planes[:-1:3], planes[2::3])

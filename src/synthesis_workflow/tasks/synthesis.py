@@ -579,7 +579,8 @@ class AddScalingRulesToParameters(WorkflowTask):
                 self.input()["synthesis_input"].pathlib_path / self.scaling_rules_path
             )
             L.debug("Load scaling rules from %s", scaling_rules_path)
-            scaling_rules = yaml.full_load(open(scaling_rules_path, "r"))
+            with open(scaling_rules_path, "r") as f:
+                scaling_rules = yaml.full_load(f)
         else:
             scaling_rules = {}
 
@@ -648,7 +649,8 @@ class RescaleMorphologies(WorkflowTask):
     def run(self):
         """ """
         morphs_df = pd.read_csv(self.input().path)
-        scaling_rules = yaml.full_load(open(self.scaling_rules_path, "r"))
+        with open(self.scaling_rules_path, "r") as f:
+            scaling_rules = yaml.full_load(f)
         rescaled_morphs_df = rescale_morphologies(
             morphs_df,
             scaling_rules,

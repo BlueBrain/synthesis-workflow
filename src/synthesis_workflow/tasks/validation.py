@@ -10,6 +10,8 @@ import yaml
 from atlas_analysis.planes.planes import load_planes_centerline
 from neurom.view import view
 from voxcell import VoxelData
+from voxcell import CellCollection
+
 
 from morphval import validation_main as morphval_validation
 from synthesis_workflow.tasks.circuit import CreateAtlasLayerAnnotations
@@ -27,6 +29,7 @@ from synthesis_workflow.tasks.luigi_tools import OptionalNumericalParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import WorkflowError
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.luigi_tools import WorkflowWrapperTask
 from synthesis_workflow.tasks.synthesis import AddScalingRulesToParameters
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
 from synthesis_workflow.tasks.synthesis import BuildMorphsDF
@@ -229,7 +232,7 @@ class PlotCollage(WorkflowTask):
     collage_base_path = luigi.Parameter(
         default="collages", description=":str: Path to the output folder."
     )
-    dpi = luigi.IntParameter(default=1000, description=":int: Dpi for pdf rendering (rasterized).")
+    dpi = luigi.IntParameter(default=100, description=":int: Dpi for pdf rendering (rasterized).")
     realistic_diameters = BoolParameter(
         default=True,
         description=":bool: Set or unset realistic diameter when NeuroM plot neurons.",
@@ -648,3 +651,169 @@ class PlotScoreMatrix(WorkflowTask):
     def output(self):
         """ """
         return ValidationLocalTarget(self.output_path)
+
+
+class PlotRegionCollageFromCircuit(WorkflowWrapperTask):
+    """Create a collage folder for all regions in regions list."""
+
+    regions = luigi.ListParameter()
+
+    def requires(self):
+        """ """
+        return [
+            PlotCollageFromCircuit(region=region, collage_base_path=f"collages/{region}")
+            for region in self.regions  # pylint: disable=not-an-iterable
+        ]
+
+
+@copy_params(
+    mtypes=ParamRef(SynthesisConfig),
+    nb_jobs=ParamRef(RunnerConfig),
+    sample=ParamRef(ValidationConfig),
+    joblib_verbose=ParamRef(RunnerConfig),
+)
+class PlotCollageFromCircuit(WorkflowWrapperTask):
+    """Plot collage for all given mtypes from a circuit (not used in this workflow).
+
+    Attributes:
+        mtypes (list(str)): Mtypes to plot.
+        nb_jobs (int): Number of joblib workers.
+        joblib_verbose (int): Verbosity level of joblib.
+        sample (float): Number of cells to use, if None, all available.
+    """
+
+    collage_base_path = luigi.Parameter(
+        default="collages", description=":str: Path to the output folder."
+    )
+    dpi = luigi.IntParameter(default=100, description=":int: Dpi for pdf rendering (rasterized).")
+    realistic_diameters = BoolParameter(
+        default=True,
+        description=":bool: Set or unset realistic diameter when NeuroM plot neurons.",
+    )
+    linewidth = luigi.NumericalParameter(
+        default=0.1,
+        var_type=float,
+        min_value=0,
+        max_value=float("inf"),
+        left_op=luigi.parameter.operator.lt,
+        description=":float: Linewidth used by NeuroM to plot neurons.",
+    )
+    diameter_scale = OptionalNumericalParameter(
+        default=view._DIAMETER_SCALE,  # pylint: disable=protected-access
+        var_type=float,
+        min_value=0,
+        max_value=float("inf"),
+        left_op=luigi.parameter.operator.lt,
+        description=":float: Diameter scale used by NeuroM to plot neurons.",
+    )
+    circuit_config = luigi.Parameter()
+    region = luigi.Parameter(default=None)
+
+    def requires(self):
+        """ """
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
+        if self.mtypes is None:
+            cells = CellCollection.load_sonata(self.circuit_config + "/circuit.morphologies.h5")
+            self.mtypes = cells.as_dataframe().mtype.unique()
+        tasks = []
+        for mtype in self.mtypes:
+            tasks.append(
+                PlotSingleCollageFromCircuit(
+                    collage_base_path=self.collage_base_path,
+                    mtype=mtype,
+                    sample=self.sample,
+                    nb_jobs=self.nb_jobs,
+                    joblib_verbose=self.joblib_verbose,
+                    dpi=self.dpi,
+                    realistic_diameters=self.realistic_diameters,
+                    linewidth=self.linewidth,
+                    diameter_scale=self.diameter_scale,
+                    region=self.region,
+                )
+            )
+        return tasks
+
+
+@copy_params(
+    nb_jobs=ParamRef(RunnerConfig),
+    joblib_verbose=ParamRef(RunnerConfig),
+    collage_base_path=ParamRef(PlotCollage),
+    sample=ParamRef(ValidationConfig),
+    dpi=ParamRef(PlotCollage),
+    realistic_diameters=ParamRef(PlotCollage),
+    linewidth=ParamRef(PlotCollage),
+    diameter_scale=ParamRef(PlotCollage),
+)
+class PlotSingleCollageFromCircuit(WorkflowTask):
+    """Plot collage for a single mtype to work with standalone PlotCollageFromCircuit.
+
+    Attributes:
+        nb_jobs (int): Number of joblib workers.
+        joblib_verbose (int): Verbosity level of joblib.
+        collage_base_path (str): Path to the output folder.
+        sample (float): Number of cells to use, if None, all available.
+        dpi (int): Dpi for pdf rendering (rasterized).
+        realistic_diameters (bool): Set or unset realistic diameter when NeuroM plot neurons.
+        linewidth (float): Linewidth used by NeuroM to plot neurons.
+        diameter_scale (float): Diameter scale used by NeuroM to plot neurons.
+    """
+
+    mtype = luigi.Parameter(description=":str: The mtype to plot.")
+    with_y_field = luigi.BoolParameter(
+        default=True, description=":str: Plot vector fields of orientations"
+    )
+    with_cells = luigi.BoolParameter(default=True, description=":str: Plot morphologies")
+    hemisphere = luigi.Parameter(default="right")
+    circuit_config = luigi.Parameter()
+    region = luigi.Parameter(default=None)
+
+    def requires(self):
+        """ """
+        return {
+            "planes": CreateAtlasPlanes(region=self.region, hemisphere=self.hemisphere),
+            "layers": CreateAtlasLayerAnnotations(),
+        }
+
+    def run(self):
+        """ """
+        circuit = load_circuit(
+            path_to_mvd3=CircuitConfig().circuit_somata_path,
+            path_to_morphologies=self.circuit_config + "morphologies",
+            path_to_atlas=CircuitConfig().atlas_path,
+        )
+
+        planes_path = self.input()["planes"].path
+        L.debug("Load planes from %s", planes_path)
+        planes = load_planes_centerline(planes_path)["planes"]
+
+        layer_annotation_path = self.input()["layers"]["annotations"].path
+        L.debug("Load layer annotations from %s", layer_annotation_path)
+        layer_annotation = VoxelData.load_nrrd(layer_annotation_path)
+
+        L.debug("Plot single collage")
+        plot_collage(
+            circuit,
+            planes,
+            layer_annotation,
+            self.mtype,
+            pdf_filename=self.output().path,
+            sample=self.sample,
+            nb_jobs=self.nb_jobs,
+            joblib_verbose=self.joblib_verbose,
+            dpi=self.dpi,
+            plot_neuron_kwargs={
+                "realistic_diameters": self.realistic_diameters,
+                "linewidth": self.linewidth,
+                "diameter_scale": self.diameter_scale,
+            },
+            region=self.region,
+            hemisphere=self.hemisphere,
+            with_y_field=self.with_y_field,
+            with_cells=self.with_cells,
+        )
+
+    def output(self):
+        """ """
+        return ValidationLocalTarget(
+            (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
+        )

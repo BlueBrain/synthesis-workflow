@@ -107,7 +107,7 @@ def load_circuit(
     path_to_atlas=None,
     circuit_config=None,
 ):
-    """Loads a circuit with bluepy.v2."""
+    """Loads a circuit with bluepy."""
     if circuit_config:
         return Circuit(circuit_config)
     return Circuit(

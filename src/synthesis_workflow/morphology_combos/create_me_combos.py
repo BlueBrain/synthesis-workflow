@@ -37,7 +37,8 @@ def create_morphs_combos_df(
     """From the morphs_df, create a dataframe with all possible combos."""
     if me_types_map is None and emodel_etype_map_path is not None and recipe_path is not None:
         recipe = read_mm_recipe(recipe_path)
-        emodel_etype_map = json.load(open(emodel_etype_map_path, "rb"))
+        with open(emodel_etype_map_path, "rb") as f:
+            emodel_etype_map = json.load(f)
         me_types_map = get_me_types_map(recipe, emodel_etype_map)
 
     morphs_combos_df = pd.DataFrame()
@@ -69,12 +70,10 @@ def add_for_optimisation_flag(config_path, morphs_combos_df=None, morphs_df=None
         emodels = list(set(morphs_combos_df.emodel))
         morphs_combos_df["for_optimisation"] = False
         for emodel in emodels:
-            recipe = json.load(
-                open(
-                    config_path / _base_emodel(emodel) / "config/recipes/recipes.json",
-                    "rb",
-                )
-            )[_base_emodel(emodel)]
+            with open(
+                config_path / _base_emodel(emodel) / "config/recipes/recipes.json", "rb"
+            ) as f:
+                recipe = json.load(f)[_base_emodel(emodel)]
             opt_mask = (morphs_combos_df.emodel == emodel) & (
                 morphs_combos_df.name == Path(recipe["morphology"][0][1]).stem
             )
@@ -100,12 +99,10 @@ def add_for_optimisation_flag(config_path, morphs_combos_df=None, morphs_df=None
         if emodels is None and morphs_combos_df is None:
             raise Exception("Please provide a list of emodels for your cells")
         for emodel in emodels:
-            recipe = json.load(
-                open(
-                    config_path / _base_emodel(emodel) / "config/recipes/recipes.json",
-                    "rb",
-                )
-            )[_base_emodel(emodel)]
+            with open(
+                config_path / _base_emodel(emodel) / "config/recipes/recipes.json", "rb"
+            ) as f:
+                recipe = json.load(f)[_base_emodel(emodel)]
             morphs_df.loc[
                 (morphs_df.name == Path(recipe["morphology"][0][1]).stem),
                 "for_optimisation",
@@ -122,7 +119,8 @@ def add_for_optimisation_flag_old(config_path, morphs_combos_df=None, morphs_df=
         emodels = list(set(morphs_combos_df.emodel))
         morphs_combos_df["for_optimisation"] = False
         for emodel in emodels:
-            recipe = json.load(open(config_path / emodel / "recipes/recipes.json", "rb"))[emodel]
+            with open(config_path / emodel / "recipes/recipes.json", "rb") as f:
+                recipe = json.load(f)[emodel]
             morphs_combos_df.loc[
                 (morphs_combos_df.emodel == emodel)
                 & (morphs_combos_df.name == Path(recipe["morphology"][0][1]).stem),
@@ -144,7 +142,8 @@ def add_for_optimisation_flag_old(config_path, morphs_combos_df=None, morphs_df=
         if emodels is None and morphs_combos_df is None:
             raise Exception("Please provide a list of emodels for your cells")
         for emodel in emodels:
-            recipe = json.load(open(config_path / emodel / "recipes/recipes.json", "rb"))[emodel]
+            with open(config_path / emodel / "recipes/recipes.json", "rb") as f:
+                recipe = json.load(f)[emodel]
             morphs_df.loc[
                 (morphs_df.name == Path(recipe["morphology"][0][1]).stem),
                 "for_optimisation",
