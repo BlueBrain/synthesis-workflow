@@ -558,10 +558,10 @@
       },
       "principal_direction_extents": {
         "ref_summary_statistics": {
-          "mean": 253.2175576487396,
-          "median": 281.860465890194,
+          "mean": 253.21755764873953,
+          "median": 281.86046589019395,
           "sample_size": 7,
-          "std": 66.44416189566039
+          "std": 66.4441618956604
         },
         "statistical_tests": {
           "StatTests.ks": {
@@ -573,10 +573,10 @@
           }
         },
         "test_summary_statistics": {
-          "mean": 148.89572756125222,
+          "mean": 148.89572756125224,
           "median": 154.0945529404251,
           "sample_size": 35,
-          "std": 36.354438629112295
+          "std": 36.3544386291123
         },
         "validation_criterion": {
           "criterion": "dist",

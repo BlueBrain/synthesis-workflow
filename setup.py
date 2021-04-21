@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# JUST TESTING THE CI
-
 import imp
 import sys
 
@@ -14,50 +12,17 @@ if sys.version_info < (3, 6):
 with open("README.rst", encoding="utf-8") as f:
     README = f.read()
 
-reqs = [
-    "atlas_analysis>0.0.1",
-    "brainbuilder>=0.14",
-    "bluepyefe",
-    "bluepyopt",
-    "bluepymm",
-    "diameter_synthesis>=0.1.8",
-    "gitpython",
-    "jinja2",
-    "joblib",
-    "luigi",
-    "luigi-tools>=0.0.7",
-    "matplotlib",
-    "morph_tool>=2.3.1",
-    "morph_validator",
-    "morphio>=2.7",
-    "neuroc",
-    "neurom>=2.0.1",
-    "pandas",
-    "placement_algorithm>=2.1.2",
-    "PyYAML",
-    "region_grower>=0.1.11,<0.2",
-    "scipy",
-    "seaborn",
-    "tns>=2.3.3",
-    "tmd",
-    "tqdm",
-    "voxcell>=3",
-]
+# Read the requirements
+with open("requirements/base.pip") as f:
+    reqs = f.read().splitlines()
 
-doc_reqs = [
-    "graphviz",
-    "sphinx",
-    "sphinx-autoapi",
-    "sphinx-bluebrain-theme",
-]
+# Read the requirements for doc
+with open("requirements/doc.pip") as f:
+    doc_reqs = f.read().splitlines()
 
-test_reqs = [
-    "dir-content-diff>=0.0.2",
-    "pytest",
-    "pytest-cov",
-    "pytest-html",
-    "pytest-xdist",
-]
+# Read the requirements for tests
+with open("requirements/test.pip") as f:
+    test_reqs = f.read().splitlines()
 
 VERSION = imp.load_source("", "src/version.py").VERSION
 
@@ -79,6 +44,7 @@ setup(
     package_dir={"": "src"},
     python_requires=">=3.6",
     install_requires=reqs,
+    test_requires=test_reqs,
     extras_require={"docs": doc_reqs, "test": test_reqs},
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
@@ -88,6 +54,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     entry_points={

@@ -10,6 +10,7 @@ from collections import namedtuple
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Dict, List
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -21,18 +22,16 @@ from joblib import Parallel
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from pyquaternion import Quaternion
+from scipy.ndimage import correlate
 from scipy.optimize import fmin
 
+import neurom
 from atlas_analysis.constants import CANONICAL
 from bluepy.v2 import Circuit
-from morph_validator.feature_configs import get_feature_configs
-from morph_validator.plotting import get_features_df
-from morph_validator.plotting import plot_violin_features
-from morph_validator.spatial import relative_depth_volume
-from morph_validator.spatial import sample_morph_voxel_values
 from morphio.mut import Morphology
 from neurom import viewer
 from neurom.apps import morph_stats
+from neurom.apps.morph_stats import extract_dataframe
 from neurom.core.dataformat import COLS
 from neurom.io import load_neurons
 from region_grower.atlas_helper import AtlasHelper
@@ -79,6 +78,25 @@ def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext="asc"):
     return cells_df.drop("morphology", axis=1)
 
 
+def get_features_df(morphologies_mtypes: Dict, features_config: Dict, n_workers: int = 1):
+    """Create a feature dataframe from a dictionary of morphology_folders per mtypes.
+
+    Args:
+        morphologies_mtypes (dict): dict of morphology_folders files per mtype
+        features_config (dict): configuration dict for features extraction
+            (see ``neurom.apps.morph_stats.extract_dataframe``)
+        n_workers (int) : number of workers for feature extractions
+    """
+    features_df = pd.DataFrame()
+    for mtype, morphology_folders in morphologies_mtypes.items():
+        features_df_tmp = extract_dataframe(
+            morphology_folders, features_config, n_workers=n_workers
+        )
+        features_df_tmp["mtype"] = mtype
+        features_df = features_df.append(features_df_tmp.replace(0, np.nan))
+    return features_df
+
+
 def _get_features_df_all_mtypes(morphs_df, features_config, morphology_path):
     """Wrapper for morph-validator functions."""
     morphs_df_dict = {mtype: df[morphology_path] for mtype, df in morphs_df.groupby("mtype")}
@@ -86,6 +104,141 @@ def _get_features_df_all_mtypes(morphs_df, features_config, morphology_path):
         # Ignore some Numpy warnings
         warnings.simplefilter("ignore", category=RuntimeWarning)
         return get_features_df(morphs_df_dict, features_config, n_workers=os.cpu_count())
+
+
+def get_feature_configs(config_types="default"):
+    """Getter function of default features configs.
+
+    Currently available config_types:
+        - default
+        - repair
+        - synthesis
+
+    Args:
+        config_types (list/str): list of types of config files
+
+    """
+    CONFIG_DEFAULT = {
+        "neurite": {"total_length_per_neurite": ["total"]},
+    }
+
+    CONFIG_REPAIR = {
+        "neurite": {"total_length_per_neurite": ["total"]},
+    }
+
+    CONFIG_SYNTHESIS = {
+        "neurite": {
+            "number_of_neurites": ["total"],
+            "number_of_sections_per_neurite": ["mean"],
+            "number_of_terminations": ["total"],
+            "number_of_bifurcations": ["total"],
+            "section_lengths": ["mean"],
+            "section_radial_distances": ["mean"],
+            "section_path_distances": ["mean"],
+            "section_branch_orders": ["mean"],
+            "remote_bifurcation_angles": ["mean"],
+        },
+        "neurite_type": ["BASAL_DENDRITE", "APICAL_DENDRITE"],
+    }
+
+    if not isinstance(config_types, list):
+        config_types = [config_types]
+    features_config = {}
+    for config_type in config_types:
+
+        if config_type == "default":
+            features_config.update(CONFIG_DEFAULT)
+
+        if config_type == "repair":
+            features_config.update(CONFIG_REPAIR)
+
+        if config_type == "synthesis":
+            features_config.update(CONFIG_SYNTHESIS)
+
+    if not features_config:
+        raise Exception("No features_config could be created with " + str(config_types))
+    return features_config
+
+
+def _expand_lists(data):
+    """Convert list element of dataframe to duplicated rows with float values."""
+    data_expanded = pd.DataFrame()
+    for row_id in data.index:
+        if isinstance(data.loc[row_id, "value"], list):
+            for value in data.loc[row_id, "value"]:
+                new_row = data.loc[row_id].copy()
+                new_row["value"] = value
+                data_expanded = data_expanded.append(new_row)
+        else:
+            data_expanded = data_expanded.append(data.loc[row_id].copy())
+    return data_expanded
+
+
+def _normalize(data):
+    """Normalize data witht mean and std."""
+    if len(data) == 0:
+        return data
+    data_tmp = data.set_index(["feature", "neurite_type", "mtype"])
+    groups = data_tmp.groupby(["feature", "neurite_type", "mtype"])
+    means = groups.mean().reset_index()
+    stds = groups.std().reset_index()
+    for feat_id in means.index:
+        mask = (
+            (data.feature == means.loc[feat_id, "feature"])
+            & (data.neurite_type == means.loc[feat_id, "neurite_type"])
+            & (data.mtype == means.loc[feat_id, "mtype"])
+        )
+        data.loc[mask, "value"] = (
+            data.loc[mask, "value"] - means.loc[feat_id, "value"]
+        ) / stds.loc[feat_id, "value"]
+    return data
+
+
+def plot_violin_features(
+    features: pd.DataFrame, neurite_types: List, output_dir: Path, bw: float, normalize=True
+):
+    """Create violin plots from features dataframe.
+
+    Args:
+        features (pandas.DataFrame): features dataframe to plot
+        neurite_types (list): list of neurite types to plot (one plot per neurite_type)
+        output_dir (Path): path to folder for saving plots
+        bw (float): resolution of violins
+        normalize (bool): normalize feature values with mean/std
+    """
+    L.info("Plotting features.")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if "property" in features.columns:
+        features = features.drop(columns="property")
+    features = features.melt(var_name=["neurite_type", "feature"], id_vars=["mtype", "label"])
+    for neurite_type in neurite_types:
+        with PdfPages(output_dir / f"morphometrics_{neurite_type}.pdf") as pdf:
+            for mtype in features.mtype.unique():
+                data = features.loc[
+                    (features.mtype == mtype) & (features.neurite_type == neurite_type)
+                ].dropna()
+                data = _expand_lists(data)
+                if normalize:
+                    data = _normalize(data)
+
+                if len(data.index) > 0:
+                    plt.figure()
+                    ax = plt.gca()
+                    sns.violinplot(
+                        x="feature",
+                        y="value",
+                        hue="label",
+                        data=data,
+                        split=True,
+                        bw=bw,
+                        ax=ax,
+                        inner="quartile",
+                    )
+
+                    ax.tick_params(axis="x", rotation=90)
+                    plt.suptitle(f"mtype: {mtype}")
+                    pdf.savefig(bbox_inches="tight")
+                    plt.close()
 
 
 def plot_morphometrics(
@@ -138,6 +291,90 @@ def plot_morphometrics(
             bw=0.1,
             normalize=normalize,
         )
+
+
+def iter_positions(morph, sample_distance, neurite_filter=None):
+    """Iterator for positions in space of points every <sample_distance> um.
+
+    Assumption about segment linearity is that curvature between the start and end of segments
+    is negligible.
+
+    Args:
+        morph (neurom.FstNeuron): morphology
+        sample_distance (int): points sampling distance (in um)
+        neurite_filter: filter neurites, see ``neurite_filter`` of ``neurom.iter_sections()``
+
+    Yields:
+        sampled points for the neurites (each point is a (3,) numpy array).
+    """
+    section_offsets = {}
+
+    for section in neurom.iter_sections(morph, neurite_filter=neurite_filter):
+        if section.parent is None:
+            parent_section_offset = 0
+        else:
+            parent_section_offset = section_offsets[section.parent.id]
+        segment_offset = parent_section_offset
+        for segment in neurom.iter_segments(section):
+            segment_len = neurom.morphmath.segment_length(segment)
+            if segment_offset + segment_len < sample_distance:
+                segment_offset += segment_len
+            elif segment_offset + segment_len == sample_distance:
+                yield segment[1][COLS.XYZ]
+                segment_offset = 0
+            else:
+                offsets = np.arange(sample_distance - segment_offset, segment_len, sample_distance)
+                for offset in offsets:
+                    yield neurom.morphmath.linear_interpolate(*segment, offset / segment_len)
+                segment_offset = segment_len - offsets[-1]
+                if segment_offset == sample_distance:
+                    segment_offset = 0
+                    yield segment[1][COLS.XYZ]
+        section_offsets[section.id] = segment_offset
+
+
+def sample_morph_voxel_values(
+    morphology,
+    sample_distance,
+    voxel_data,
+    out_of_bounds_value,
+    neurite_types=None,
+):
+    """Sample the values of the neurites in the given voxeldata.
+
+    The value is out_of_bounds_value if the neurite is outside the voxeldata.
+
+    Arguments:
+        morphology (neurom.FstNeuron): cell morphology
+        sample_distance (int in um): sampling distance for neurite points
+        voxel_data (voxcell.VoxelData): volumetric data to extract values from
+        out_of_bounds_value: value to assign to neurites outside of voxeldata
+        neurite_types (list): list of neurite types, or None (will use basal and axon)
+
+    Returns:
+        dict mapping each neurite type of the morphology to the sampled values
+        {(nm.NeuriteType): np.array(...)}
+    """
+    if neurite_types is None:
+        neurite_types = [neurite.type for neurite in morphology.neurites]
+
+    output = {}
+    for neurite_type in neurite_types:
+        points = list(
+            iter_positions(
+                morphology,
+                sample_distance=sample_distance,
+                neurite_filter=lambda n, nt=neurite_type: n.type == nt,
+            )
+        )
+        indices = voxel_data.positions_to_indices(points, False)
+        out_of_bounds = np.any(indices == -1, axis=1)
+        within_bounds = ~out_of_bounds
+        values = np.zeros(len(points), dtype=voxel_data.raw.dtype)
+        values[within_bounds] = voxel_data.raw[tuple(indices[within_bounds].transpose())]
+        values[out_of_bounds] = out_of_bounds_value
+        output[neurite_type] = values
+    return output
 
 
 def _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance):
@@ -227,6 +464,64 @@ def _plot_density_profile(
         )
     fig.suptitle(mtype)
     return fig
+
+
+def _spherical_filter(radius):
+    filt_size = radius * 2 + 1
+    sphere = np.zeros((filt_size, filt_size, filt_size))
+    center = np.array([radius, radius, radius])
+    posns = np.transpose(np.nonzero(sphere == 0))
+    in_sphere = posns[np.linalg.norm(posns - center, axis=-1) <= radius]
+    sphere[tuple(in_sphere.transpose())] = 1
+    return sphere
+
+
+def relative_depth_volume(
+    atlas,
+    top_layer="1",
+    bottom_layer="6",  # pylint: disable=too-many-locals
+    in_region="Isocortex",
+    relative=True,
+):
+    """Return volumetric data of relative cortical depth at voxel centers.
+
+    The relative cortical depth is equal to <distance from pia> / <total_cortex_thickness>.
+    Outside of the region `in_region` relative depth will be estimated, i.e. extrapolated from the
+    internal relative depth.
+    The `in_region` is the region within which to use the relative depth-values outside this
+    region are estimated.
+    """
+    y = atlas.load_data("[PH]y")
+    top = atlas.load_data(f"[PH]{top_layer}").raw[..., 1]
+    bottom = atlas.load_data(f"[PH]{bottom_layer}").raw[..., 0]
+    thickness = top - bottom
+    if relative:
+        reldepth = (top - y.raw) / thickness
+    else:
+        reldepth = y.raw
+    voxel_size = y.voxel_dimensions[0]
+    region = atlas.get_region_mask(in_region).raw
+    to_filter = np.zeros(region.shape)
+    to_filter[np.logical_and(region, reldepth < 0.5)] = -1
+    to_filter[np.logical_and(region, reldepth >= 0.5)] = 1
+    max_dist = 5  # voxels
+    for voxels_distance in range(max_dist, 0, -1):
+        filt = _spherical_filter(voxels_distance)
+
+        num_voxels_in_range = correlate(to_filter, filt)
+        # we get the estimated thickness by normalizing the filtered thickness
+        # by the number of voxels that contributed
+        filtered_thickness = correlate(region * np.nan_to_num(thickness), filt) / np.abs(
+            num_voxels_in_range
+        )
+        in_range_below = np.logical_and(num_voxels_in_range > 0.5, ~region)
+        in_range_above = np.logical_and(num_voxels_in_range < -0.5, ~region)
+        max_distance_from_region = voxels_distance * voxel_size
+        reldepth[in_range_below] = 1 + (
+            max_distance_from_region / filtered_thickness[in_range_below]
+        )
+        reldepth[in_range_above] = -(max_distance_from_region / filtered_thickness[in_range_above])
+    return y.with_data(reldepth)
 
 
 def plot_density_profiles(circuit, sample, region, sample_distance, output_path, nb_jobs=-1):
@@ -928,7 +1223,7 @@ def get_scores(df1, df2, percentile=5):
                     else:
                         scores.append(0.0)
                 else:
-                    scores.append(0.0)
+                    scores.append(np.nan)
 
     return score_names, scores
 

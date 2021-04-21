@@ -92,7 +92,7 @@ class PlotMorphometrics(WorkflowTask):
     )
     config_features = luigi.DictParameter(
         default=None,
-        description=":dict: The feature from ``morph_validator.feature_configs`` to plot.",
+        description=":dict: The features to plot.",
     )
     morphometrics_path = luigi.Parameter(
         default="morphometrics",

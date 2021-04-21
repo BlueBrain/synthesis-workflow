@@ -11,7 +11,7 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
     np.random.seed(0)
 
     # Run the workflow
-    # assert luigi.build([ValidateSynthesis()], local_scheduler=True)
+    assert luigi.build([ValidateSynthesis()], local_scheduler=True)
 
     result_dir, expected_dir, small_O1 = small_O1_working_directory
 
@@ -19,7 +19,6 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
     result_dir_pattern = str(result_dir) + "/?"
 
     # Check the results
-    """
     assert_equal_trees(
         expected_dir,
         result_dir,
@@ -51,4 +50,3 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
             },
         },
     )
-    """

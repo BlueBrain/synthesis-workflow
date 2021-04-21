@@ -1,4 +1,4 @@
-diff_pdf_visually>=1.5.1
+dir-content-diff>=0.0.2
 pytest
 pytest-cov
 pytest-html

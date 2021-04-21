@@ -29,19 +29,6 @@ def export_config(params, filepath):
         params.write(configfile)
 
 
-def reset_luigi_config(filepath):
-    # Set current config in luigi
-    luigi_config = luigi.configuration.get_config()
-    luigi_config.read(filepath)
-
-    config.reset_default_prefixes()
-
-    yield luigi_config
-
-    # Reset luigi config
-    luigi_config.clear()
-
-
 @pytest.fixture
 def root_dir():
     return TEST_ROOT
@@ -100,13 +87,6 @@ def get_config_parser(cfg_path):
 
 
 @pytest.fixture
-def luigi_tools_params():
-    params = ConfigParser()
-    params.read_dict({"TaskA": {"a_cfg": "default_value_in_cfg"}})
-    return params
-
-
-@pytest.fixture
 def small_O1_params():
     return get_config_parser(DATA / "in_small_O1" / "luigi.cfg")
 
@@ -129,24 +109,6 @@ def set_param_paths(params, tmp_working_dir, atlas_path=None):
     params["PathConfig"]["local_synthesis_input_path"] = (
         tmp_working_dir / "synthesis_input"
     ).as_posix()
-
-
-@pytest.fixture
-def luigi_tools_working_directory(tmp_working_dir, luigi_tools_params):
-    # Setup config
-    params = luigi_tools_params
-
-    # Export config
-    export_config(params, "luigi.cfg")
-
-    # Set current config in luigi
-    luigi_config = luigi.configuration.get_config()
-    luigi_config.read("./luigi.cfg")
-
-    yield tmp_working_dir
-
-    # Reset luigi config
-    luigi_config.clear()
 
 
 @pytest.fixture
