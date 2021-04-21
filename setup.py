@@ -1,6 +1,6 @@
+"""Setup"""
 #!/usr/bin/env python3
-
-import imp
+import importlib
 import sys
 
 from setuptools import setup, find_packages
@@ -24,7 +24,7 @@ with open("requirements/doc.pip") as f:
 with open("requirements/test.pip") as f:
     test_reqs = f.read().splitlines()
 
-VERSION = imp.load_source("", "src/version.py").VERSION
+VERSION = importlib.import_module("src.version").VERSION
 
 setup(
     name="synthesis-workflow",
