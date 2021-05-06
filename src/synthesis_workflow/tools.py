@@ -15,7 +15,7 @@ from joblib import delayed
 from joblib import Parallel
 from joblib import cpu_count
 
-from bluepy.v2 import Circuit
+from bluepy import Circuit
 from placement_algorithm.exceptions import SkipSynthesisError
 from morph_tool.morphdb import MorphDB
 from morph_tool.utils import find_morph

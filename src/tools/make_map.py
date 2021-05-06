@@ -15,7 +15,7 @@ import matplotlib
 
 
 from synthesis_workflow.validation import plot_collage, get_layer_info
-from bluepy.v2 import Circuit
+from bluepy import Circuit
 
 matplotlib.use("Agg")
 

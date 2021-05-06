@@ -51,7 +51,7 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
     )
 
     def run(self):
-        """"""
+        """ """
         annotation, layer_mapping = get_layer_tags(CircuitConfig().atlas_path)
 
         if self.use_half:
@@ -70,7 +70,7 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         annotation_path = Path(self.layer_annotations_path)
         annotation_base_name = annotation_path.with_suffix("").name
         layer_mapping_path = annotation_path.with_name(
@@ -124,11 +124,11 @@ class CreateAtlasPlanes(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return CreateAtlasLayerAnnotations()
 
     def run(self):
-        """"""
+        """ """
         layer_annotation = VoxelData.load_nrrd(self.input()["annotations"].path)
         planes, centerline = create_planes(
             layer_annotation,
@@ -143,7 +143,7 @@ class CreateAtlasPlanes(WorkflowTask):
         save_planes_centerline(self.output().path, planes, centerline)
 
     def output(self):
-        """"""
+        """ """
         return AtlasLocalTarget(self.atlas_planes_path + ".npz")
 
 
@@ -172,11 +172,11 @@ class BuildCircuit(WorkflowTask):
     seed = luigi.IntParameter(default=None, description=":int: Pseudo-random generator seed.")
 
     def requires(self):
-        """"""
+        """ """
         return GetSynthesisInputs()
 
     def run(self):
-        """"""
+        """ """
         cell_composition_path = self.input().pathlib_path / self.cell_composition_path
         mtype_taxonomy_path = self.input().pathlib_path / self.mtype_taxonomy_path
 
@@ -197,7 +197,7 @@ class BuildCircuit(WorkflowTask):
         cells.save(self.output().path)
 
     def output(self):
-        """"""
+        """ """
         return CircuitLocalTarget(CircuitConfig().circuit_somata_path)
 
 
@@ -225,14 +225,14 @@ class SliceCircuit(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return {
             "atlas_planes": CreateAtlasPlanes(),
             "circuit": BuildCircuit(),
         }
 
     def run(self):
-        """"""
+        """ """
         planes = load_planes_centerline(self.input()["atlas_planes"].path)["planes"]
 
         _slicer = partial(
@@ -249,5 +249,5 @@ class SliceCircuit(WorkflowTask):
             raise Exception("No cells will be synthtesized, better stop here.")
 
     def output(self):
-        """"""
+        """ """
         return CircuitLocalTarget(self.sliced_circuit_path)

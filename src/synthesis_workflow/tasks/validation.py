@@ -61,11 +61,11 @@ class ConvertMvd3(WorkflowTask):
     """
 
     def requires(self):
-        """"""
+        """ """
         return Synthesize()
 
     def run(self):
-        """"""
+        """ """
         synth_morphs_df = convert_mvd3_to_morphs_df(
             self.input()["out_mvd3"].path,
             self.input()["out_morphologies"].path,
@@ -75,7 +75,7 @@ class ConvertMvd3(WorkflowTask):
         synth_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return MorphsDfLocalTarget(PathConfig().synth_morphs_df_path)
 
 
@@ -113,14 +113,14 @@ class PlotMorphometrics(WorkflowTask):
     normalize = BoolParameter(description=":bool: Normalize data if set to True.")
 
     def requires(self):
-        """"""
+        """ """
         if self.in_atlas:
             return {"morphs": BuildMorphsDF(), "mvd3": ConvertMvd3()}
         else:
             return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
 
     def run(self):
-        """"""
+        """ """
         morphs_df = pd.read_csv(self.input()["morphs"].path)
         if self.in_atlas:
             synth_morphs_df = pd.read_csv(self.input()["mvd3"].path)
@@ -142,7 +142,7 @@ class PlotMorphometrics(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.morphometrics_path)
 
 
@@ -168,14 +168,14 @@ class PlotDensityProfiles(WorkflowTask):
     in_atlas = BoolParameter(default=False, description=":bool: Trigger atlas case.")
 
     def requires(self):
-        """"""
+        """ """
         if self.in_atlas:
             return Synthesize()
         else:
             return VacuumSynthesize()
 
     def run(self):
-        """"""
+        """ """
         if self.in_atlas:
             circuit = load_circuit(
                 path_to_mvd3=self.input()["out_mvd3"].path,
@@ -200,7 +200,7 @@ class PlotDensityProfiles(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.density_profiles_path)
 
 
@@ -252,11 +252,11 @@ class PlotCollage(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return ConvertMvd3()
 
     def run(self):
-        """"""
+        """ """
         if self.mtypes is None:
             mtypes = sorted(pd.read_csv(self.input().path).mtype.unique())
         else:
@@ -276,7 +276,7 @@ class PlotCollage(WorkflowTask):
             )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.collage_base_path)
 
 
@@ -307,7 +307,7 @@ class PlotSingleCollage(WorkflowTask):
     mtype = luigi.Parameter(description=":str: The mtype to plot.")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "synthesis": Synthesize(),
             "planes": CreateAtlasPlanes(),
@@ -315,7 +315,7 @@ class PlotSingleCollage(WorkflowTask):
         }
 
     def run(self):
-        """"""
+        """ """
         mvd3_path = self.input()["synthesis"]["out_mvd3"].path
         morphologies_path = self.input()["synthesis"]["out_morphologies"].path
         atlas_path = CircuitConfig().atlas_path
@@ -355,7 +355,7 @@ class PlotSingleCollage(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(
             (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
         )
@@ -403,11 +403,11 @@ class PlotScales(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return ConvertMvd3()
 
     def run(self):
-        """"""
+        """ """
         morphs_df = pd.read_csv(self.input().path)
         if self.mtypes is None:
             mtypes = sorted(morphs_df.mtype.unique())
@@ -454,7 +454,7 @@ class PlotScales(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.scales_base_path)
 
 
@@ -484,7 +484,7 @@ class PlotPathDistanceFits(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return {
             "scaling_rules": AddScalingRulesToParameters(),
             "rescaled": ApplySubstitutionRules(),
@@ -492,7 +492,7 @@ class PlotPathDistanceFits(WorkflowTask):
         }
 
     def run(self):
-        """"""
+        """ """
 
         L.debug("output_path = %s", self.output().path)
         plot_path_distance_fits(
@@ -507,7 +507,7 @@ class PlotPathDistanceFits(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.output_path)
 
 
@@ -541,14 +541,14 @@ class MorphologyValidationReports(WorkflowTask):
     bio_compare = BoolParameter(default=False, description=":bool: Use the bio compare template.")
 
     def requires(self):
-        """"""
+        """ """
         return {
             "ref": ApplySubstitutionRules(),
             "test": ConvertMvd3(),
         }
 
     def run(self):
-        """"""
+        """ """
         L.debug("Morphology validation output path = %s", self.output().path)
 
         ref_morphs_df = pd.read_csv(self.input()["ref"].path)
@@ -590,7 +590,7 @@ class MorphologyValidationReports(WorkflowTask):
         validator.write_report(validation_report=(not self.bio_compare))
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.output_path)
 
 
@@ -625,7 +625,7 @@ class PlotScoreMatrix(WorkflowTask):
     in_atlas = BoolParameter(default=False, description=":bool: Trigger atlas case.")
 
     def requires(self):
-        """"""
+        """ """
         if self.in_atlas:
             test_task = ConvertMvd3()
         else:
@@ -636,7 +636,7 @@ class PlotScoreMatrix(WorkflowTask):
         }
 
     def run(self):
-        """"""
+        """ """
         L.debug("Score matrix output path = %s", self.output().path)
 
         ref_morphs_df = pd.read_csv(self.input()["ref"].path)
@@ -673,5 +673,5 @@ class PlotScoreMatrix(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.output_path)

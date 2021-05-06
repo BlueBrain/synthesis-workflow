@@ -65,11 +65,11 @@ class BuildMorphsDF(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return GetSynthesisInputs()
 
     def run(self):
-        """"""
+        """ """
 
         neurondb_path = find_case_insensitive_file(self.neurondb_path)
 
@@ -89,7 +89,7 @@ class BuildMorphsDF(WorkflowTask):
         morphs_df.to_csv(self.output().path)
 
     def output(self):
-        """"""
+        """ """
         return MorphsDfLocalTarget(PathConfig().morphs_df_path)
 
 
@@ -105,14 +105,14 @@ class ApplySubstitutionRules(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return {
             "synthesis_input": GetSynthesisInputs(),
             "morphs_df": BuildMorphsDF(),
         }
 
     def run(self):
-        """"""
+        """ """
         substitution_rules_path = (
             self.input()["synthesis_input"].pathlib_path / self.substitution_rules_path
         )
@@ -125,7 +125,7 @@ class ApplySubstitutionRules(WorkflowTask):
         substituted_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return MorphsDfLocalTarget(PathConfig().substituted_morphs_df_path)
 
 
@@ -148,14 +148,14 @@ class BuildSynthesisParameters(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return {
             "synthesis_input": GetSynthesisInputs(),
             "morphologies": ApplySubstitutionRules(),
         }
 
     def run(self):
-        """"""
+        """ """
         morphs_df = pd.read_csv(self.input()["morphologies"].path)
         mtypes = sorted(morphs_df.mtype.unique())
         neurite_types = get_neurite_types(morphs_df, mtypes)
@@ -188,7 +188,7 @@ class BuildSynthesisParameters(WorkflowTask):
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """"""
+        """ """
         return SynthesisLocalTarget(self.tmd_parameters_path)
 
 
@@ -205,11 +205,11 @@ class BuildSynthesisDistributions(WorkflowTask):
     """
 
     def requires(self):
-        """"""
+        """ """
         return ApplySubstitutionRules()
 
     def run(self):
-        """"""
+        """ """
         L.debug("reading morphs df from: %s", self.input().path)
         morphs_df = pd.read_csv(self.input().path)
 
@@ -237,7 +237,7 @@ class BuildSynthesisDistributions(WorkflowTask):
             json.dump(tmd_distributions, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """"""
+        """ """
         return SynthesisLocalTarget(SynthesisConfig().tmd_distributions_path)
 
 
@@ -250,7 +250,7 @@ class BuildAxonMorphsDF(BuildMorphsDF):
     )
 
     def output(self):
-        """"""
+        """ """
         return MorphsDfLocalTarget(self.axon_morphs_df_path)
 
 
@@ -319,7 +319,7 @@ class BuildAxonMorphologies(WorkflowTask):
         return (Path(self.axon_cells_path) / self.neurondb_basename).with_suffix("." + ext)
 
     def requires(self):
-        """"""
+        """ """
         tasks = {"circuit": SliceCircuit()}
 
         neurondb_path = self.get_neuron_db_path("xml")
@@ -331,7 +331,7 @@ class BuildAxonMorphologies(WorkflowTask):
         return tasks
 
     def run(self):
-        """"""
+        """ """
         if self.annotations_path is None:
             annotations_file = None
             neurondb_path = None
@@ -394,7 +394,7 @@ class BuildAxonMorphologies(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         targets = {
             "morphs": MorphsDfLocalTarget(self.axon_morphs_path),
         }
@@ -447,7 +447,7 @@ class Synthesize(WorkflowTask):
     seed = luigi.IntParameter(default=0, description=":int: Pseudo-random generator seed.")
 
     def requires(self):
-        """"""
+        """ """
 
         return {
             "substituted_cells": ApplySubstitutionRules(),
@@ -458,7 +458,7 @@ class Synthesize(WorkflowTask):
         }
 
     def run(self):
-        """"""
+        """ """
 
         axon_morphs_path = self.input()["axons"]["morphs"].path
         out_mvd3 = self.output()["out_mvd3"]
@@ -506,7 +506,7 @@ class Synthesize(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         outputs = {
             "out_mvd3": SynthesisLocalTarget(self.out_circuit_path),
             "out_morphologies": SynthesisLocalTarget(PathConfig().synth_output_path),
@@ -540,7 +540,7 @@ class AddScalingRulesToParameters(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return {
             "synthesis_input": GetSynthesisInputs(),
             "morphologies": ApplySubstitutionRules(),
@@ -548,7 +548,7 @@ class AddScalingRulesToParameters(WorkflowTask):
         }
 
     def run(self):
-        """"""
+        """ """
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
 
         if self.scaling_rules_path is not None:
@@ -572,7 +572,7 @@ class AddScalingRulesToParameters(WorkflowTask):
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """"""
+        """ """
         return SynthesisLocalTarget(self.tmd_parameters_path)
 
 
@@ -619,11 +619,11 @@ class RescaleMorphologies(WorkflowTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         return ApplySubstitutionRules()
 
     def run(self):
-        """"""
+        """ """
         morphs_df = pd.read_csv(self.input().path)
         scaling_rules = yaml.full_load(open(self.scaling_rules_path, "r"))
         rescaled_morphs_df = rescale_morphologies(
@@ -640,5 +640,5 @@ class RescaleMorphologies(WorkflowTask):
         rescaled_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """"""
+        """ """
         return MorphsDfLocalTarget(self.rescaled_morphs_df_path)

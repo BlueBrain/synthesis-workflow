@@ -46,7 +46,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         tasks = [GetSynthesisInputs()]
         if self.with_collage:
             tasks.append(PlotCollage())
@@ -85,7 +85,7 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
     )
 
     def requires(self):
-        """"""
+        """ """
         tasks = [GetSynthesisInputs()]
         if self.with_morphometrics:
             tasks.append(PlotMorphometrics(in_atlas=False))
@@ -125,12 +125,12 @@ class ValidateRescaling(WorkflowTask):
     normalize = BoolParameter(description=":bool: Normalize data if set to True.")
 
     def requires(self):
-        """"""
+        """ """
         # pylint: disable=no-self-use
         return ApplySubstitutionRules()
 
     def run(self):
-        """"""
+        """ """
         # TODO: just call the PlotMorphometrics task with correct arguments?
         base_morphs_df = pd.read_csv(self.requires().input().path)
         comp_morphs_df = pd.read_csv(self.input().path)
@@ -148,5 +148,5 @@ class ValidateRescaling(WorkflowTask):
         )
 
     def output(self):
-        """"""
+        """ """
         return ValidationLocalTarget(self.morphometrics_path)

@@ -25,11 +25,11 @@ class GitClone(WorkflowTask):
     dest = luigi.Parameter(description=":str: Path to the destination directory.")
 
     def run(self):
-        """"""
+        """ """
         Repo.clone_from(self.url, self.output().path)
 
     def output(self):
-        """"""
+        """ """
         return OutputLocalTarget(self.dest)
 
 
@@ -58,7 +58,7 @@ class GetSynthesisInputs(WorkflowTask):
     )
 
     def run(self):
-        """"""
+        """ """
         if self.url is None:
             shutil.copytree(self.git_synthesis_input_path, self.output().path)
         else:
@@ -72,7 +72,7 @@ class GetSynthesisInputs(WorkflowTask):
                 shutil.copytree(dest / self.git_synthesis_input_path, self.output().path)
 
     def output(self):
-        """"""
+        """ """
         # TODO: it would probably be better to have a specific target for each file
         return OutputLocalTarget(PathConfig().local_synthesis_input_path)
 
@@ -85,7 +85,7 @@ class CreateAnnotationsFile(WorkflowTask):
     destination = luigi.Parameter(description=":str: Path to output JSON file.")
 
     def run(self):
-        """"""
+        """ """
         # pylint: disable=protected-access
         annotations = _collect_annotations(self.annotation_dir, self.morph_db)
 
@@ -93,5 +93,5 @@ class CreateAnnotationsFile(WorkflowTask):
             json.dump(annotations, f, indent=4, sort_keys=True)
 
     def output(self):
-        """"""
+        """ """
         return OutputLocalTarget(self.destination)

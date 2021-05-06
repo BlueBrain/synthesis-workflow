@@ -27,13 +27,13 @@ from scipy.optimize import fmin
 
 import neurom
 from atlas_analysis.constants import CANONICAL
-from bluepy.v2 import Circuit
+from bluepy import Circuit
 from morphio.mut import Morphology
+from neurom import load_neurons
 from neurom import viewer
 from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.core.dataformat import COLS
-from neurom.io import load_neurons
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
 from tmd.io.io import load_population
@@ -700,7 +700,7 @@ def plot_cells(
         all_pos_final_plane_coord = np.tensordot(all_dist_plane_final, rotation_matrix.T, axes=1)
 
     for num, gid in enumerate(gids):
-        morphology = circuit.morph.get(gid, transform=True, source="ascii")
+        morphology = neurom.core.Neuron(circuit.morph.get(gid, transform=True, source="ascii"))
 
         def _to_plane_coord(p):
             return np.dot(p - plane_left.point, rotation_matrix.T)
@@ -901,8 +901,8 @@ def _get_fit_population(mtype, files, outlier_percentage, tmd_parameters, tmd_di
     x_clean, y_clean = clean_outliers(x, y, outlier_percentage)
 
     # Create synthetic neuron population
-    tmd_distributions["diameter"]["method"] = "M1"
-    tmd_parameters["diameter_params"]["method"] = "M1"
+    tmd_distributions["diameter"] = {"method": "M1"}
+    tmd_parameters["diameter_params"] = {"method": "M1"}
 
     with TemporaryDirectory() as tmpdir:
         neuron_paths, y_synth = _generate_synthetic_random_population(

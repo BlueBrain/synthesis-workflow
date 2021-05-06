@@ -5,8 +5,9 @@ import json
 from copy import deepcopy
 
 from neurom import viewer, geom, NeuriteType
-from neurom.core import Population, iter_neurites
+from neurom.core import iter_neurites
 from neurom.core.dataformat import COLS
+from neurom.core.population import Population
 from neurom.core.types import tree_type_checker as is_type
 from region_grower.utils import NumpyEncoder
 
