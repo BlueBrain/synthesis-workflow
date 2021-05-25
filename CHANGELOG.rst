@@ -4,9 +4,18 @@ Changelog
 Version 0.0.11
 --------------
 
-Improvements
-~~~~~~~~~~~~
-- Use luigi-tools>=0.0.5
+- Pin versions before moving to region-grower >= 0.2
+- Use importlib in setup.py instead of imp
+- Import morph-validator functions, fix the tests and fix dependencies
+- Create distributions for axon according to https://bbpcode.epfl.ch/code/\#/c/52107
+- Make choose_morphologies export scores
+- Add density map tool
+- Use workflow rendering functions that were transfered to luigi-tools
+- Use dir-diff-content, update to py38 and bump dependencies
+- Fix compatibility with Py38
+- Black the code with line length of 100
+- Update tox to for py36 only for linting
+- Use luigi-tools>=0.0.5 to automatically create parent directories of task targets
 
 Version 0.0.10
 --------------
@@ -96,7 +105,6 @@ Version 0.0.2
 Improvements
 ~~~~~~~~~~~~
 - Improve doc generation
-
 
 Version 0.0.1
 -------------
