@@ -36,7 +36,7 @@ from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
 from synthesis_workflow.tools import load_circuit
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
 from synthesis_workflow.validation import convert_mvd3_to_morphs_df
-from synthesis_workflow.validation import parse_log
+from synthesis_workflow.validation import get_debug_data
 from synthesis_workflow.validation import plot_collage
 from synthesis_workflow.validation import plot_density_profiles
 from synthesis_workflow.validation import plot_morphometrics
@@ -381,25 +381,16 @@ class PlotScales(WorkflowTask):
     scales_base_path = luigi.Parameter(
         default="scales", description=":str: Path to the output folder."
     )
-    log_files = luigi.OptionalParameter(
+    debug_file = luigi.OptionalParameter(
         default=None,
-        description=":str: Directory containing log files to parse.",
+        description=":str: File containing debug data.",
     )
-    neuron_type_position_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite type and position: (.*)",
-        description=":str: Regex used to find neuron type and position.",
-    )
-    default_scale_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Default barcode scale: (.*)",
-        description=":str: Regex used to find default scales.",
-    )
-    target_scale_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Target barcode scale: (.*)",
-        description=":str: Regex used to find target scales.",
-    )
-    neurite_hard_limit_regex = luigi.Parameter(
-        default=r".*\[WORKER TASK ID=([0-9]*)\] Neurite hard limit rescaling: (.*)",
-        description=":str: Regex used to find neurite hard limits.",
+    extra_stat_cols = luigi.ListParameter(
+        default=tuple(),
+        description=(
+            ":str: The extra columns that should be ploted (these columns must exist in the debug "
+            "data)."
+        ),
     )
 
     def requires(self):
@@ -414,42 +405,24 @@ class PlotScales(WorkflowTask):
         else:
             mtypes = self.mtypes
 
-        debug_scales = self.log_files
+        debug_scales = self.debug_file
         if debug_scales is None:
             debug_scales = self.requires().input()["debug_scales"].path
             if debug_scales is None:
                 raise WorkflowError(
-                    "%s task: either a 'log_files' argument must be provided, either the "
+                    "%s task: either a 'debug_file' argument must be provided, either the "
                     "'Synthesize' task must be run with 'debug_region_grower_scales' set "
                     "to a valid directory path" % self.__class__.__name__
                 )
 
         # Plot statistics
-        scale_data = parse_log(
-            debug_scales,
-            self.neuron_type_position_regex,
-            self.default_scale_regex,
-            self.target_scale_regex,
-            self.neurite_hard_limit_regex,
-        )
-        scale_data.sort_values("worker_task_id", inplace=True)
-        scale_data.set_index("worker_task_id", inplace=True)
+        scale_data, stat_cols = get_debug_data(debug_scales)
+        plotted_cols = list(self.extra_stat_cols) + stat_cols
 
-        morphs_df["x"] = morphs_df["x"].round(4)
-        morphs_df["y"] = morphs_df["y"].round(4)
-        morphs_df["z"] = morphs_df["z"].round(4)
-        scale_data["x"] = scale_data["x"].round(4)
-        scale_data["y"] = scale_data["y"].round(4)
-        scale_data["z"] = scale_data["z"].round(4)
-        failed = scale_data.loc[
-            ~scale_data.x.isin(morphs_df.x)
-            & ~scale_data.y.isin(morphs_df.y)
-            & ~scale_data.z.isin(morphs_df.z)
-        ]
-        L.info("Failed cells are %s", failed)
         plot_scale_statistics(
             mtypes,
             scale_data,
+            plotted_cols,
             output_dir=self.output().path,
         )
 

@@ -18,9 +18,6 @@ from neuroc.scale import ScaleParameters
 from neurom.core.dataformat import COLS
 from placement_algorithm.app import utils
 from placement_algorithm.app.choose_morphologies import Master as ChooseMorphologyMaster
-from placement_algorithm.app.synthesize_morphologies import (
-    Master as SynthesizeMorphologiesMaster,
-)
 from tmd.io.io import load_population
 from tns import extract_input
 from voxcell import CellCollection
@@ -302,84 +299,6 @@ def create_axon_morphologies_tsv(
             )["name"].to_list()
 
         utils.dump_morphology_list(axon_morphs, axon_morphs_path)
-
-
-def run_synthesize_morphologies(kwargs, nb_jobs=-1, debug_scales_path=None):
-    """Runs placement algorithm from python.
-
-    Args:
-        kwargs (dict): dictionary with argument from placement-algorithm CLI
-        nb_jobs (int): number of jobs
-        debug_scales_path (str): path to the directory containing the log files
-    """
-    parser_args = [
-        i.replace("-", "_")
-        for i in [
-            "mvd3",
-            "cells-path",
-            "tmd-parameters",
-            "tmd-distributions",
-            "morph-axon",
-            "base-morph-dir",
-            "atlas",
-            "atlas-cache",
-            "seed",
-            "out-mvd3",
-            "out-cells-path",
-            "out-apical",
-            "out-morph-dir",
-            "out-morph-ext",
-            "max-files-per-dir",
-            "overwrite",
-            "max-drop-ratio",
-            "scaling-jitter-std",
-            "rotational-jitter-std",
-            "no-mpi",
-            "out-apical-NRN-sections",
-            "out-apical-sections",
-        ]
-    ]
-
-    # Setup defaults
-    defaults = {
-        "atlas_cache": None,
-        "base_morph_dir": None,
-        "max_drop_ratio": 0.0,
-        "max_files_per_dir": None,
-        "morph_axon": None,
-        "mvd3": None,
-        "out_mvd3": None,
-        "out_morph_dir": "out",
-        "out_morph_ext": ["swc"],
-        "scaling_jitter_std": None,
-        "rotational_jitter_std": None,
-        "seed": 0,
-        "out-apical-NRN-sections": None,
-        "out-apical-sections": None,
-    }
-
-    if kwargs.pop("apply_jitter", False):
-        kwargs["scaling_jitter_std"] = 0.2
-        kwargs["rotational_jitter_std"] = 10
-
-    # Set logging arguments
-    logger_kwargs = None
-    if debug_scales_path is not None:
-        logger_kwargs = {
-            "log_level": logging.DEBUG,
-            "log_file": debug_scales_path,
-            "name": "region_grower",
-        }
-
-    # Run
-    run_master(
-        SynthesizeMorphologiesMaster,
-        kwargs,
-        parser_args,
-        defaults,
-        nb_jobs,
-        logger_kwargs=logger_kwargs,
-    )
 
 
 def get_target_length(soma_layer, target_layer, cortical_thicknesses):

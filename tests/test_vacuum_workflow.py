@@ -42,8 +42,6 @@ def test_ValidateVacuumSynthesis(vacuum_working_directory, data_dir):
                     }
                 }
             },
-            "validation/score_matrix_reports.pdf": {"kwargs": {"threshold": 64.5}},
-            "validation/vacuum_morphologies.pdf": {"kwargs": {"threshold": 70}},
             "synthesis/tns_input/tmd_distributions.json": {"kwargs": {"tolerance": 0.9}},
         },
     )

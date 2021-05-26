@@ -166,7 +166,7 @@ class PathConfig(luigi.Config):
     )
 
     debug_region_grower_scales_path = luigi.Parameter(
-        default="region_grower_scales_logs",
+        default="region_grower_scales.pkl",
         description=(
             ":str: Path to the log files in which the scaling factors computed in region-grower "
             "are stored."

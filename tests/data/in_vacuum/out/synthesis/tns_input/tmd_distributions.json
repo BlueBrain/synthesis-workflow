@@ -4194,13 +4194,13 @@
                         "distribution": "exponnorm",
                         "params": {
                             "a": 4.0,
-                            "loc": 2.590527376465865,
-                            "max": 9.189130783081055,
-                            "min": 2.5250375270843506,
+                            "loc": 2.5908563288801734,
+                            "max": 9.189130357830956,
+                            "min": 2.5250375906714853,
                             "num_value": 51,
-                            "scale": 0.5243706915661589
+                            "scale": 0.5243368547854691
                         },
-                        "sequential": "asymmetry_threshold"
+                        "sequential": null
                     }
                 },
                 "method": "external",
@@ -4215,7 +4215,7 @@
                             "num_value": 51.0,
                             "scale": 0.2681257128715515
                         },
-                        "sequential": "asymmetry_threshold"
+                        "sequential": null
                     }
                 },
                 "tapers": {
@@ -6284,25 +6284,25 @@
                         "distribution": "exponnorm",
                         "params": {
                             "a": 4.0,
-                            "loc": 1.7147989090530475,
-                            "max": 5.031041383743286,
-                            "min": 1.6633217334747314,
-                            "num_value": 31,
-                            "scale": 0.3027634054539657
+                            "loc": 1.749150507496415,
+                            "max": 8.11589818645372,
+                            "min": 1.799509794016765,
+                            "num_value": 40,
+                            "scale": 0.46550659780691905
                         },
-                        "sequential": "asymmetry_threshold"
+                        "sequential": null
                     },
                     "basal": {
                         "distribution": "exponnorm",
                         "params": {
-                            "a": 1.065337698997355,
-                            "loc": 3.062105615621746,
-                            "max": 7.633991980552673,
+                            "a": 1.065007332761786,
+                            "loc": 3.062202144268822,
+                            "max": 7.633991912789879,
                             "min": 2.0,
                             "num_value": 32,
-                            "scale": 1.4448868607734706
+                            "scale": 1.4450035873171894
                         },
-                        "sequential": "asymmetry_threshold"
+                        "sequential": null
                     }
                 },
                 "method": "external",
@@ -6312,11 +6312,11 @@
                         "params": {
                             "loc": -1.0,
                             "max": 1.0,
-                            "min": 0.5067883431911469,
-                            "num_value": 31.0,
-                            "scale": 0.143044114112854
+                            "min": 0.42720422297716143,
+                            "num_value": 40.0,
+                            "scale": 0.23270714282989502
                         },
-                        "sequential": "asymmetry_threshold"
+                        "sequential": null
                     },
                     "basal": {
                         "distribution": "expon_rev",
@@ -6327,7 +6327,7 @@
                             "num_value": 32.0,
                             "scale": 0.18857097625732422
                         },
-                        "sequential": "asymmetry_threshold"
+                        "sequential": null
                     }
                 },
                 "tapers": {

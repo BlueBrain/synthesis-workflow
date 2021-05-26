@@ -55,12 +55,13 @@ def _grow_morphology(
     return vacuum_synth_morphs_df
 
 
-def _external_diametrizer(neuron, model, neurite_type, diameter_params=None):
+def _external_diametrizer(neuron, neurite_type, model_all, random_generator, diameter_params=None):
     return build_diameters.build(
         neuron,
-        model,
+        model_all,
         [neurite_type],
         diameter_params,
+        random_generator,
     )
 
 

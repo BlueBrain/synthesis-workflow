@@ -43,10 +43,9 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
             "morphs_df/axon_morphs_df.csv": {
                 "kwargs": {"replace_pattern": {(data_dir_pattern, ""): ["path", "clone_path"]}}
             },
-            "synthesis/apical_points.yaml": {"kwargs": {"tolerance": 1e-9}},
             "synthesis/tns_input/tmd_distributions.json": {"kwargs": {"tolerance": 0.85}},
             "validation/morphology_validation_reports/validation_results.json": {
-                "kwargs": {"tolerance": 1e-3}
+                "kwargs": {"tolerance": 2e-3}
             },
         },
     )

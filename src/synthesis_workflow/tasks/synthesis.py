@@ -10,6 +10,7 @@ import yaml
 
 import morphio
 from diameter_synthesis.build_models import build as build_diameter_models
+from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import NumpyEncoder
 from tns import extract_input
 
@@ -20,7 +21,6 @@ from synthesis_workflow.synthesis import create_axon_morphologies_tsv
 from synthesis_workflow.synthesis import get_axon_base_dir
 from synthesis_workflow.synthesis import get_neurite_types
 from synthesis_workflow.synthesis import rescale_morphologies
-from synthesis_workflow.synthesis import run_synthesize_morphologies
 from synthesis_workflow.tasks.circuit import SliceCircuit
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import DiametrizerConfig
@@ -444,6 +444,23 @@ class Synthesize(WorkflowTask):
     apply_jitter = BoolParameter(
         default=False, description=":bool: Apply jitter to all sections of axons."
     )
+    scaling_jitter_std = luigi.NumericalParameter(
+        default=0.2,
+        var_type=float,
+        min_value=0,
+        max_value=float("inf"),
+        left_op=luigi.parameter.operator.lt,
+        description=":float: The std value of the scaling jitter to apply.",
+    )
+    rotational_jitter_std = luigi.NumericalParameter(
+        default=10,
+        var_type=float,
+        min_value=0,
+        max_value=180,
+        left_op=luigi.parameter.operator.lt,
+        right_op=luigi.parameter.operator.le,
+        description=":float: The std value of the scaling jitter to apply (in degrees).",
+    )
     seed = luigi.IntParameter(default=0, description=":int: Pseudo-random generator seed.")
 
     def requires(self):
@@ -482,28 +499,34 @@ class Synthesize(WorkflowTask):
 
         L.debug("axon_morphs_base_dir = %s", axon_morphs_base_dir)
 
-        # Build arguments for placement_algorithm.synthesize_morphologies.Master
+        # Build arguments for region_grower.synthesize_morphologies.SynthesizeMorphologies
         kwargs = {
-            "cells_path": self.input()["circuit"].path,
+            "input_cells": self.input()["circuit"].path,
             "tmd_parameters": self.input()["tmd_parameters"].path,
             "tmd_distributions": self.input()["tmd_distributions"].path,
             "atlas": CircuitConfig().atlas_path,
-            "out_cells_path": out_mvd3.path,
+            "out_cells": out_mvd3.path,
             "out_apical": out_apical_points.path,
             "out_morph_ext": [str(self.ext)],
             "out_morph_dir": out_morphologies.path,
             "overwrite": True,
-            "no_mpi": True,
-            "morph-axon": axon_morphs_path,
-            "base-morph-dir": axon_morphs_base_dir,
+            "with_mpi": False,
+            "morph_axon": axon_morphs_path,
+            "base_morph_dir": axon_morphs_base_dir,
             "max_drop_ratio": self.max_drop_ratio,
-            "apply_jitter": self.apply_jitter,
             "seed": self.seed,
+            "nb_processes": self.nb_jobs,
         }
 
-        run_synthesize_morphologies(
-            kwargs, nb_jobs=self.nb_jobs, debug_scales_path=debug_scales_path
-        )
+        if self.apply_jitter:
+            kwargs["scaling_jitter_std"] = self.scaling_jitter_std
+            kwargs["rotational_jitter_std"] = self.rotational_jitter_std
+
+        if debug_scales_path is not None:
+            kwargs["out_debug_data"] = debug_scales_path
+
+        synthesizer = SynthesizeMorphologies(**kwargs)
+        synthesizer.synthesize()
 
     def output(self):
         """ """

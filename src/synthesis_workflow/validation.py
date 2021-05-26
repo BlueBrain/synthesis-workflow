@@ -1,9 +1,7 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
 import json
-import glob
 import logging
 import os
-import re
 import warnings
 from collections import defaultdict
 from collections import namedtuple
@@ -650,12 +648,13 @@ def get_y_info(atlas, plane_origin, rotation_matrix, n_pixels=64):
     X = np.repeat(xs_plane.reshape((1, -1)), n_pixels, axis=0).T
     Y = np.repeat(ys_plane.reshape((1, -1)), n_pixels, axis=0)
     rot_T = rotation_matrix.T
+
     for i, x_plane in enumerate(xs_plane):
         for j, y_plane in enumerate(ys_plane):
-            # transform plane coordinates into real coordinates (coordinates of VoxelData)
+            # Transform plane coordinates into real coordinates (coordinates of VoxelData)
             point = rot_T.dot([x_plane, 0, 0]) + rot_T.dot([0, y_plane, 0]) + plane_origin
             try:
-                orientation = atlas.lookup_orientation(point)
+                orientation = np.dot(atlas.orientations.lookup(point), [0, 1, 0])[0]
                 if orientation[0] != 0.0 and orientation[1] != 1.0:
                     orientation_u[i, j], orientation_v[i, j] = rotation_matrix.dot(orientation)[:2]
             except VoxcellError:
@@ -1012,109 +1011,59 @@ def plot_path_distance_fits(
             plt.close(fig)
 
 
-def parse_log(
-    log_file,
-    neuron_type_position_regex,
-    default_scale_regex,
-    target_scale_regex,
-    neurite_hard_limit_regex,
-):
+def get_debug_data(log_file):
     """Parse log file and return a DataFrame with data."""
-    # pylint: disable=too-many-locals
-
-    def _search(pattern, line, data):
-        group = re.search(pattern, line)
-        if group:
-            groups = group.groups()
-            new_data = json.loads(groups[1])
-            new_data["worker_task_id"] = int(groups[0])
-            data.append(new_data)
-
-    # List log files
-    log_files = glob.glob(log_file + "/*")
-
-    # Read log file
-    all_lines = []
-    for file in log_files:
-        with open(file) as f:
-            lines = f.readlines()
-            all_lines.extend(lines)
-
-    # Get data from log
-    neuron_type_position_data = []
-    default_scale_data = []
-    target_scale_data = []
-    neurite_hard_limit_data = []
-    for line in all_lines:
-        _search(neuron_type_position_regex, line, neuron_type_position_data)
-        _search(default_scale_regex, line, default_scale_data)
-        _search(target_scale_regex, line, target_scale_data)
-        _search(neurite_hard_limit_regex, line, neurite_hard_limit_data)
-    # Format data
-    neuron_type_position_df = pd.DataFrame(neuron_type_position_data)
-    default_scale_df = pd.DataFrame(default_scale_data)
-    target_scale_df = pd.DataFrame(target_scale_data)
-    neurite_hard_limit_df = pd.DataFrame(neurite_hard_limit_data)
-
-    def _pos_to_xyz(df, drop=True):
-        df[["x", "y", "z"]] = pd.DataFrame(df["position"].values.tolist(), index=df.index)
-        if drop:
-            df.drop(columns=["position"], inplace=True)
-
-    # Format positions
-    _pos_to_xyz(neuron_type_position_df)
-
-    def _compute_min_max_scales(df, key, name_min, name_max):
-        groups = df.groupby("worker_task_id")
-        neurite_hard_min = groups[key].min().rename(name_min).reset_index()
-        neurite_hard_max = groups[key].max().rename(name_max).reset_index()
-        return neurite_hard_min, neurite_hard_max
+    # Get data
+    df = pd.read_pickle(log_file)
 
     # Compute min/max hard limit scales
-    neurite_hard_min, neurite_hard_max = _compute_min_max_scales(
-        neurite_hard_limit_df, "scale", "hard_min_scale", "hard_max_scale"
+    hard_scales = df["debug_infos"].apply(
+        lambda row: [i["scale"] for i in row.get("neurite_hard_limit_rescaling", {}).values()]
     )
-    default_min, default_max = _compute_min_max_scales(
-        default_scale_df, "scaling_ratio", "default_min_scale", "default_max_scale"
+    neurite_hard_min = hard_scales.apply(lambda row: min(row) if row else None)
+    neurite_hard_max = hard_scales.apply(lambda row: max(row) if row else None)
+
+    default_scales = df["debug_infos"].apply(
+        lambda row: [
+            i["scaling_ratio"]
+            for i in row.get("input_scaling", {}).get("default_func", {}).get("scaling", {})
+        ]
     )
-    target_min, target_max = _compute_min_max_scales(
-        target_scale_df, "scaling_ratio", "target_min_scale", "target_max_scale"
+    default_min = default_scales.apply(lambda row: min(row) if row else None)
+    default_max = default_scales.apply(lambda row: max(row) if row else None)
+
+    target_scales = df["debug_infos"].apply(
+        lambda row: [
+            i["scaling_ratio"]
+            for i in row.get("input_scaling", {}).get("target_func", {}).get("scaling", {})
+        ]
     )
+    target_min = target_scales.apply(lambda row: min(row) if row else None)
+    target_max = target_scales.apply(lambda row: max(row) if row else None)
 
     # Merge data
-    result_data = neuron_type_position_df
-    result_data = result_data.merge(
-        default_min, how="left", on="worker_task_id", suffixes=("", "_default_min")
-    )
-    result_data = result_data.merge(
-        default_max, how="left", on="worker_task_id", suffixes=("", "_default_max")
-    )
-    result_data = result_data.merge(
-        target_min, how="left", on="worker_task_id", suffixes=("", "_target_min")
-    )
-    result_data = result_data.merge(
-        target_max, how="left", on="worker_task_id", suffixes=("", "_target_max")
-    )
-    result_data = result_data.merge(
-        neurite_hard_min,
-        how="left",
-        on="worker_task_id",
-        suffixes=("", "_hard_limit_min"),
-    )
-    return result_data.merge(
-        neurite_hard_max,
-        how="left",
-        on="worker_task_id",
-        suffixes=("", "_hard_limit_max"),
-    )
+    stat_cols = {
+        "min_hard_scale": neurite_hard_min,
+        "max_hard_scale": neurite_hard_max,
+        "min_default_scale": default_min,
+        "max_default_scale": default_max,
+        "min_target_scale": target_min,
+        "max_target_scale": target_max,
+    }
+
+    for col, vals in stat_cols.items():
+        df[col] = vals
+
+    return df, list(stat_cols.keys())
 
 
-def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
+def plot_scale_statistics(mtypes, scale_data, cols, output_dir="scales", dpi=100):
     """Plot collage of an mtype and a list of planes.
 
     Args:
         mtypes (list): mtypes of cells to plot
-        scale_data (dict): dicto od DataFrame(s) with scale data
+        scale_data (pd.DataFrame): DataFrame with scale data
+        cols (list): The column names that should be plotted from the data
         output_dir (str): result directory
         dpi (int): resolution of the output image
     """
@@ -1141,10 +1090,8 @@ def plot_scale_statistics(mtypes, scale_data, output_dir="scales", dpi=100):
         if mtypes is None:
             mtypes = sorted(scale_data["mtype"].unique())
 
-        for col in scale_data.drop(
-            columns=["worker_task_id", "mtype", "x", "y", "z"], errors="ignore"
-        ).columns:
-            fig = plt.figure(figsize=(10, 20))
+        for col in cols:
+            fig = plt.figure()
             ax = plt.gca()
             scale_data.loc[scale_data["mtype"].isin(mtypes), ["mtype", col]].boxplot(
                 by="mtype", vert=False, ax=ax
