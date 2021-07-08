@@ -1,5 +1,3 @@
-global-exclude *.py[co] .DS_Store
-
 include src/version.py
 include src/morphval/templates/*
 include src/synthesis_workflow/defaults/*
