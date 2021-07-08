@@ -4,6 +4,7 @@ ignore=version.py
 [MESSAGES CONTROL]
 disable=
 	bad-continuation,
+	duplicate-code,
 	empty-docstring,
 	fixme,
 	invalid-name,

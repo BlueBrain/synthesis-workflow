@@ -37,7 +37,7 @@ setup(
     url="https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow",
     project_urls={
         "Tracker": "https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues",
-        "Source": "ssh://bbpcode.epfl.ch/cells/synthesis-workflow",
+        "Source": "https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow",
     },
     license="BBP-internal-confidential",
     packages=find_packages("src", exclude=["tests"]),

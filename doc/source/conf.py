@@ -46,6 +46,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
+    "m2r2",
 ]
 
 autoapi_dirs = [
