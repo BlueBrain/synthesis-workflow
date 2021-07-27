@@ -8,31 +8,31 @@ from collections import namedtuple
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, List
+from typing import Dict
+from typing import List
 
 import matplotlib
 import matplotlib.pyplot as plt
+import neurom
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from joblib import delayed
+from bluepy import Circuit
 from joblib import Parallel
+from joblib import delayed
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
-from pyquaternion import Quaternion
-from scipy.ndimage import correlate
-from scipy.optimize import fmin
-
-import neurom
-from bluepy import Circuit
 from morphio.mut import Morphology
 from neurom import load_neurons
 from neurom import viewer
 from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.core.dataformat import COLS
+from pyquaternion import Quaternion
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
+from scipy.ndimage import correlate
+from scipy.optimize import fmin
 from tmd.io.io import load_population
 from tns import NeuronGrower
 from voxcell import CellCollection
@@ -40,12 +40,11 @@ from voxcell import VoxelData
 
 from synthesis_workflow.circuit import get_cells_between_planes
 from synthesis_workflow.fit_utils import clean_outliers
-from synthesis_workflow.fit_utils import get_path_distances
 from synthesis_workflow.fit_utils import get_path_distance_from_extent
+from synthesis_workflow.fit_utils import get_path_distances
 from synthesis_workflow.fit_utils import get_projections
 from synthesis_workflow.tools import ensure_dir
 from synthesis_workflow.utils import DisableLogger
-
 
 L = logging.getLogger(__name__)
 matplotlib.use("Agg")

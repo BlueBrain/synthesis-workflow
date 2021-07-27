@@ -1,13 +1,13 @@
 """Functions for slicing mvd3 circuit files to place specific cells only."""
 import logging
+
+import numpy as np
 import pandas as pd
+from atlas_analysis.planes.planes import create_planes as _create_planes
+from brainbuilder.app.cells import _place as place
 from tqdm import tqdm
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import LocalAtlas
-import numpy as np
-
-from atlas_analysis.planes.planes import create_planes as _create_planes
-from brainbuilder.app.cells import _place as place
 
 L = logging.getLogger(__name__)
 LEFT = 0

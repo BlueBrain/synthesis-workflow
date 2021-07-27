@@ -1,13 +1,13 @@
 """
 Tests for the morphval package.
 """
-import pkg_resources
 from pathlib import Path
+
+import pkg_resources
 
 import morphval
 import morphval.config
 import morphval.validation_main
-
 
 _distribution = pkg_resources.get_distribution("synthesis-workflow")
 DATA = Path(__file__).parent / "data"

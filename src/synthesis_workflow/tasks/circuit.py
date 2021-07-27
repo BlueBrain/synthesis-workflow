@@ -1,33 +1,32 @@
 """Luigi tasks for circuit and atlas processings."""
 from functools import partial
 from pathlib import Path
-import yaml
 
 import luigi
-
-from voxcell import VoxelData
-from voxcell.nexus.voxelbrain import LocalAtlas
+import yaml
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
+from voxcell import VoxelData
+from voxcell.nexus.voxelbrain import LocalAtlas
 
 from synthesis_workflow.circuit import build_circuit
 from synthesis_workflow.circuit import circuit_slicer
+from synthesis_workflow.circuit import create_atlas_thickness_mask
 from synthesis_workflow.circuit import create_planes
 from synthesis_workflow.circuit import get_centerline_bounds
 from synthesis_workflow.circuit import halve_atlas
 from synthesis_workflow.circuit import slice_circuit
-from synthesis_workflow.circuit import create_atlas_thickness_mask
 from synthesis_workflow.tasks.config import AtlasLocalTarget
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import CircuitLocalTarget
 from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.utils import GetSynthesisInputs
 from synthesis_workflow.tools import get_layer_tags
 

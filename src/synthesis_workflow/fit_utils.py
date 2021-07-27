@@ -1,9 +1,10 @@
 """Some functions used to fit path distances with depth."""
-from typing import Tuple, Sequence
+from typing import Sequence
+from typing import Tuple
 
 import numpy as np
-from scipy.optimize import curve_fit
 import tmd
+from scipy.optimize import curve_fit
 from tmd.Population.Population import Population
 
 

@@ -5,10 +5,9 @@ from functools import partial
 from pathlib import Path
 
 import luigi
+import morphio
 import pandas as pd
 import yaml
-
-import morphio
 from diameter_synthesis.build_models import build as build_diameter_models
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import NumpyEncoder
@@ -30,15 +29,14 @@ from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.utils import CreateAnnotationsFile
 from synthesis_workflow.tasks.utils import GetSynthesisInputs
 from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
-
 
 morphio.set_maximum_warnings(0)
 

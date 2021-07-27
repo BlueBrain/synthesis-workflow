@@ -1,9 +1,10 @@
-import pytest
 from copy import deepcopy
 
-from morphval import validation
+import pytest
 from neurom import stats
 from neurom.core.types import NeuriteType
+
+from morphval import validation
 
 
 @pytest.fixture

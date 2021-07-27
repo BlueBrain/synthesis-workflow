@@ -1,9 +1,9 @@
-"""Setup"""
-#!/usr/bin/env python3
+"""Setup for the synthesis-workflow package."""
 import importlib
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from setuptools import setup
 
 if sys.version_info < (3, 6):
     sys.exit("Sorry, Python < 3.6 is not supported")

@@ -4,9 +4,8 @@ from collections import namedtuple
 from decimal import Decimal
 
 import numpy as np
-
-from neurom import stats
 from neurom import get
+from neurom import stats
 from neurom.core.types import NeuriteType
 
 DICTDATA = dict.fromkeys(["name", "data_type", "data", "labels"])

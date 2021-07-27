@@ -1,30 +1,34 @@
-[MASTER]
-ignore=version.py
+# BLACK
+[tool.black]
+line-length = 100
+target-version = ["py36"]
 
-[MESSAGES CONTROL]
-disable=
-	bad-continuation,
-	duplicate-code,
-	empty-docstring,
-	fixme,
-	invalid-name,
-	len-as-condition,
-	no-else-return,
-	no-member,
-	too-many-ancestors,
-	too-many-lines,
-    unsubscriptable-object,
+# PYLINT
+[tool.pylint.messages-control]
+disable=[
+	"bad-continuation",
+	"duplicate-code",
+	"empty-docstring",
+	"fixme",
+	"invalid-name",
+	"len-as-condition",
+	"no-else-return",
+	"no-member",
+	"too-many-ancestors",
+	"too-many-lines",
+    "unsubscriptable-object",
+]
 
-[FORMAT]
+[tool.pylint.format]
 # Maximum number of characters on a single line.
 max-line-length=100
 
-[DESIGN]
+[tool.pylint.design]
 # Maximum number of arguments for function / method
 max-args=10
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore
-ignored-argument-names=args|kwargs|_.*
+ignored-argument-names="args|kwargs|_.*"
 # Maximum number of locals for function / method body
 max-locals=25
 # Maximum number of return / yield for function / method body
@@ -34,37 +38,47 @@ max-branches=20
 # Maximum number of statements in function / method body
 max-statements=60
 # Maximum number of parents for a class (see R0901).
-max-parents=7
+max-parents=10
 # Maximum number of attributes for a class (see R0902).
 max-attributes=40
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=0
 # Maximum number of public methods for a class (see R0904).
 max-public-methods=60
-# checks for similarities and duplicated code. This computation may be
-# memory / CPU intensive, so you should disable it if you experiments some
-# problems.
-#
 
-[SIMILARITIES]
+[tool.pylint.similarities]
 # Minimum lines number of a similarity.
 min-similarity-lines=25
 # Ignore comments when computing similarities.
-ignore-comments=yes
+ignore-comments=true
 # Ignore docstrings when computing similarities.
-ignore-docstrings=yes
+ignore-docstrings=true
 
-[TYPECHECK]
-# List of classes names for which member attributes should not be checked
-# (useful for classes with attributes dynamically set).
-
-#as of numpy 1.8.0, name resolution seems to be a problem.  Ignore lookups in numpy
-ignored-classes=numpy,list
-
-extension-pkg-whitelist=numpy,lxml
+[tool.pylint.typecheck]
+extension-pkg-whitelist = ["numpy", "lxml"]
 
 # List of module names for which member attributes should not be checked
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis. It
 # supports qualified module names, as well as Unix pattern matching.
-ignored-modules=atlas_analysis,atlas_analysis.constants
+ignored-modules=["atlas_analysis", "atlas_analysis.constants"]
+
+# PYDOCSTYLE
+[tool.pydocstyle]
+# ignore the following:
+#   - D102: Missing docstring in public method
+#   - D105: Missing docstring in magic method
+#   - D107: Missing docstring in __init__
+add-ignore = [
+	"D102",
+	"D105",
+	"D107",
+]
+convention = "google"
+
+# ISORT
+[tool.isort]
+line_length = 100
+profile = "black"
+force_single_line = true
+

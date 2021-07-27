@@ -8,7 +8,6 @@ from synthesis_workflow.tasks.luigi_tools import ExtParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalIntParameter
 from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
 
-
 # Add some warning filters
 warnings.filterwarnings("ignore", module="diameter_synthesis.build_diameters")
 warnings.filterwarnings("ignore", module="joblib")

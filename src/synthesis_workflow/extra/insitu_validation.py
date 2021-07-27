@@ -1,20 +1,21 @@
 """In-situ validation functions for synthesis in atlas."""
 from pathlib import Path
-from tqdm import tqdm
+
+import matplotlib
+import matplotlib.pyplot as plt
+import neurom as nm
 import numpy as np
 import pandas as pd
-
-import matplotlib.pyplot as plt
-import matplotlib
-from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
-
-from morphio import Morphology, SectionType
-import neurom as nm
+from bluepyparallel import evaluate
+from bluepyparallel import init_parallel_factory
+from matplotlib.backends.backend_pdf import PdfPages
+from morphio import Morphology
+from morphio import SectionType
+from region_grower.atlas_helper import AtlasHelper
+from tqdm import tqdm
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
-from region_grower.atlas_helper import AtlasHelper
-from bluepyparallel import evaluate, init_parallel_factory
 
 from synthesis_workflow.tools import get_layer_tags
 

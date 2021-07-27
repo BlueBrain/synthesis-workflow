@@ -11,14 +11,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from joblib import delayed
+from bluepy import Circuit
 from joblib import Parallel
 from joblib import cpu_count
-
-from bluepy import Circuit
-from placement_algorithm.exceptions import SkipSynthesisError
+from joblib import delayed
 from morph_tool.morphdb import MorphDB
 from morph_tool.utils import find_morph
+from placement_algorithm.exceptions import SkipSynthesisError
 from voxcell import VoxelData
 from voxcell.nexus.voxelbrain import LocalAtlas
 

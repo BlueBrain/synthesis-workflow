@@ -1,9 +1,9 @@
 """Functions to create and mofify combos dataframe."""
-from pathlib import Path
 import json
 import logging
-import pandas as pd
+from pathlib import Path
 
+import pandas as pd
 from bluepymm.prepare_combos.parse_files import read_mm_recipe
 
 L = logging.getLogger(__name__)

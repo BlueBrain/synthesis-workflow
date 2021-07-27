@@ -8,24 +8,22 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pandas as pd
-from joblib import delayed
 from joblib import Parallel
-from tqdm import tqdm
-
+from joblib import delayed
 from morphio.mut import Morphology
-from neuroc.scale import scale_section
 from neuroc.scale import ScaleParameters
+from neuroc.scale import scale_section
 from neurom.core.dataformat import COLS
 from placement_algorithm.app import utils
 from placement_algorithm.app.choose_morphologies import Master as ChooseMorphologyMaster
 from tmd.io.io import load_population
 from tns import extract_input
+from tqdm import tqdm
 from voxcell import CellCollection
 
 from synthesis_workflow import STR_TO_TYPES
 from synthesis_workflow.fit_utils import fit_path_distance_to_extent
 from synthesis_workflow.tools import run_master
-
 
 L = logging.getLogger(__name__)
 matplotlib.use("Agg")

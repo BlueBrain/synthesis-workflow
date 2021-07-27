@@ -9,9 +9,8 @@ import pkg_resources
 import yaml
 from atlas_analysis.planes.planes import load_planes_centerline
 from neurom.view import view
-from voxcell import VoxelData
 from voxcell import CellCollection
-
+from voxcell import VoxelData
 
 from morphval import validation_main as morphval_validation
 from synthesis_workflow.tasks.circuit import CreateAtlasLayerAnnotations
@@ -24,12 +23,12 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import ValidationConfig
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.luigi_tools import OptionalNumericalParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import WorkflowError
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import WorkflowWrapperTask
+from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.synthesis import AddScalingRulesToParameters
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
 from synthesis_workflow.tasks.synthesis import BuildMorphsDF
@@ -38,6 +37,8 @@ from synthesis_workflow.tasks.synthesis import Synthesize
 from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
 from synthesis_workflow.tools import load_circuit
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
+from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
+from synthesis_workflow.validation import VacuumCircuit
 from synthesis_workflow.validation import convert_mvd3_to_morphs_df
 from synthesis_workflow.validation import get_debug_data
 from synthesis_workflow.validation import plot_collage
@@ -46,9 +47,6 @@ from synthesis_workflow.validation import plot_morphometrics
 from synthesis_workflow.validation import plot_path_distance_fits
 from synthesis_workflow.validation import plot_scale_statistics
 from synthesis_workflow.validation import plot_score_matrix
-from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
-from synthesis_workflow.validation import VacuumCircuit
-
 
 L = logging.getLogger(__name__)
 

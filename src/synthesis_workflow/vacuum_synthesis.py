@@ -4,22 +4,20 @@ from functools import partial
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from diameter_synthesis import build_diameters
+from joblib import Parallel
 from joblib import cpu_count
 from joblib import delayed
-from joblib import Parallel
 from matplotlib.backends.backend_pdf import PdfPages
-from tqdm import tqdm
-
 from morphio.mut import Morphology
 from neurom import load_neuron
 from neurom import viewer
 from tns import NeuronGrower
-from diameter_synthesis import build_diameters
+from tqdm import tqdm
 
 from synthesis_workflow import STR_TO_TYPES
 from synthesis_workflow.synthesis import get_max_len
 from synthesis_workflow.utils import DisableLogger
-
 
 VACUUM_SYNTH_MORPHOLOGY_PATH = "vacuum_synth_morphologies"
 

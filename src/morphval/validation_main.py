@@ -9,13 +9,12 @@ import neurom
 import numpy as np
 import pandas as pd
 import pkg_resources
-from joblib import delayed
 from joblib import Parallel
 from joblib import cpu_count
+from joblib import delayed
 
 from morphval import common
 from morphval import validation
-
 
 TEMPLATE_FILE = pkg_resources.resource_filename("morphval", "templates/report_template.jinja2")
 SUMMARY_TEMPLATE_FILE = pkg_resources.resource_filename(

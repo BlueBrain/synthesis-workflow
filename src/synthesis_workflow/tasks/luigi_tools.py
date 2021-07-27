@@ -3,7 +3,6 @@
 import logging
 
 import luigi
-
 from luigi_tools import task
 from luigi_tools.parameter import BoolParameter
 from luigi_tools.parameter import ExtParameter
@@ -14,11 +13,10 @@ from luigi_tools.parameter import OptionalParameter
 from luigi_tools.parameter import OptionalRatioParameter
 from luigi_tools.parameter import RatioParameter
 from luigi_tools.target import OutputLocalTarget
-from luigi_tools.task import copy_params
 from luigi_tools.task import ParamRef
 from luigi_tools.task import WorkflowWrapperTask
+from luigi_tools.task import copy_params
 from luigi_tools.util import WorkflowError
-
 
 L = logging.getLogger(__name__)
 

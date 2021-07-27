@@ -1,12 +1,11 @@
 """Make a atlas map from scatter data."""
 from copy import copy
-from pyquaternion import Quaternion
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 
 import matplotlib
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from pyquaternion import Quaternion
 
 from synthesis_workflow.validation import get_annotation_info
 

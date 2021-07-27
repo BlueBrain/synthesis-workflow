@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """CLI for MorphVal package."""
 import argparse
+
 import pkg_resources
 
-from morphval.validation_main import Validation
 from morphval import config
+from morphval.validation_main import Validation
 
 
 def get_parser():

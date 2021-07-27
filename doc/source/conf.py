@@ -14,16 +14,15 @@
 
 import importlib
 import re
-from pkg_resources import get_distribution
 
 import luigi
+from pkg_resources import get_distribution
 
 import morphval
 import synthesis_workflow
 import synthesis_workflow.tasks
 from synthesis_workflow.tasks.cli import _PARAM_NO_VALUE
 from synthesis_workflow.tasks.cli import _process_param
-
 
 # -- Project information -----------------------------------------------------
 

@@ -16,7 +16,6 @@ import synthesis_workflow
 from synthesis_workflow.tasks import workflows
 from synthesis_workflow.utils import setup_logging
 
-
 L = logging.getLogger(__name__)
 
 

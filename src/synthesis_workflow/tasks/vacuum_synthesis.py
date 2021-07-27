@@ -11,15 +11,14 @@ from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.config import ValidationLocalTarget
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
 from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
+from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
 from synthesis_workflow.vacuum_synthesis import grow_vacuum_morphologies
 from synthesis_workflow.vacuum_synthesis import plot_vacuum_morphologies
-from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
-
 
 morphio.set_maximum_warnings(0)
 

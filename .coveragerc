@@ -1,0 +1,8 @@
+[paths]
+source_synthesis =
+	src/synthesis_workflow
+	*/site-packages/synthesis_workflow
+
+source_morphval =
+	src/morphval
+	*/site-packages/morphval

@@ -1,22 +1,21 @@
 """Private helper functions of the validation module."""
 import contextlib
-import os
 import json
+import os
 from copy import deepcopy
 
-from neurom import viewer, geom, NeuriteType
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from neurom import NeuriteType
+from neurom import geom
+from neurom import viewer
 from neurom.core.dataformat import COLS
 from neurom.core.neuron import iter_neurites
 from neurom.core.population import Population
 from neurom.core.types import tree_type_checker as is_type
 from region_grower.utils import NumpyEncoder
-
-import numpy as np
-
-from matplotlib import pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
-
 
 COMP_MAP = {
     "basal_dendrite": NeuriteType.basal_dendrite,
