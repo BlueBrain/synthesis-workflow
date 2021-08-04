@@ -55,7 +55,7 @@ BASAL_DATA: &basal_data
   number_of_bifurcations:
     <<: *default
     threshold: 0.47863
-  number_of_terminations:
+  number_of_leaves:
     <<: *default
     threshold: 0.51282
   section_tortuosity:
@@ -116,7 +116,7 @@ APICAL_DATA: &apical_data
   number_of_bifurcations:
     <<: *default
     threshold: 0.39031
-  number_of_terminations:
+  number_of_leaves:
     <<: *default
     threshold: 0.39031
   section_tortuosity:
@@ -174,7 +174,7 @@ AXON_DATA: &axon_data
   number_of_bifurcations:
     <<: *default
     threshold: 0.62536
-  number_of_terminations:
+  number_of_leaves:
     <<: *default
     threshold: 0.62536
   section_tortuosity:

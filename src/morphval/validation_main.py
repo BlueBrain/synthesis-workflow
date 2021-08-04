@@ -148,8 +148,8 @@ def validate_feature(
     mtype, config, output_dir, ref_files, test_files, cell_figure_count, notebook=False
 ):
     """Validate one feature."""
-    ref_population = neurom.load_neurons(ref_files, cache=True)
-    test_population = neurom.load_neurons(test_files, cache=True)
+    ref_population = neurom.load_morphologies(ref_files, cache=True)
+    test_population = neurom.load_morphologies(test_files, cache=True)
 
     morphometrics, result_mtype = do_validation(config, ref_population, test_population)
 

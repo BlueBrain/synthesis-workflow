@@ -10,8 +10,8 @@ from joblib import cpu_count
 from joblib import delayed
 from matplotlib.backends.backend_pdf import PdfPages
 from morphio.mut import Morphology
-from neurom import load_neuron
-from neurom import viewer
+from neurom import load_morphology
+from neurom.view import matplotlib_impl
 from tns import NeuronGrower
 from tqdm import tqdm
 
@@ -123,8 +123,8 @@ def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_filename, morphology_pa
             plt.figure()
             ax = plt.gca()
             for gid in vacuum_synth_morphs_df[vacuum_synth_morphs_df.mtype == mtype].index:
-                morphology = load_neuron(vacuum_synth_morphs_df.loc[gid, morphology_path])
-                viewer.plot_neuron(ax, morphology, plane="zy")
+                morphology = load_morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
+                matplotlib_impl.plot_morph(morphology, ax, plane="zy")
                 morph = Morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
                 for neurite in morph.root_sections:
                     if neurite.type == STR_TO_TYPES["apical"]:

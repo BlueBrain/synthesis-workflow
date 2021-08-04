@@ -16,7 +16,7 @@ from diameter_synthesis.plotting import plot_distribution_fit
 from joblib import Parallel
 from joblib import delayed
 from morphio.mut import Morphology
-from neurom import load_neurons
+from neurom import load_morphologies
 from tqdm import tqdm
 
 from synthesis_workflow.tasks.config import DiametrizerConfig
@@ -37,7 +37,9 @@ def _build_diameter_model(
     mtype, morphs_df=None, config_model=None, morphology_path="morphology_path"
 ):
     """Internal model builder for parallelisation."""
-    morphologies = load_neurons(morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
+    morphologies = load_morphologies(
+        morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
+    )
     return mtype, build_diameter_model(morphologies, config_model, with_data=True)
 
 
@@ -104,7 +106,7 @@ class BuildDiameterModels(WorkflowTask):
                 models_params[mtype] = params
                 models_data[mtype] = data
         else:
-            morphologies = load_neurons(morphs_df[self.morphology_path].to_list())
+            morphologies = load_morphologies(morphs_df[self.morphology_path].to_list())
             models_params["all"], models_data["all"] = build_model(
                 morphologies, config_model, with_data=True
             )

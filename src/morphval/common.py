@@ -10,11 +10,12 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from neurom import NeuriteType
 from neurom import geom
-from neurom import viewer
 from neurom.core.dataformat import COLS
-from neurom.core.neuron import iter_neurites
+from neurom.core.morphology import iter_neurites
 from neurom.core.population import Population
 from neurom.core.types import tree_type_checker as is_type
+from neurom.view import matplotlib_impl
+from neurom.view import matplotlib_utils
 from region_grower.utils import NumpyEncoder
 
 COMP_MAP = {
@@ -111,7 +112,7 @@ def get_agg_fig():
 
 def center_population(population):
     """Return a new population where all cells have been translated to their soma origins."""
-    morphs = [geom.transform.translate(n, -np.asarray(n.soma.center)) for n in population]
+    morphs = [geom.transform.translate(n, -1 * np.asarray(n.soma.center)) for n in population]
     return Population(morphs, name=population.name)
 
 
@@ -168,7 +169,9 @@ def plot_population(output_dir, population, xlim, ylim, notebook_desc=None):
     with pyplot_non_interactive():
         for morph in add_progress_bar(population, "-- {}", notebook_desc):
             try:
-                fig, ax = viewer.draw(morph, diameter_scale=None)
+                fig, ax = matplotlib_utils.get_figure()
+                matplotlib_impl.plot_morph(morph, ax, diameter_scale=None)
+                matplotlib_utils.plot_style(fig=fig, ax=ax)
                 ax.set_xlim(xlim)
                 ax.set_ylim(ylim)
                 file_name = os.path.join(output_dir, morph.name + ".png")

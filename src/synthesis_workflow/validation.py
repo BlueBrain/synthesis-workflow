@@ -23,11 +23,11 @@ from joblib import delayed
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from morphio.mut import Morphology
-from neurom import load_neurons
-from neurom import viewer
+from neurom import load_morphologies
 from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.core.dataformat import COLS
+from neurom.view import matplotlib_impl
 from pyquaternion import Quaternion
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
@@ -115,19 +115,19 @@ def get_feature_configs(config_types="default"):
 
     """
     CONFIG_DEFAULT = {
-        "neurite": {"total_length_per_neurite": ["total"]},
+        "neurite": {"total_length_per_neurite": ["sum"]},
     }
 
     CONFIG_REPAIR = {
-        "neurite": {"total_length_per_neurite": ["total"]},
+        "neurite": {"total_length_per_neurite": ["sum"]},
     }
 
     CONFIG_SYNTHESIS = {
         "neurite": {
-            "number_of_neurites": ["total"],
+            "number_of_neurites": ["sum"],
             "number_of_sections_per_neurite": ["mean"],
-            "number_of_terminations": ["total"],
-            "number_of_bifurcations": ["total"],
+            "number_of_leaves": ["sum"],
+            "number_of_bifurcations": ["sum"],
             "section_lengths": ["mean"],
             "section_radial_distances": ["mean"],
             "section_path_distances": ["mean"],
@@ -700,7 +700,7 @@ def plot_cells(
     all_pos_final_plane_coord = np.tensordot(all_dist_plane_final, rotation_matrix.T, axes=1)
 
     for num, gid in enumerate(gids):
-        morphology = neurom.core.Neuron(circuit.morph.get(gid, transform=True, source="ascii"))
+        morphology = neurom.core.Morphology(circuit.morph.get(gid, transform=True, source="ascii"))
 
         def _to_plane_coord(p):
             return np.dot(p - plane_left.point, rotation_matrix.T)
@@ -714,7 +714,7 @@ def plot_cells(
             c="0.5",
             lw=0.1,
         )
-        viewer.plot_neuron(ax, morphology, plane="xy", **plot_neuron_kwargs)
+        matplotlib_impl.plot_morph(morphology, ax, plane="xy", **plot_neuron_kwargs)
 
 
 def _get_region_mask(region, atlas, hemisphere=None):
@@ -1231,8 +1231,8 @@ def compute_scores(ref, test, config):
     test_mtype, test_files = test
     assert ref_mtype == test_mtype, "The mtypes of ref and test files must be the same."
 
-    ref_pop = load_neurons(ref_files)
-    test_pop = load_neurons(test_files)
+    ref_pop = load_morphologies(ref_files)
+    test_pop = load_morphologies(test_files)
 
     ref_features = morph_stats.extract_dataframe(ref_pop, config)
     test_features = morph_stats.extract_dataframe(test_pop, config)

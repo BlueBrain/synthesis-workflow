@@ -24,7 +24,7 @@ matplotlib.use("Agg")
 
 def _extent_function(row):
     """Inner function to compute the max extent of dendrites."""
-    neuron = nm.load_neuron(row["path"])
+    neuron = nm.load_morphology(row["path"])
     a = nm.get("max_radial_distance", neuron, neurite_type=nm.NeuriteType.basal_dendrite)
     b = nm.get("max_radial_distance", neuron, neurite_type=nm.NeuriteType.apical_dendrite)
     return {"extent": max(a, b)}

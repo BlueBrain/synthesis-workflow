@@ -117,7 +117,7 @@
           "value": 0.24
         }
       },
-      "partition": {
+      "bifurcation_partitions": {
         "ref_summary_statistics": {
           "mean": 2.5571739807033924,
           "median": 1.6666666666666667,
@@ -527,7 +527,7 @@
           "value": 0.11428571428571428
         }
       },
-      "partition": {
+      "bifurcation_partitions": {
         "ref_summary_statistics": {
           "mean": 2.3755952380952383,
           "median": 1.342857142857143,

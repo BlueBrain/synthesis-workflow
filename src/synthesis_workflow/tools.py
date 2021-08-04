@@ -17,7 +17,6 @@ from joblib import cpu_count
 from joblib import delayed
 from morph_tool.morphdb import MorphDB
 from morph_tool.utils import find_morph
-from placement_algorithm.exceptions import SkipSynthesisError
 from voxcell import VoxelData
 from voxcell.nexus.voxelbrain import LocalAtlas
 
@@ -278,8 +277,6 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
                             i.setLevel(handler_levels[i])
 
         return res
-    except SkipSynthesisError:
-        return _id, None
     except Exception:  # pylint: disable=broad-except
 
         exception = "".join(traceback.format_exception(*sys.exc_info()))

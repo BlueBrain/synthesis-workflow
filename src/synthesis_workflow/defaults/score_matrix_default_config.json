@@ -7,7 +7,7 @@
             "mean",
             "sum"
         ],
-        "number_of_terminations": [
+        "number_of_leaves": [
             "sum"
         ],
         "partition_asymmetry": [

@@ -8,7 +8,7 @@ import pandas as pd
 import pkg_resources
 import yaml
 from atlas_analysis.planes.planes import load_planes_centerline
-from neurom.view import view
+from neurom.view import matplotlib_impl
 from voxcell import CellCollection
 from voxcell import VoxelData
 
@@ -244,7 +244,7 @@ class PlotCollage(WorkflowTask):
         description=":float: Linewidth used by NeuroM to plot neurons.",
     )
     diameter_scale = OptionalNumericalParameter(
-        default=view._DIAMETER_SCALE,  # pylint: disable=protected-access
+        default=matplotlib_impl._DIAMETER_SCALE,  # pylint: disable=protected-access
         var_type=float,
         min_value=0,
         max_value=float("inf"),
@@ -697,7 +697,7 @@ class PlotCollageFromCircuit(WorkflowWrapperTask):
         description=":float: Linewidth used by NeuroM to plot neurons.",
     )
     diameter_scale = OptionalNumericalParameter(
-        default=view._DIAMETER_SCALE,  # pylint: disable=protected-access
+        default=matplotlib_impl._DIAMETER_SCALE,  # pylint: disable=protected-access
         var_type=float,
         min_value=0,
         max_value=float("inf"),

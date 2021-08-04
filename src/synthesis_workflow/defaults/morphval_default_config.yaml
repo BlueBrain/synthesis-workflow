@@ -12,7 +12,7 @@ BASAL_DATA: &basal_data
     criterion: 'dist'
   local_bifurcation_angles: *default
   remote_bifurcation_angles: *default
-  partition: *default
+  bifurcation_partitions: *default
   section_branch_orders: *default
   section_path_distances: *default
   section_radial_distances: *default

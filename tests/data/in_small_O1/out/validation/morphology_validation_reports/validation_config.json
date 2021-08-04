@@ -25,7 +25,7 @@
         "stat_test": "StatTests.ks",
         "threshold": 0.1
       },
-      "partition": {
+      "bifurcation_partitions": {
         "bins": 40,
         "criterion": "dist",
         "stat_test": "StatTests.ks",
@@ -113,7 +113,7 @@
         "stat_test": "StatTests.ks",
         "threshold": 0.1
       },
-      "partition": {
+      "bifurcation_partitions": {
         "bins": 40,
         "criterion": "dist",
         "stat_test": "StatTests.ks",
