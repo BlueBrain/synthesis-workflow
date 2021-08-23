@@ -16,6 +16,7 @@ disable=[
 	"no-member",
 	"too-many-ancestors",
 	"too-many-lines",
+	"unspecified-encoding",
     "unsubscriptable-object",
 ]
 

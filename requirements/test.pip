@@ -3,3 +3,7 @@ pytest
 pytest-cov
 pytest-html
 pytest-xdist
+
+# Pin versions for tests
+matplotlib<3.5
+seaborn==0.11.1
