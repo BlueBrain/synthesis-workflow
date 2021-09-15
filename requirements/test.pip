@@ -1,4 +1,4 @@
-dir-content-diff>=0.0.2
+dir-content-diff>=0.2
 pytest
 pytest-cov
 pytest-html

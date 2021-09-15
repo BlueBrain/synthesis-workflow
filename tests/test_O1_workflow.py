@@ -24,28 +24,33 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
         result_dir,
         specific_args={
             "morphs_df/synth_morphs_df.csv": {
-                "kwargs": {"replace_pattern": {(result_dir_pattern, ""): ["synth_morphology_path"]}}
+                "format_data_kwargs": {
+                    "replace_pattern": {(result_dir_pattern, ""): ["synth_morphology_path"]}
+                }
             },
             "morphs_df/substituted_morphs_df.csv": {
-                "kwargs": {
+                "format_data_kwargs": {
                     "replace_pattern": {
                         (data_dir_pattern, ""): ["path", "repaired_morphology_path"]
                     }
                 }
             },
             "morphs_df/morphs_df.csv": {
-                "kwargs": {
+                "format_data_kwargs": {
                     "replace_pattern": {
                         (data_dir_pattern, ""): ["path", "repaired_morphology_path"]
                     }
                 }
             },
             "morphs_df/axon_morphs_df.csv": {
-                "kwargs": {"replace_pattern": {(data_dir_pattern, ""): ["path", "clone_path"]}}
+                "format_data_kwargs": {
+                    "replace_pattern": {(data_dir_pattern, ""): ["path", "clone_path"]}
+                }
             },
-            "synthesis/tns_input/tmd_distributions.json": {"kwargs": {"tolerance": 0.85}},
-            "validation/morphology_validation_reports/validation_results.json": {
-                "kwargs": {"tolerance": 2e-3}
+            "synthesis/tns_input/tmd_distributions.json": {
+                "tolerance": 2e-3,
+                "absolute_tolerance": 1e-15,
             },
+            "validation/morphology_validation_reports/validation_results.json": {"tolerance": 2e-3},
         },
     )
