@@ -30,6 +30,7 @@ def add_mtype_taxonomy(morphs_df, mtype_taxonomy):
         morphs_df (pandas.DataFrame): the morphs_df DataFrame
         mtype_taxonomy (pandas.DataFrame): with columns mtype and mClass
     """
+    morphs_df = morphs_df[morphs_df["mtype"].isin(mtype_taxonomy.mtype)]
     morphs_df["morph_class"] = morphs_df["mtype"].map(
         lambda mtype: mtype_taxonomy.loc[mtype_taxonomy.mtype == mtype, "mClass"].to_list()[0]
     )

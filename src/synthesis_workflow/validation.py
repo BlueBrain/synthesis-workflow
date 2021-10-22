@@ -496,6 +496,8 @@ def relative_depth_volume(
     else:
         reldepth = y.raw
     voxel_size = y.voxel_dimensions[0]
+    if in_region is None:
+        raise Exception("in_region should not be None")
     region = atlas.get_region_mask(in_region).raw
     to_filter = np.zeros(region.shape)
     to_filter[np.logical_and(region, reldepth < 0.5)] = -1

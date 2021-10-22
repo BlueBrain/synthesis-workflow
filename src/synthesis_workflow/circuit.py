@@ -92,6 +92,7 @@ def build_circuit(
     density_factor=0.01,
     mask=None,
     seed=None,
+    region=None,
 ):
     """Builds a new circuit by calling ``brainbuilder.app.cells._place``.
 
@@ -108,7 +109,7 @@ def build_circuit(
         atlas_url=atlas_path,
         mini_frequencies_path=None,
         atlas_cache=None,
-        region=None,
+        region=region,
         mask_dset=mask,
         density_factor=density_factor,
         soma_placement="basic",

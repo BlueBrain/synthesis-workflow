@@ -23,6 +23,7 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalPathParameter
+from synthesis_workflow.tasks.luigi_tools import OptionalStrParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import PathParameter
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
@@ -129,6 +130,10 @@ class CreateAtlasPlanes(WorkflowTask):
 
     def run(self):
         """ """
+
+        if self.plane_count < 1:
+            raise Exception("Number of planes should be larger than one")
+
         layer_annotation = VoxelData.load_nrrd(self.input()["annotations"].path)
 
         atlas = LocalAtlas(CircuitConfig().atlas_path)
@@ -176,6 +181,7 @@ class BuildCircuit(WorkflowTask):
         default=None, description=":str: Path to save thickness mask (NCx only)."
     )
     seed = luigi.IntParameter(default=None, description=":int: Pseudo-random generator seed.")
+    region = OptionalStrParameter(default=None, description=":str: Region to use.")
 
     def requires(self):
         """ """
@@ -199,6 +205,7 @@ class BuildCircuit(WorkflowTask):
             self.density_factor,
             mask=thickness_mask_path,
             seed=self.seed,
+            region=self.region,
         )
         cells.save(self.output().path)
 
@@ -252,7 +259,7 @@ class SliceCircuit(WorkflowTask):
         cells = slice_circuit(self.input()["circuit"].path, self.output().path, _slicer)
 
         if len(cells.index) == 0:
-            raise Exception("No cells will be synthtesized, better stop here.")
+            raise Exception("No cells will be synthesized, better stop here.")
 
     def output(self):
         """ """
