@@ -126,7 +126,7 @@ def find_case_insensitive_file(path):
     """Helper function to find a file ignoring case."""
 
     def either(c):
-        return "[%s%s]" % (c.lower(), c.upper()) if c.isalpha() else c
+        return f"[{c.lower()}{c.upper()}]" if c.isalpha() else c
 
     # Return the exact path if it exists
     exact_path = Path(path)

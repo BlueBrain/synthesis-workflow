@@ -12,6 +12,7 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.luigi_tools import ParamRef
+from synthesis_workflow.tasks.luigi_tools import PathParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
@@ -43,7 +44,7 @@ class VacuumSynthesize(WorkflowTask):
         default=VACUUM_SYNTH_MORPHOLOGY_PATH,
         description="Name of the column in the morphs_df.csv file.",
     )
-    vacuum_synth_morphs_df_path = luigi.Parameter(
+    vacuum_synth_morphs_df_path = PathParameter(
         default="vacuum_synth_morphs_df.csv",
         description="Path to the morphs_df.csv file.",
     )
@@ -108,7 +109,7 @@ class PlotVacuumMorphologies(WorkflowTask):
         vacuum_synth_morphology_path (str): Column name to use from the morphlogy DataFrame.
     """
 
-    pdf_filename = luigi.Parameter(
+    pdf_filename = PathParameter(
         default="vacuum_morphologies.pdf", description=":str: Path to the output file."
     )
 

@@ -47,7 +47,7 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
                     "replace_pattern": {(data_dir_pattern, ""): ["path", "clone_path"]}
                 }
             },
-            "synthesis/tns_input/tmd_distributions.json": {
+            "synthesis/neurots_input/tmd_distributions.json": {
                 "tolerance": 2e-3,
                 "absolute_tolerance": 1e-15,
             },

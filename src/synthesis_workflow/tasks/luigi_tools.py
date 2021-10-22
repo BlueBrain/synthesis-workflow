@@ -10,7 +10,9 @@ from luigi_tools.parameter import OptionalFloatParameter
 from luigi_tools.parameter import OptionalIntParameter
 from luigi_tools.parameter import OptionalNumericalParameter
 from luigi_tools.parameter import OptionalParameter
+from luigi_tools.parameter import OptionalPathParameter
 from luigi_tools.parameter import OptionalRatioParameter
+from luigi_tools.parameter import PathParameter
 from luigi_tools.parameter import RatioParameter
 from luigi_tools.target import OutputLocalTarget
 from luigi_tools.task import ParamRef

@@ -1,6 +1,5 @@
 """Luigi tasks for circuit and atlas processings."""
 from functools import partial
-from pathlib import Path
 
 import luigi
 import yaml
@@ -23,7 +22,9 @@ from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
+from synthesis_workflow.tasks.luigi_tools import OptionalPathParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
+from synthesis_workflow.tasks.luigi_tools import PathParameter
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import copy_params
@@ -34,7 +35,7 @@ from synthesis_workflow.tools import get_layer_tags
 class CreateAtlasLayerAnnotations(WorkflowTask):
     """Create the annotation file for layers from an atlas."""
 
-    layer_annotations_path = luigi.Parameter(
+    layer_annotations_path = PathParameter(
         default="layer_annotation.nrrd",
         description=":str: Path to save layer annotations constructed from atlas.",
     )
@@ -67,13 +68,12 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
 
     def output(self):
         """ """
-        annotation_path = Path(self.layer_annotations_path)
-        annotation_base_name = annotation_path.with_suffix("").name
-        layer_mapping_path = annotation_path.with_name(
+        annotation_base_name = self.layer_annotations_path.stem
+        layer_mapping_path = self.layer_annotations_path.with_name(
             annotation_base_name + "_layer_mapping"
         ).with_suffix(".yaml")
         return {
-            "annotations": AtlasLocalTarget(annotation_path),
+            "annotations": AtlasLocalTarget(self.layer_annotations_path),
             "layer_mapping": AtlasLocalTarget(layer_mapping_path),
         }
 
@@ -115,7 +115,7 @@ class CreateAtlasPlanes(WorkflowTask):
         default=0,
         description=":str: (only for plane_type = aligned) Axis along which to create planes.",
     )
-    atlas_planes_path = luigi.Parameter(
+    atlas_planes_path = PathParameter(
         default="atlas_planes", description=":str: Path to save atlas planes."
     )
     region = luigi.Parameter(default=None, description=":str: Name of region to consider")
@@ -163,7 +163,7 @@ class BuildCircuit(WorkflowTask):
         mtype_taxonomy_path (str): Path to the taxonomy file (TSV).
     """
 
-    cell_composition_path = luigi.Parameter(
+    cell_composition_path = PathParameter(
         default="cell_composition.yaml",
         description=":str: Path to the cell composition file (YAML).",
     )
@@ -172,7 +172,7 @@ class BuildCircuit(WorkflowTask):
         left_op=luigi.parameter.operator.lt,
         description=":float: The density of positions generated from the atlas.",
     )
-    mask_path = luigi.Parameter(
+    mask_path = OptionalPathParameter(
         default=None, description=":str: Path to save thickness mask (NCx only)."
     )
     seed = luigi.IntParameter(default=None, description=":int: Pseudo-random generator seed.")
@@ -190,7 +190,7 @@ class BuildCircuit(WorkflowTask):
         if self.mask_path is not None:
             thickness_mask = create_atlas_thickness_mask(CircuitConfig().atlas_path)
             thickness_mask.save_nrrd(self.mask_path)
-            thickness_mask_path = Path(self.mask_path).stem
+            thickness_mask_path = self.mask_path.stem
 
         cells = build_circuit(
             cell_composition_path,
@@ -217,7 +217,7 @@ class SliceCircuit(WorkflowTask):
         mtypes (list): List of mtypes to consider.
     """
 
-    sliced_circuit_path = luigi.Parameter(
+    sliced_circuit_path = PathParameter(
         default="sliced_circuit_somata.mvd3",
         description=":str: Path to save sliced circuit somata mvd3.",
     )

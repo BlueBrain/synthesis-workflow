@@ -25,6 +25,7 @@ from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalNumericalParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
+from synthesis_workflow.tasks.luigi_tools import PathParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowError
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import WorkflowWrapperTask
@@ -95,7 +96,7 @@ class PlotMorphometrics(WorkflowTask):
         default=None,
         description=":dict: The features to plot.",
     )
-    morphometrics_path = luigi.Parameter(
+    morphometrics_path = PathParameter(
         default="morphometrics",
         description=":str: Path to output directory (relative from ``PathConfig.result_path``).",
     )
@@ -159,7 +160,7 @@ class PlotDensityProfiles(WorkflowTask):
         nb_jobs (int) : Number of joblib workers.
     """
 
-    density_profiles_path = luigi.Parameter(
+    density_profiles_path = PathParameter(
         default="density_profiles.pdf", description=":str: Path for pdf file."
     )
     sample_distance = luigi.FloatParameter(
@@ -227,7 +228,7 @@ class PlotCollage(WorkflowTask):
         sample (float): Number of cells to use, if None, all available.
     """
 
-    collage_base_path = luigi.Parameter(
+    collage_base_path = PathParameter(
         default="collages", description=":str: Path to the output folder."
     )
     dpi = luigi.IntParameter(default=100, description=":int: Dpi for pdf rendering (rasterized).")
@@ -379,7 +380,7 @@ class PlotScales(WorkflowTask):
         mtypes (list(str)): Mtypes to plot.
     """
 
-    scales_base_path = luigi.Parameter(
+    scales_base_path = PathParameter(
         default="scales", description=":str: Path to the output folder."
     )
     debug_file = luigi.OptionalParameter(
@@ -411,9 +412,9 @@ class PlotScales(WorkflowTask):
             debug_scales = self.requires().input()["debug_scales"].path
             if debug_scales is None:
                 raise WorkflowError(
-                    "%s task: either a 'debug_file' argument must be provided, either the "
-                    "'Synthesize' task must be run with 'debug_region_grower_scales' set "
-                    "to a valid directory path" % self.__class__.__name__
+                    f"{self.__class__.__name__} task: either a 'debug_file' argument must be "
+                    "provided, either the 'Synthesize' task must be run with "
+                    "'debug_region_grower_scales' set to a valid directory path"
                 )
 
         # Plot statistics
@@ -450,7 +451,7 @@ class PlotPathDistanceFits(WorkflowTask):
         nb_jobs (int): Number of jobs.
     """
 
-    output_path = luigi.Parameter(
+    output_path = PathParameter(
         default="path_distance_fit.pdf", description=":str: Path to the output file."
     )
     outlier_percentage = luigi.IntParameter(
@@ -505,7 +506,7 @@ class MorphologyValidationReports(WorkflowTask):
             ":str: Path to the configuration file. Use default configuration if not provided."
         ),
     )
-    output_path = luigi.Parameter(
+    output_path = PathParameter(
         default="morphology_validation_reports",
         description=":str: Path to the output file.",
     )
@@ -593,8 +594,9 @@ class PlotScoreMatrix(WorkflowTask):
             ":str: Path to the configuration file. Use default configuration if not provided."
         ),
     )
-    output_path = luigi.Parameter(
-        default="score_matrix_reports.pdf", description=":str: Path to the output file."
+    output_path = PathParameter(
+        default="score_matrix_reports.pdf",
+        description=":str: Path to the output file.",
     )
     in_atlas = BoolParameter(default=False, description=":bool: Trigger atlas case.")
 
@@ -680,7 +682,7 @@ class PlotCollageFromCircuit(WorkflowWrapperTask):
         sample (float): Number of cells to use, if None, all available.
     """
 
-    collage_base_path = luigi.Parameter(
+    collage_base_path = PathParameter(
         default="collages", description=":str: Path to the output folder."
     )
     dpi = luigi.IntParameter(default=100, description=":int: Dpi for pdf rendering (rasterized).")

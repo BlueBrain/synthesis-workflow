@@ -28,13 +28,13 @@ from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.core.dataformat import COLS
 from neurom.view import matplotlib_impl
+from neurots import NeuronGrower
 from pyquaternion import Quaternion
 from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
 from scipy.ndimage import correlate
 from scipy.optimize import fmin
 from tmd.io.io import load_population
-from tns import NeuronGrower
 from voxcell import CellCollection
 from voxcell import VoxelData
 

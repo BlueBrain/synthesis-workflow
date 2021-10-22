@@ -14,10 +14,10 @@ from morphio.mut import Morphology
 from neuroc.scale import ScaleParameters
 from neuroc.scale import scale_section
 from neurom.core.dataformat import COLS
+from neurots import extract_input
 from placement_algorithm.app import utils
 from placement_algorithm.app.choose_morphologies import Master as ChooseMorphologyMaster
 from tmd.io.io import load_population
-from tns import extract_input
 from tqdm import tqdm
 from voxcell import CellCollection
 
@@ -250,9 +250,9 @@ def create_axon_morphologies_tsv(
         "morphdb_path": morphdb_path is not None,
     }
     if any(check_placement_params.values()) and not all(check_placement_params.values()):
+        _params = [k for k in check_placement_params if k != "morphs_df_path"]
         raise ValueError(
-            "Either 'morphs_df_path' or all the following parameter should be None: %s"
-            % [k for k in check_placement_params if k != "morphs_df_path"]
+            f"Either 'morphs_df_path' or all the following parameter should be None: {_params}"
         )
 
     if all(check_placement_params.values()):

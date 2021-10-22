@@ -36,7 +36,7 @@ def extract_hist(data, bins=20):
     """
     bin_data, edges = np.histogram(data, bins, normed=True)
 
-    edges_centers = [float(Decimal("%.2f" % e)) for e in list((edges[1:] + edges[:-1]) / 2)]
+    edges_centers = [float(Decimal(f"{e:.2f}")) for e in list((edges[1:] + edges[:-1]) / 2)]
 
     return list(bin_data), list(edges_centers)
 

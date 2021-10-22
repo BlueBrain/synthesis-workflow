@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore", module="scipy")
 # Disable some loggers
 logging.getLogger("matplotlib").propagate = False
 logging.getLogger("numexpr").propagate = False
-logging.getLogger("tns").propagate = False
+logging.getLogger("neurots").propagate = False
 
 
 class DiametrizerConfig(luigi.Config):
@@ -81,11 +81,11 @@ class SynthesisConfig(luigi.Config):
     """Synthesis global configuration."""
 
     tmd_parameters_path = luigi.Parameter(
-        default="tns_input/tmd_parameters.json",
+        default="neurots_input/tmd_parameters.json",
         description=":str: The path to the TMD parameters.",
     )
     tmd_distributions_path = luigi.Parameter(
-        default="tns_input/tmd_distributions.json",
+        default="neurots_input/tmd_distributions.json",
         description=":str: The path to the TMD distributions.",
     )
     cortical_thickness = luigi.ListParameter(
@@ -202,31 +202,11 @@ class ValidationLocalTarget(OutputLocalTarget):
 def reset_default_prefixes():
     """Set default output paths for targets."""
     OutputLocalTarget.set_default_prefix(PathConfig().result_path)
-    AtlasLocalTarget.set_default_prefix(
-        # pylint: disable=protected-access
-        OutputLocalTarget._prefix
-        / PathConfig().atlas_subpath
-    )
-    CircuitLocalTarget.set_default_prefix(
-        # pylint: disable=protected-access
-        OutputLocalTarget._prefix
-        / PathConfig().circuit_subpath
-    )
-    MorphsDfLocalTarget.set_default_prefix(
-        # pylint: disable=protected-access
-        OutputLocalTarget._prefix
-        / PathConfig().morphs_df_subpath
-    )
-    SynthesisLocalTarget.set_default_prefix(
-        # pylint: disable=protected-access
-        OutputLocalTarget._prefix
-        / PathConfig().synthesis_subpath
-    )
-    ValidationLocalTarget.set_default_prefix(
-        # pylint: disable=protected-access
-        OutputLocalTarget._prefix
-        / PathConfig().validation_subpath
-    )
+    AtlasLocalTarget.set_default_prefix(PathConfig().atlas_subpath)
+    CircuitLocalTarget.set_default_prefix(PathConfig().circuit_subpath)
+    MorphsDfLocalTarget.set_default_prefix(PathConfig().morphs_df_subpath)
+    SynthesisLocalTarget.set_default_prefix(PathConfig().synthesis_subpath)
+    ValidationLocalTarget.set_default_prefix(PathConfig().validation_subpath)
 
 
 reset_default_prefixes()

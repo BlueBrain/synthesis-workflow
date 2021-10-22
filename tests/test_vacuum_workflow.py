@@ -42,7 +42,7 @@ def test_ValidateVacuumSynthesis(vacuum_working_directory, data_dir):
                     }
                 }
             },
-            "synthesis/tns_input/tmd_distributions.json": {
+            "synthesis/neurots_input/tmd_distributions.json": {
                 "tolerance": 2e-3,
                 "absolute_tolerance": 1e-15,
             },

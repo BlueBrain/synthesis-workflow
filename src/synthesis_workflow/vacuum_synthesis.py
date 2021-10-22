@@ -12,7 +12,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from morphio.mut import Morphology
 from neurom import load_morphology
 from neurom.view import matplotlib_impl
-from tns import NeuronGrower
+from neurots import NeuronGrower
 from tqdm import tqdm
 
 from synthesis_workflow import STR_TO_TYPES

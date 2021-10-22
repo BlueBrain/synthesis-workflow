@@ -21,3 +21,11 @@ include:
 .tox-template:
   # Using the same image as DVF
   image: docker-registry-default.ocp.bbp.epfl.ch/bbp-ou-cells/data-validation-framework:latest
+
+py37:
+  tags:
+    - c8r16
+
+py38:
+  tags:
+    - c8r16

@@ -9,9 +9,9 @@ import morphio
 import pandas as pd
 import yaml
 from diameter_synthesis.build_models import build as build_diameter_models
+from neurots import extract_input
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import NumpyEncoder
-from tns import extract_input
 
 from synthesis_workflow.synthesis import add_scaling_rules_to_parameters
 from synthesis_workflow.synthesis import apply_substitutions
@@ -29,7 +29,9 @@ from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
+from synthesis_workflow.tasks.luigi_tools import OptionalPathParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
+from synthesis_workflow.tasks.luigi_tools import PathParameter
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import copy_params
@@ -83,6 +85,10 @@ class BuildMorphsDF(WorkflowTask):
 
         # Remove duplicated morphologies in L23
         morphs_df.drop_duplicates(subset=["name"], inplace=True)
+
+        # Only use wanted mtypes
+        if SynthesisConfig().mtypes is not None:
+            morphs_df = morphs_df[morphs_df.mtype.isin(SynthesisConfig().mtypes)]
 
         morphs_df.to_csv(self.output().path)
 
@@ -242,7 +248,7 @@ class BuildSynthesisDistributions(WorkflowTask):
 class BuildAxonMorphsDF(BuildMorphsDF):
     """Generate the list of axon morphologies with their mtypes and paths."""
 
-    axon_morphs_df_path = luigi.Parameter(
+    axon_morphs_df_path = PathParameter(
         default="axon_morphs_df.csv",
         description=":str: Path to the CSV file containing axon morphologies.",
     )
@@ -258,17 +264,18 @@ class BuildAxonMorphologies(WorkflowTask):
     If no annotation file is given, axons will be randomly chosen from input cells.
     """
 
-    axon_morphs_path = luigi.Parameter(
+    axon_morphs_path = PathParameter(
         default="axon_morphs.tsv",
         description=":str: Path to save .tsv file with list of morphologies for axon grafting.",
     )
-    annotations_path = luigi.Parameter(
+    annotations_path = OptionalPathParameter(
         default=None,
         description=(
             ":str: Path to annotations file used by "
             "``placementAlgorithm.app.choose_morphologies``. "
             "If None, random axons will be choosen."
         ),
+        exists=True,
     )
     neurondb_basename = luigi.Parameter(
         default="neuronDB",
@@ -419,7 +426,7 @@ class Synthesize(WorkflowTask):
         nb_jobs (int): Number of threads used for synthesis
     """
 
-    out_circuit_path = luigi.Parameter(
+    out_circuit_path = PathParameter(
         default="sliced_circuit_morphologies.mvd3",
         description=":str: Path to circuit mvd3 with morphology data.",
     )
@@ -427,7 +434,7 @@ class Synthesize(WorkflowTask):
         default=None,
         description=":str: Base dir for morphology used for axon (.h5 files).",
     )
-    apical_points_path = luigi.Parameter(
+    apical_points_path = PathParameter(
         default="apical_points.yaml",
         description=":str: Path to the apical points file (YAML).",
     )
@@ -615,7 +622,7 @@ class RescaleMorphologies(WorkflowTask):
         default="rescaled_morphology_path",
         description=":str: Column name with rescaled morphology paths in the morphology DataFrame.",
     )
-    rescaled_morphology_base_path = luigi.Parameter(
+    rescaled_morphology_base_path = PathParameter(
         default="rescaled_morphologies",
         description=":str: Base path to rescaled morphologies.",
     )
@@ -623,7 +630,7 @@ class RescaleMorphologies(WorkflowTask):
         default="scaling_rules.yaml",
         description=":str: Path to the file containing the scaling rules.",
     )
-    rescaled_morphs_df_path = luigi.Parameter(
+    rescaled_morphs_df_path = PathParameter(
         default="rescaled_morphs_df.csv",
         description=":str: Path to the CSV morphology file.",
     )

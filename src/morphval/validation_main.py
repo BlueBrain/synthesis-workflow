@@ -131,7 +131,7 @@ def create_morphometrics_histograms(output_dir, morphometrics, config, notebook_
     for component_name, features in m_items:
         figure_dir = os.path.join(output_dir, component_name, "figures")
 
-        c_name = "-- %ss" % common.pretty_name(component_name).capitalize()
+        c_name = f"-- {common.pretty_name(component_name).capitalize()}s"
         f_items = common.add_progress_bar(features.items(), c_name, notebook_desc)
         for feature_name, feature_metrics in f_items:
             test_data, ref_data = feature_metrics["test"], feature_metrics["ref"]
@@ -238,11 +238,9 @@ class Validation:
             if not arg_files.empty:
                 arg_dir = Path(arg_files.iloc[0]["filepath"]).parent
             else:
-                raise ValueError("The %s DataFrame is empty" % arg_name)
+                raise ValueError(f"The {arg_name} DataFrame is empty")
         else:
-            raise TypeError(
-                "The %s argument must be a string path or a pandas.DataFrame" % arg_name
-            )
+            raise TypeError(f"The {arg_name} argument must be a string path or a pandas.DataFrame")
         return arg_dir, arg_files
 
     def _list_files(self, directory):
@@ -308,7 +306,7 @@ class Validation:
                 # template text (tt) as a string
                 "num_pass": num_pass,
                 "num_features": num_features,
-                "pass_percentage": "{:5.2f}".format((100.0 * num_pass) / num_features),
+                "pass_percentage": f"{(100.0 * num_pass) / num_features:5.2f}",
             }
 
             for f, feature_results in component_results.items():
@@ -322,7 +320,7 @@ class Validation:
 
         tt["num_pass"] = total_num_pass
         tt["num_features"] = total_num_features
-        tt["pass_percentage"] = "{:5.2f}".format((100.0 * total_num_pass) / total_num_features)
+        tt["pass_percentage"] = f"{(100.0 * total_num_pass) / total_num_features:5.2f}"
 
         return tt
 
@@ -338,25 +336,22 @@ class Validation:
             ),
             "name": feature_name.capitalize().replace("_", " "),
             "stat_test": stat_test.split(".")[1].upper() + " test",
-            "stat_test_result": (
-                "{:10.4f}".format(stat_test_results[0]),
-                "{:1.4g}".format(stat_test_results[1]),
-            ),
+            "stat_test_result": (f"{stat_test_results[0]:10.4f}", f"{stat_test_results[1]:1.4g}"),
             "validation_criterion": {
-                "value": "{:1.5g}".format(results_validation_criterion["value"]),
-                "threshold": "{:g}".format(results_validation_criterion["threshold"]),
+                "value": f"{results_validation_criterion['value']:1.5g}",
+                "threshold": f"{results_validation_criterion['threshold']:g}",
                 "status": results_validation_criterion["status"],
                 "criterion": results_validation_criterion["criterion"],
             },
         }
 
         ret["test_summary_statistics"] = dict(
-            (k, "{:10.2f}".format(feature_results["test_summary_statistics"][k]))
+            (k, f"{feature_results['test_summary_statistics'][k]:10.2f}")
             for k in feature_results["test_summary_statistics"]
         )
 
         ret["ref_summary_statistics"] = dict(
-            (k, "{:10.2f}".format(feature_results["ref_summary_statistics"][k]))
+            (k, f"{feature_results['ref_summary_statistics'][k]:10.2f}")
             for k in feature_results["ref_summary_statistics"]
         )
 
@@ -405,7 +400,7 @@ class Validation:
 
         templateVars = {
             "output_title": "Validation report: " + mtype,
-            "description": "Validation summary for cell type %s" % mtype,
+            "description": f"Validation summary for cell type {mtype}",
             "timestamp": self.timestamp,
             "results_dir": self.output_dir,
             "test_dir": self.test_dir.as_posix(),
