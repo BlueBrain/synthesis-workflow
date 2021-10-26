@@ -22,10 +22,12 @@ include:
   # Using the same image as DVF
   image: docker-registry-default.ocp.bbp.epfl.ch/bbp-ou-cells/data-validation-framework:latest
 
-py37:
+.pytest-template:
+  # Using Kubernetes runner with custom cpu count and memory amount
   tags:
-    - c8r16
-
-py38:
-  tags:
-    - c8r16
+    - kubernetes
+  variables:
+    KUBERNETES_CPU_LIMIT: 4
+    KUBERNETES_CPU_RESOURCES: 4
+    KUBERNETES_MEMORY_LIMIT: 4Gi
+    KUBERNETES_MEMORY_RESOURCES: 4Gi

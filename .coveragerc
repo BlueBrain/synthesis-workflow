@@ -2,7 +2,9 @@
 source_synthesis =
 	src/synthesis_workflow
 	*/site-packages/synthesis_workflow
+	*/synthesis-workflow/src/synthesis_workflow
 
 source_morphval =
 	src/morphval
 	*/site-packages/morphval
+	*/synthesis-workflow/src/morphval
