@@ -14,7 +14,6 @@ include:
      file:
         - /ci/jobs/auto-release.yml
         - /ci/lib/pytest-template.yml
-        - /ci/jobs/py37.yml
         - /ci/jobs/py38.yml
         - /ci/jobs/coverage.yml
 
