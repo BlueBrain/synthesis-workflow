@@ -83,23 +83,26 @@ def get_features_df(morphologies_mtypes: Dict, features_config: Dict, n_workers:
             (see ``neurom.apps.morph_stats.extract_dataframe``)
         n_workers (int) : number of workers for feature extractions
     """
-    features_df = pd.DataFrame()
+    rows = []
     for mtype, morphology_folders in morphologies_mtypes.items():
         features_df_tmp = extract_dataframe(
             morphology_folders, features_config, n_workers=n_workers
         )
         features_df_tmp["mtype"] = mtype
-        features_df = features_df.append(features_df_tmp.replace(0, np.nan))
+        rows.append(features_df_tmp.replace(0, np.nan))
+    features_df = pd.concat(rows)
     return features_df
 
 
-def _get_features_df_all_mtypes(morphs_df, features_config, morphology_path):
+def _get_features_df_all_mtypes(morphs_df, features_config, morphology_path, n_workers=None):
     """Wrapper for morph-validator functions."""
+    if n_workers is None:
+        n_workers = os.cpu_count()
     morphs_df_dict = {mtype: df[morphology_path] for mtype, df in morphs_df.groupby("mtype")}
     with warnings.catch_warnings():
         # Ignore some Numpy warnings
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        return get_features_df(morphs_df_dict, features_config, n_workers=os.cpu_count())
+        return get_features_df(morphs_df_dict, features_config, n_workers=n_workers)
 
 
 def get_feature_configs(config_types="default"):
@@ -158,15 +161,16 @@ def get_feature_configs(config_types="default"):
 
 def _expand_lists(data):
     """Convert list element of dataframe to duplicated rows with float values."""
-    data_expanded = pd.DataFrame()
+    new_rows = []
     for row_id in data.index:
         if isinstance(data.loc[row_id, "value"], list):
             for value in data.loc[row_id, "value"]:
                 new_row = data.loc[row_id].copy()
                 new_row["value"] = value
-                data_expanded = data_expanded.append(new_row)
+                new_rows.append(new_row)
         else:
-            data_expanded = data_expanded.append(data.loc[row_id].copy())
+            new_rows.append(data.loc[row_id].copy())
+    data_expanded = pd.DataFrame(new_rows)
     return data_expanded
 
 
@@ -247,6 +251,7 @@ def plot_morphometrics(
     comp_label="comp",
     normalize=False,
     config_features=None,
+    n_workers=None,
 ):
     """Plot morphometrics.
 
@@ -260,14 +265,22 @@ def plot_morphometrics(
         comp_label (str): label for the compared morphologies
         normalize (bool): normalize data if set to True
         config_features (dict): mapping of features to plot
+        n_workers (int): the number of workers used to compute morphology features
     """
     if config_features is None:
         config_features = get_feature_configs(config_types="synthesis")
         # config_features["neurite"].update({"y_distances": ["min", "max"]})
 
-    base_features_df = _get_features_df_all_mtypes(base_morphs_df, config_features, base_key)
+    L.debug("Get features from base morphologies")
+    base_features_df = _get_features_df_all_mtypes(
+        base_morphs_df, config_features, base_key, n_workers=n_workers
+    )
     base_features_df["label"] = base_label
-    comp_features_df = _get_features_df_all_mtypes(comp_morphs_df, config_features, comp_key)
+
+    L.debug("Get features from compared morphologies")
+    comp_features_df = _get_features_df_all_mtypes(
+        comp_morphs_df, config_features, comp_key, n_workers=n_workers
+    )
     comp_features_df["label"] = comp_label
 
     base_features_df = base_features_df[
@@ -280,6 +293,7 @@ def plot_morphometrics(
     all_features_df = pd.concat([base_features_df, comp_features_df])
     ensure_dir(output_path)
     with DisableLogger():
+        L.debug("Plot violin figure to %s", str(output_path))
         plot_violin_features(
             all_features_df,
             ["basal_dendrite", "apical_dendrite"],

@@ -1,11 +1,13 @@
 """Tests for workflows module."""
 import luigi
 import numpy as np
+import pytest
 from dir_content_diff import assert_equal_trees
 
 from synthesis_workflow.tasks.workflows import ValidateSynthesis
 
 
+@pytest.mark.xdist_group("group_O1")
 def test_ValidateSynthesis(small_O1_working_directory, data_dir):
     """Test the synthesis workflow in simple atlas"""
     np.random.seed(0)
@@ -51,6 +53,9 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
                 "tolerance": 2e-3,
                 "absolute_tolerance": 1e-15,
             },
-            "validation/morphology_validation_reports/validation_results.json": {"tolerance": 2e-3},
+            "validation/morphology_validation_reports/validation_results.json": {
+                "tolerance": 2e-3,
+                "absolute_tolerance": 1e-12,
+            },
         },
     )

@@ -44,7 +44,7 @@ setup(
     package_dir={"": "src"},
     python_requires=">=3.8",
     install_requires=reqs,
-    test_requires=test_reqs,
+    tests_require=test_reqs,
     extras_require={"docs": doc_reqs, "test": test_reqs},
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

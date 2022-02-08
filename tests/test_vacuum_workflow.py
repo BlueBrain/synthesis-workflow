@@ -1,11 +1,13 @@
 """Tests for workflows module."""
 import luigi
 import numpy as np
+import pytest
 from dir_content_diff import assert_equal_trees
 
 from synthesis_workflow.tasks.workflows import ValidateVacuumSynthesis
 
 
+@pytest.mark.xdist_group("group_vacuum")
 def test_ValidateVacuumSynthesis(vacuum_working_directory, data_dir):
     """Test the synthesis workflow in vacuum"""
     np.random.seed(0)

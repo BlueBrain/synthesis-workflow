@@ -80,7 +80,8 @@ def grow_vacuum_morphologies(
     otherwise 'M1-M5' from TNS are allowed.
     """
     global_gid = 0
-    vacuum_synth_morphs_df = pd.DataFrame()
+    # vacuum_synth_morphs_df = pd.DataFrame()
+    rows = []
     for mtype in tqdm(mtypes):
         tmd_parameters[mtype]["diameter_params"]["method"] = diametrizer
         tmd_distributions["mtypes"][mtype]["diameter"]["method"] = diametrizer
@@ -112,7 +113,8 @@ def grow_vacuum_morphologies(
             )
             for gid in gids
         ):
-            vacuum_synth_morphs_df = vacuum_synth_morphs_df.append(row)
+            rows.append(row)
+    vacuum_synth_morphs_df = pd.concat(rows)
     return vacuum_synth_morphs_df
 
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from subprocess import call
 
 import dir_content_diff.pandas
-import dir_content_diff.voxcell
+import dir_content_diff_plugins.voxcell
 import luigi
 import numpy as np
 import pytest
@@ -16,8 +16,8 @@ import pytest
 from synthesis_workflow.tasks import config
 from synthesis_workflow.tools import get_layer_tags
 
-dir_content_diff.pandas.register_pandas()
-dir_content_diff.voxcell.register_voxcell()
+dir_content_diff.pandas.register()
+dir_content_diff_plugins.voxcell.register()
 
 
 TEST_ROOT = Path(__file__).parent

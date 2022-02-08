@@ -19,12 +19,9 @@ include:
 
 .tox-template:
   # Using the same image as DVF
-  image: docker-registry-default.ocp.bbp.epfl.ch/bbp-ou-cells/data-validation-framework:latest
+  image: bbpgitlab.epfl.ch:5050/neuromath/ci/data-validation-framework:latest
 
 .pytest-template:
-  # Using Kubernetes runner with custom cpu count and memory amount
-  tags:
-    - kubernetes
   variables:
     KUBERNETES_CPU_LIMIT: 4
     KUBERNETES_CPU_REQUEST: 4
@@ -32,9 +29,6 @@ include:
     KUBERNETES_MEMORY_REQUEST: 4Gi
 
 lint:
-   # Using Kubernetes runner with custom memory amount
-   tags:
-      - kubernetes
    variables:
       KUBERNETES_CPU_LIMIT: 1
       KUBERNETES_CPU_REQUEST: 1

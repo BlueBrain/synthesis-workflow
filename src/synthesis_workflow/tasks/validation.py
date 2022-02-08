@@ -81,6 +81,9 @@ class ConvertMvd3(WorkflowTask):
         return MorphsDfLocalTarget(PathConfig().synth_morphs_df_path)
 
 
+@copy_params(
+    nb_jobs=ParamRef(RunnerConfig),
+)
 class PlotMorphometrics(WorkflowTask):
     """Plot cell morphometrics for two groups of cells so they can be easily compared.
 
@@ -141,6 +144,7 @@ class PlotMorphometrics(WorkflowTask):
             comp_label=self.comp_label,
             normalize=self.normalize,
             config_features=self.config_features,
+            n_workers=self.nb_jobs,
         )
 
     def output(self):
