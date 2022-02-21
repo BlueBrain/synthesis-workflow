@@ -109,7 +109,7 @@ def set_param_paths(params, tmp_working_dir, atlas_path=None):
     params["BuildMorphsDF"]["neurondb_path"] = (DATA / "input_cells" / "neuronDB.xml").as_posix()
     params["BuildMorphsDF"]["morphology_dirs"] = json.dumps(
         {
-            "repaired_morphology_path": (DATA / "input_cells").as_posix(),
+            "morphology_path": (DATA / "input_cells").as_posix(),
         }
     )
     params["PathConfig"]["result_path"] = (tmp_working_dir / "out").as_posix()

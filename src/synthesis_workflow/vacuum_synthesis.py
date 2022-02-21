@@ -9,14 +9,11 @@ from joblib import Parallel
 from joblib import cpu_count
 from joblib import delayed
 from matplotlib.backends.backend_pdf import PdfPages
-from morphio.mut import Morphology
 from neurom import load_morphology
 from neurom.view import matplotlib_impl
 from neurots import NeuronGrower
 from tqdm import tqdm
 
-from synthesis_workflow import STR_TO_TYPES
-from synthesis_workflow.synthesis import get_max_len
 from synthesis_workflow.utils import DisableLogger
 
 VACUUM_SYNTH_MORPHOLOGY_PATH = "vacuum_synth_morphologies"
@@ -127,11 +124,6 @@ def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_filename, morphology_pa
             for gid in vacuum_synth_morphs_df[vacuum_synth_morphs_df.mtype == mtype].index:
                 morphology = load_morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
                 matplotlib_impl.plot_morph(morphology, ax, plane="zy")
-                morph = Morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
-                for neurite in morph.root_sections:
-                    if neurite.type == STR_TO_TYPES["apical"]:
-                        max_len = get_max_len(neurite)
-                        ax.axhline(max_len, c="0.5", lw=0.5)
             ax.set_title(mtype)
             ax.set_rasterized(True)
             plt.axis([-800, 800, -800, 2000])

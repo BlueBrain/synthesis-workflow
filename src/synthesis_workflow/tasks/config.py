@@ -145,7 +145,7 @@ class PathConfig(luigi.Config):
     # Default internal values
     ext = ExtParameter(default="asc", description=":str: Default extension used.")
     morphology_path = luigi.Parameter(
-        default="repaired_morphology_path",
+        default="morphology_path",
         description="Column name in the morphology dataframe to access morphology paths",
     )
     morphs_df_path = luigi.Parameter(

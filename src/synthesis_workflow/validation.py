@@ -1,6 +1,7 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
 import json
 import logging
+import multiprocessing
 import os
 import warnings
 from collections import defaultdict
@@ -83,6 +84,8 @@ def get_features_df(morphologies_mtypes: Dict, features_config: Dict, n_workers:
             (see ``neurom.apps.morph_stats.extract_dataframe``)
         n_workers (int) : number of workers for feature extractions
     """
+    if n_workers == -1:
+        n_workers = multiprocessing.cpu_count()
     rows = []
     for mtype, morphology_folders in morphologies_mtypes.items():
         features_df_tmp = extract_dataframe(

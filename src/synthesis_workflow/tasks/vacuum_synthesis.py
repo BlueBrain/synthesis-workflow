@@ -101,10 +101,6 @@ class VacuumSynthesize(WorkflowTask):
 class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations.
 
-    The generated images are like the following:
-
-    .. image:: vacuum_morphologies-1.png
-
     Attributes:
         vacuum_synth_morphology_path (str): Column name to use from the morphlogy DataFrame.
     """

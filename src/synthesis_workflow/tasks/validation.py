@@ -104,7 +104,7 @@ class PlotMorphometrics(WorkflowTask):
         description=":str: Path to output directory (relative from ``PathConfig.result_path``).",
     )
     base_key = luigi.Parameter(
-        default="repaired_morphology_path",
+        default="morphology_path",
         description=":str: Base key to use in the morphology DataFrame.",
     )
     comp_key = luigi.Parameter(
@@ -193,7 +193,7 @@ class PlotDensityProfiles(WorkflowTask):
             circuit = VacuumCircuit(
                 morphs_df=df,
                 cells=pd.DataFrame(df["mtype"].unique(), columns=["mtypes"]),
-                morphology_path=PathConfig().morphology_path,
+                morphology_path=VacuumSynthesize().vacuum_synth_morphology_path,
             )
 
         plot_density_profiles(
@@ -220,10 +220,6 @@ class PlotCollage(WorkflowTask):
     """Plot collage for all given mtypes.
 
     Collage reports show the cells in the atlas.
-
-    The generated images are like the following:
-
-    .. image:: collages-1.png
 
     Attributes:
         mtypes (list(str)): Mtypes to plot.

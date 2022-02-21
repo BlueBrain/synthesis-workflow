@@ -32,16 +32,12 @@ def test_ValidateVacuumSynthesis(vacuum_working_directory, data_dir):
             },
             "morphs_df/substituted_morphs_df.csv": {
                 "format_data_kwargs": {
-                    "replace_pattern": {
-                        (data_dir_pattern, ""): ["path", "repaired_morphology_path"]
-                    }
+                    "replace_pattern": {(data_dir_pattern, ""): ["path", "morphology_path"]}
                 }
             },
             "morphs_df/morphs_df.csv": {
                 "format_data_kwargs": {
-                    "replace_pattern": {
-                        (data_dir_pattern, ""): ["path", "repaired_morphology_path"]
-                    }
+                    "replace_pattern": {(data_dir_pattern, ""): ["path", "morphology_path"]}
                 }
             },
             "synthesis/neurots_input/tmd_distributions.json": {
