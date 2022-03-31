@@ -1,6 +1,4 @@
 """Functions for synthesis in vacuum to be used by luigi tasks."""
-from functools import partial
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -77,17 +75,13 @@ def grow_vacuum_morphologies(
     otherwise 'M1-M5' from TNS are allowed.
     """
     global_gid = 0
-    # vacuum_synth_morphs_df = pd.DataFrame()
     rows = []
     for mtype in tqdm(mtypes):
         tmd_parameters[mtype]["diameter_params"]["method"] = diametrizer
         tmd_distributions["mtypes"][mtype]["diameter"]["method"] = diametrizer
 
         if diametrizer == "external":
-            external_diametrizer = partial(
-                _external_diametrizer,
-                diameter_params=tmd_parameters[mtype]["diameter_params"],
-            )
+            external_diametrizer = build_diameters.build
         else:
             external_diametrizer = None
 
