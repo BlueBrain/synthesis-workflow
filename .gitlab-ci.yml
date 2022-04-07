@@ -40,3 +40,17 @@ lint:
 auto-prepare-release:
   variables:
     VERSION_FILE: src/version.py
+
+trigger_synthdb:
+  stage: release
+  needs:
+    - job: tag
+      optional: true
+  variables:
+    PIP_PRE: "true"
+    SKIP_CHECK_VERSION: "true"
+  trigger:
+    project: neuromath/synthdb
+    strategy: depend
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "schedule"'
