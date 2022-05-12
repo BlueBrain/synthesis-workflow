@@ -16,6 +16,7 @@ from synthesis_workflow.tasks.validation import PlotMorphometrics
 from synthesis_workflow.tasks.validation import PlotPathDistanceFits
 from synthesis_workflow.tasks.validation import PlotScales
 from synthesis_workflow.tasks.validation import PlotScoreMatrix
+from synthesis_workflow.tasks.validation import TrunkValidation
 from synthesis_workflow.validation import plot_morphometrics
 
 
@@ -44,6 +45,9 @@ class ValidateSynthesis(WorkflowWrapperTask):
     with_score_matrix_reports = BoolParameter(
         default=True, description=":bool: Trigger score matrix reports."
     )
+    with_trunk_validation = BoolParameter(
+        default=False, description=":bool: Trigger trunk validation."
+    )
 
     def requires(self):
         """ """
@@ -62,6 +66,8 @@ class ValidateSynthesis(WorkflowWrapperTask):
             tasks.append(MorphologyValidationReports())
         if self.with_score_matrix_reports:
             tasks.append(PlotScoreMatrix(in_atlas=True))
+        if self.with_trunk_validation:
+            tasks.append(TrunkValidation(in_atlas=True))
         return tasks
 
 
@@ -83,6 +89,9 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
     with_score_matrix_reports = BoolParameter(
         default=True, description=":bool: Trigger score matrix reports."
     )
+    with_trunk_validation = BoolParameter(
+        default=False, description=":bool: Trigger trunk validation."
+    )
 
     def requires(self):
         """ """
@@ -95,6 +104,8 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
             tasks.append(PlotDensityProfiles(in_atlas=False))
         if self.with_score_matrix_reports:
             tasks.append(PlotScoreMatrix(in_atlas=False))
+        if self.with_trunk_validation:
+            tasks.append(TrunkValidation(in_atlas=False))
         return tasks
 
 

@@ -133,9 +133,7 @@ class ApplySubstitutionRules(WorkflowTask):
         return MorphsDfLocalTarget(PathConfig().substituted_morphs_df_path)
 
 
-@copy_params(
-    tmd_parameters_path=ParamRef(SynthesisConfig),
-)
+@copy_params(tmd_parameters_path=ParamRef(SynthesisConfig))
 class BuildSynthesisParameters(WorkflowTask):
     """Build the tmd_parameter.json for synthesis.
 
@@ -150,6 +148,7 @@ class BuildSynthesisParameters(WorkflowTask):
             "parameters from TNS."
         ),
     )
+    trunk_method = luigi.ChoiceParameter(default="simple", choices=["simple", "3d_angle"])
 
     def requires(self):
         """ """
@@ -175,10 +174,13 @@ class BuildSynthesisParameters(WorkflowTask):
         tmd_parameters = {}
         for mtype in mtypes:
             if self.input_tmd_parameters_path is None:
-                tmd_parameters[mtype] = extract_input.parameters(
-                    neurite_types=neurite_types[mtype],
-                    diameter_parameters=DiametrizerConfig().config_diametrizer,
-                )
+                kwargs = {
+                    "neurite_types": neurite_types[mtype],
+                    "diameter_parameters": DiametrizerConfig().config_diametrizer,
+                }
+                if self.trunk_method != "simple":
+                    kwargs["trunk_method"] = self.trunk_method
+                tmd_parameters[mtype] = extract_input.parameters(**kwargs)
             else:
                 try:
                     tmd_parameters[mtype] = custom_tmd_parameters[mtype]
@@ -208,6 +210,8 @@ class BuildSynthesisDistributions(WorkflowTask):
         nb_jobs (int): Number of workers.
     """
 
+    trunk_method = luigi.ChoiceParameter(default="simple", choices=["simple", "3d_angle"])
+
     def requires(self):
         """ """
         return ApplySubstitutionRules()
@@ -235,6 +239,7 @@ class BuildSynthesisDistributions(WorkflowTask):
             self.morphology_path,
             SynthesisConfig().cortical_thickness,
             nb_jobs=self.nb_jobs,
+            trunk_method=self.trunk_method,
         )
 
         with self.output().open("w") as f:

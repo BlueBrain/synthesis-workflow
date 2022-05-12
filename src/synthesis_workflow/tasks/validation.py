@@ -48,6 +48,7 @@ from synthesis_workflow.validation import plot_morphometrics
 from synthesis_workflow.validation import plot_path_distance_fits
 from synthesis_workflow.validation import plot_scale_statistics
 from synthesis_workflow.validation import plot_score_matrix
+from synthesis_workflow.validation import trunk_validation
 
 L = logging.getLogger(__name__)
 
@@ -817,3 +818,58 @@ class PlotSingleCollageFromCircuit(WorkflowTask):
         return ValidationLocalTarget(
             (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
         )
+
+
+class TrunkValidation(WorkflowTask):
+    """Trunk angle validation plots."""
+
+    in_atlas = BoolParameter(
+        default=False, description=":bool: Set to True to consider cells in an atlas."
+    )
+    validation_path = luigi.Parameter(
+        default="trunk_validation",
+        description=":str: Path to output directory (relative from ``PathConfig.result_path``).",
+    )
+    base_key = luigi.Parameter(
+        default="repaired_morphology_path",
+        description=":str: Base key to use in the morphology DataFrame.",
+    )
+    comp_key = luigi.Parameter(
+        default=SYNTH_MORPHOLOGY_PATH,
+        description=":str: Compared key to use in the morphology DataFrame.",
+    )
+    base_label = luigi.Parameter(default="bio", description=":str: Label for base morphologies.")
+    comp_label = luigi.Parameter(
+        default="synth", description=":str: Label for compared morphologies."
+    )
+
+    def requires(self):
+        """ """
+        if self.in_atlas:
+            return {"morphs": BuildMorphsDF(), "mvd3": ConvertMvd3()}
+        else:
+            return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
+
+    def run(self):
+        """ """
+        morphs_df = pd.read_csv(self.input()["morphs"].path)
+        if self.in_atlas:
+            synth_morphs_df = pd.read_csv(self.input()["mvd3"].path)
+            comp_key = self.comp_key
+        else:
+            synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)
+            comp_key = self.requires()["vacuum"].vacuum_synth_morphology_path
+
+        trunk_validation(
+            morphs_df,
+            synth_morphs_df,
+            self.output().pathlib_path,
+            base_key=self.base_key,
+            comp_key=comp_key,
+            base_label=self.base_label,
+            comp_label=self.comp_label,
+        )
+
+    def output(self):
+        """ """
+        return ValidationLocalTarget(self.validation_path)

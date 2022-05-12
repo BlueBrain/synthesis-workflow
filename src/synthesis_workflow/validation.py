@@ -1,4 +1,5 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
+import itertools
 import json
 import logging
 import multiprocessing
@@ -27,7 +28,9 @@ from morphio.mut import Morphology
 from neurom import load_morphologies
 from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
+from neurom.check.morphology_checks import has_apical_dendrite
 from neurom.core.dataformat import COLS
+from neurom.core.types import tree_type_checker as is_type
 from neurom.view import matplotlib_impl
 from neurots import NeuronGrower
 from pyquaternion import Quaternion
@@ -366,7 +369,7 @@ def sample_morph_voxel_values(
 
     Returns:
         dict mapping each neurite type of the morphology to the sampled values
-        {(nm.NeuriteType): np.array(...)}
+        {(neurom.NeuriteType): np.array(...)}
     """
     if neurite_types is None:
         neurite_types = [neurite.type for neurite in morphology.neurites]
@@ -1371,3 +1374,101 @@ def plot_score_matrix(
         with DisableLogger():
             pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
         plt.close(fig)
+
+
+def trunk_vectors(morph, neurite_type):
+    """This is the same as `neurom.get('trunk_vectors')`, but wrt to `[0, 0, 0]`.
+
+    If one uses `soma.center` (which is center of mass of soma points), it
+    may not correspond to `[0, 0, 0]`, from which the trunk angles should be computed for synthesis.
+    """
+    return [
+        neurom.morphmath.vector(n.root_node.points[0], [0, 0, 0])
+        for n in neurom.iter_neurites(morph, filt=is_type(neurite_type))
+    ]
+
+
+def extract_angle_data(df, morph_key, pia=None):
+    """Extract all pairwise angles between neurite_types from the morphologies in df."""
+    if pia is None:
+        pia = [0, 1, 0]
+
+    data = defaultdict(list)
+    morph_class = (
+        "PC" if has_apical_dendrite(neurom.load_morphology(df.iloc[0][morph_key])) else "IN"
+    )
+
+    for gid in df.index:
+        morph = neurom.load_morphology(df.loc[gid, morph_key])
+
+        _vec_basal = trunk_vectors(morph, neurite_type=neurom.NeuriteType.basal_dendrite)
+        _vec_axon = trunk_vectors(morph, neurite_type=neurom.NeuriteType.axon)
+
+        if morph_class == "PC":
+            _vec_apical = trunk_vectors(morph, neurite_type=neurom.NeuriteType.apical_dendrite)
+            data["pia_apical"] += [
+                neurom.morphmath.angle_between_vectors(_vec_apical[0], [0, 1, 0])
+            ]
+
+        data["basal_basal"] += [
+            neurom.morphmath.angle_between_vectors(_vec_basal[i], _vec_basal[j])
+            for i, j in itertools.combinations(range(len(_vec_basal)), 2)
+        ]
+
+        if morph_class == "PC":
+            data["apical_basal"] += [
+                neurom.morphmath.angle_between_vectors(_vec_apical[0], _vec_basal[i])
+                for i in range(len(_vec_basal))
+            ]
+
+        data["pia_basal"] += [
+            neurom.morphmath.angle_between_vectors(pia, _vec_basal[i])
+            for i in range(len(_vec_basal))
+        ]
+
+        if len(_vec_axon) > 0:
+
+            if morph_class == "PC":
+                data["axon_apical"] += [
+                    neurom.morphmath.angle_between_vectors(_vec_axon[0], _vec_apical[0])
+                ]
+            data["axon_pia"] += [neurom.morphmath.angle_between_vectors(_vec_axon[0], [0, 1, 0])]
+            data["axon_basal"] += [
+                neurom.morphmath.angle_between_vectors(_vec_axon[0], _vec_basal[i])
+                for i in range(len(_vec_basal))
+            ]
+    return data
+
+
+def _get_hist(data, bins=50):
+    """Return density histogram with bin centers."""
+    d, b = np.histogram(data, bins=bins, density=True)
+    b = 0.5 * (b[1:] + b[:-1])
+    return b, d
+
+
+def trunk_validation(
+    morphs_df,
+    synth_morphs_df,
+    output_dir,
+    base_key,
+    comp_key,
+    base_label,
+    comp_label,
+):
+    """Create plots to validate trunk angles."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for mtype in morphs_df.mtype.unique():
+        data_bio = extract_angle_data(morphs_df[morphs_df.mtype == mtype], base_key)
+        data_synth = extract_angle_data(synth_morphs_df[synth_morphs_df.mtype == mtype], comp_key)
+        with PdfPages(output_dir / f"trunk_validation_{mtype}.pdf") as pdf:
+            for data_type in data_bio:
+                plt.figure(figsize=(6, 4))
+                plt.axvline(0, c="k")
+                plt.axvline(np.pi, c="k")
+                plt.plot(*_get_hist(data_bio[data_type]), label=base_label)
+                if data_type in data_synth:
+                    plt.plot(*_get_hist(data_synth[data_type]), label=comp_label)
+                plt.xlabel(data_type)
+                plt.legend()
+                pdf.savefig(bbox_inches="tight")

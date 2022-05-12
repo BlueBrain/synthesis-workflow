@@ -69,18 +69,19 @@ def _build_distributions_single_mtype(
     neurite_types=None,
     diameter_model_function=None,
     morphology_path=None,
+    trunk_method="simple",
 ):
     """Internal function for multiprocessing of tmd_distribution building."""
     morphology_paths = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
-    return (
-        mtype,
-        extract_input.distributions(
-            morphology_paths,
-            neurite_types=neurite_types[mtype],
-            diameter_input_morph=morphology_paths,
-            diameter_model=diameter_model_function,
-        ),
-    )
+    kwargs = {
+        "neurite_types": neurite_types[mtype],
+        "diameter_input_morph": morphology_paths,
+        "diameter_model": diameter_model_function,
+    }
+    if trunk_method != "simple":
+        kwargs["trunk_method"] = trunk_method
+
+    return mtype, extract_input.distributions(morphology_paths, **kwargs)
 
 
 def build_distributions(
@@ -92,6 +93,7 @@ def build_distributions(
     cortical_thickness,
     nb_jobs=-1,
     joblib_verbose=10,
+    trunk_method="simple",
 ):
     """Build tmd_distribution dictionary for synthesis.
 
@@ -111,6 +113,7 @@ def build_distributions(
         neurite_types=neurite_types,
         diameter_model_function=diameter_model_function,
         morphology_path=morphology_path,
+        trunk_method=trunk_method,
     )
 
     tmd_distributions = {
