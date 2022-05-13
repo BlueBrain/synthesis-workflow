@@ -47,7 +47,7 @@ trigger_synthdb:
     - job: tag
       optional: true
   variables:
-    PIP_PRE: "true"
+    USE_PRE_SYNTHESIS_WORKFLOW: "true"
     SKIP_CHECK_VERSION: "true"
   trigger:
     project: neuromath/synthdb
