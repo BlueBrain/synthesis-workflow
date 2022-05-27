@@ -13,8 +13,8 @@ import luigi
 import numpy as np
 import pytest
 
+from synthesis_workflow.circuit import get_layer_tags
 from synthesis_workflow.tasks import config
-from synthesis_workflow.tools import get_layer_tags
 
 dir_content_diff.pandas.register()
 dir_content_diff_plugins.voxcell.register()
@@ -62,7 +62,9 @@ def small_O1(tmp_path):
     shutil.copyfile(DATA / "in_small_O1" / "metadata.json", atlas_dir / "metadata.json")
 
     # Add dummy cell density files for L1_DAC and L3_TPC:A
-    br, _ = get_layer_tags(atlas_dir)
+    br, _ = get_layer_tags(
+        atlas_dir, region_structure_path=DATA / "synthesis_input" / "region_structure.yaml"
+    )
     layer_tags = br.raw.copy()
     br.raw[np.where(layer_tags == 1)] = 1000
     br.raw[np.where(layer_tags != 1)] = 0

@@ -3,18 +3,20 @@ import logging
 
 import numpy as np
 import pandas as pd
+import yaml
 from atlas_analysis.planes.planes import create_planes as _create_planes
 from brainbuilder.app.cells import _place as place
+from region_grower.atlas_helper import AtlasHelper
 from tqdm import tqdm
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import LocalAtlas
 
 L = logging.getLogger(__name__)
-LEFT = 0
-RIGHT = 1
+LEFT = "left"
+RIGHT = "right"
 
 
-def halve_atlas(annotated_volume, axis=0, side=LEFT):
+def halve_atlas(annotated_volume, axis=2, side=LEFT):
     """Return the half of the annotated volume along the x-axis.
 
     The identifiers of the voxels located on the left half or the right half
@@ -24,8 +26,8 @@ def halve_atlas(annotated_volume, axis=0, side=LEFT):
         annotated_volume: integer array of shape (W, L, D) holding the annotation
             of a brain region.
         axis: (Optional) axis along which to halve. Either 0, 1 or 2.
-            Defaults to 0.
-        side: (Optional) Either LEFT or RIGHT, depending on which half is requested.
+            Defaults to 2.
+        side: (Optional) Either 'left' or 'right', depending on which half is requested.
             Defaults to LEFT.
 
     Returns:
@@ -85,6 +87,22 @@ def create_atlas_thickness_mask(atlas_dir):
     return brain_regions.with_data(np.logical_and(~too_thick, isocortex_mask).astype(np.uint8))
 
 
+def get_regions_from_composition(cell_composition_path):
+    """Get list of region regex from cell_composition."""
+    with open(cell_composition_path, "r") as comp_p:
+        cell_composition = yaml.safe_load(comp_p)
+
+    region_regex = "@"
+    for reg in set(entry["region"] for entry in cell_composition["neurons"]):
+        if reg[-1] != "|":
+            reg += "|"
+        if reg[0] == "@":
+            region_regex += reg[1:]
+        else:
+            region_regex += reg
+    return region_regex[:-1]
+
+
 def build_circuit(
     cell_composition_path,
     mtype_taxonomy_path,
@@ -109,7 +127,7 @@ def build_circuit(
         atlas_url=atlas_path,
         mini_frequencies_path=None,
         atlas_cache=None,
-        region=region,
+        region=region or get_regions_from_composition(cell_composition_path),
         mask_dset=mask,
         density_factor=density_factor,
         soma_placement="basic",
@@ -153,8 +171,12 @@ def circuit_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
     if mtypes is not None:
         cells = slice_per_mtype(cells, mtypes)
 
-    if hemisphere is not None and "hemisphere" in cells:
-        cells = cells[cells.hemisphere == hemisphere]
+    # TODO: rough way to split hemisphere, maybe there is a better way, to investigate if needed
+    if hemisphere is not None:
+        if hemisphere == "left":
+            cells = cells[cells.z < cells.z.mean()]
+        if hemisphere == "right":
+            cells = cells[cells.z >= cells.z.mean()]
 
     if planes is not None:
         # between each pair of planes, select n_cells
@@ -198,29 +220,23 @@ def _get_principal_direction(points):
     return v[:, w.argmax()]
 
 
-def get_centerline_bounds(atlas, layer, region=None, central_layer=5, hemisphere=None):
+def get_centerline_bounds(layer):
     """Find centerline bounds using PCA of the voxell position of a given layer in the region."""
-    if region is not None:
-        mask = atlas.get_region_mask(region)
-        mask.raw = np.array(mask.raw, dtype=int)
-        layer.raw = layer.raw * mask.raw
-
-    _ids = np.where(layer.raw == central_layer)
-    ids = np.column_stack(_ids)
+    _ls = np.unique(layer.raw[layer.raw > 0])
+    central_layer = _ls[int(len(_ls) / 2)]
+    ids = np.column_stack(np.where(layer.raw == central_layer))
     points = layer.indices_to_positions(ids)
-
-    ids = np.array(ids)
-    points = np.array(points)
-    if hemisphere is not None:
-        if hemisphere == "left":
-            point_mask = points[:, 2] < points[:, 2].mean()
-        if hemisphere == "right":
-            point_mask = points[:, 2] > points[:, 2].mean()
-        ids = ids[point_mask]
-        points = points[point_mask]
-    direction = _get_principal_direction(points)
-    _align = points.dot(direction)
+    _align = points.dot(_get_principal_direction(points))
     return ids[_align.argmin()], ids[_align.argmax()]
+
+
+def get_local_bbox(annotation):
+    """Compute bbox where annotation file is strictly positive."""
+    ids = np.where(annotation.raw > 0)
+    dim = annotation.voxel_dimensions
+    return annotation.offset + np.array(
+        [np.min(ids, axis=1) * dim, (np.max(ids, axis=1) + 1) * dim]
+    )
 
 
 def create_planes(
@@ -254,6 +270,8 @@ def create_planes(
         centerline_axis (str): (for plane_type = aligned) axis along which to create planes
     """
     if plane_type == "centerline":
+        if centerline_first_bound is None and centerline_last_bound is None:
+            centerline_first_bound, centerline_last_bound = get_centerline_bounds(layer_annotation)
         centerline = np.array(
             [
                 layer_annotation.indices_to_positions(centerline_first_bound),
@@ -262,13 +280,10 @@ def create_planes(
         )
 
     elif plane_type == "aligned":
-        _n_points = 10
-        centerline = np.zeros([_n_points, 3])
-        bbox = layer_annotation.bbox
+        centerline = np.zeros([2, 3])
+        bbox = get_local_bbox(layer_annotation)
         centerline[:, centerline_axis] = np.linspace(
-            bbox[0, centerline_axis],
-            bbox[1, centerline_axis],
-            _n_points,
+            bbox[0, centerline_axis], bbox[1, centerline_axis], 2
         )
     else:
         raise Exception(f"Please set plane_type to 'aligned' or 'centerline', not {plane_type}.")
@@ -285,3 +300,28 @@ def create_planes(
     planes_select_ids += list(planes_all_ids[int(id_shift / 2) - 1 :: id_shift])
     planes_select_ids += list(planes_all_ids[int(id_shift / 2) + 1 :: id_shift])
     return [planes[i] for i in sorted(planes_select_ids)], centerline
+
+
+def get_layer_tags(atlas_dir, region_structure_path, region=None):
+    """Create a VoxelData with layer tags."""
+    atlas_helper = AtlasHelper(LocalAtlas(atlas_dir), region_structure_path=region_structure_path)
+
+    brain_regions = atlas_helper.brain_regions
+    layers_data = np.zeros_like(brain_regions.raw, dtype="uint8")
+
+    region_mask = None
+    if region is not None:
+        region_mask = atlas_helper.atlas.get_region_mask(region).raw
+
+    layer_mapping = {}
+    for layer_id, layer in enumerate(atlas_helper.layers):
+        layer_mapping[layer_id] = atlas_helper.region_structure["names"].get(layer, str(layer))
+        region_query = atlas_helper.region_structure["region_queries"].get(layer, None)
+        mask = atlas_helper.atlas.get_region_mask(region_query).raw
+        if region_mask is not None:
+            mask *= region_mask
+        layers_data[mask] = layer_id + 1
+        if not len(layers_data[mask]):
+            L.warning("No voxel found for layer %s.", layer)
+    brain_regions.raw = layers_data
+    return brain_regions, layer_mapping

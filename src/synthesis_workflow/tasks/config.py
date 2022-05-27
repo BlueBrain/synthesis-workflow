@@ -1,12 +1,19 @@
 """Configurations for luigi tasks."""
 import logging
+import shutil
 import warnings
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import luigi
+import yaml
+from git import Repo
 
 from synthesis_workflow.tasks.luigi_tools import ExtParameter
+from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalIntParameter
 from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
+from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 
 # Add some warning filters
 warnings.filterwarnings("ignore", module="diameter_synthesis.build_diameters")
@@ -20,6 +27,72 @@ warnings.filterwarnings("ignore", module="scipy")
 logging.getLogger("matplotlib").propagate = False
 logging.getLogger("numexpr").propagate = False
 logging.getLogger("neurots").propagate = False
+
+
+class GitClone(WorkflowTask):
+    """Task to clone a git repository."""
+
+    url = luigi.Parameter(
+        description=(
+            ":str: Url of repository. If None, git_synthesis_input_path should be an existing "
+            "folder."
+        )
+    )
+    dest = luigi.Parameter(description=":str: Path to the destination directory.")
+    branch = luigi.Parameter(default="main")
+
+    def run(self):
+        """ """
+        Repo.clone_from(self.url, self.output().path, branch=self.branch)
+
+    def output(self):
+        """ """
+        return OutputLocalTarget(self.dest)
+
+
+class GetSynthesisInputs(WorkflowTask):
+    """Task to get synthesis input files from a folder on git repository.
+
+    If no url is provided, this task will copy an existing folder to the target location.
+
+    Attributes:
+        local_synthesis_input_path (str): Path to local folder to copy these files.
+    """
+
+    url = luigi.OptionalParameter(
+        default=None,
+        description=(
+            ":str: Url of repository. If None, git_synthesis_input_path should be an "
+            "existing folder."
+        ),
+    )
+    version = luigi.OptionalParameter(
+        default=None, description=":str: Version of repo to checkout."
+    )
+    git_synthesis_input_path = luigi.Parameter(
+        default="synthesis_input",
+        description=":str: Path to folder in git repo with synthesis files.",
+    )
+    branch = luigi.Parameter(default="main")
+
+    def run(self):
+        """ """
+        if self.url is None:
+            shutil.copytree(self.git_synthesis_input_path, self.output().path)
+        else:
+            with TemporaryDirectory() as tmpdir:
+                dest = Path(tmpdir) / "tmp_repo"
+                # Note: can not be called with yield here because of the TemporaryDirectory
+                GitClone(url=self.url, dest=dest, branch=self.branch).run()
+                if self.version is not None:
+                    r = Repo(dest)
+                    r.git.checkout(self.version)
+                shutil.copytree(dest / self.git_synthesis_input_path, self.output().path)
+
+    def output(self):
+        """ """
+        # TODO: it would probably be better to have a specific target for each file
+        return OutputLocalTarget(PathConfig().local_synthesis_input_path)
 
 
 class DiametrizerConfig(luigi.Config):
@@ -88,16 +161,15 @@ class SynthesisConfig(luigi.Config):
         default="neurots_input/tmd_distributions.json",
         description=":str: The path to the TMD distributions.",
     )
-    cortical_thickness = luigi.ListParameter(
-        default=[165, 149, 353, 190, 525, 700],
-        description=":list(int): The list of cortical thicknesses.",
-    )
     mtypes = luigi.ListParameter(
         default=None,
         description=(
             ":list(str): The list of mtypes to process (default is None, which means that all "
             "found mtypes are taken)."
         ),
+    )
+    with_axons = luigi.BoolParameter(
+        default=False, description=":bool: Set to True to synthesize local axons"
     )
 
 
@@ -108,16 +180,63 @@ class CircuitConfig(luigi.Config):
         default="circuit_somata.mvd3", description=":str: Path to the circuit somata."
     )
     atlas_path = luigi.Parameter(default=None, description=":str: Path to the atlas directory.")
+    cell_composition_path = luigi.Parameter(
+        default="cell_composition.yaml", description=":str: Path to cell_compoistion.yaml file."
+    )
+    region_structure_path = luigi.Parameter(
+        default="region_structure.yaml",
+        description=":str: Path to the file containing the layer structure data.",
+    )
+    region = luigi.OptionalParameter(default=None)
+    hemisphere = OptionalChoiceParameter(
+        default=None,
+        choices=["left", "right"],
+        description=":str: The hemisphere side.",
+    )
+
+
+class GetCellComposition(luigi.Task):
+    """Get cell_composition with adapted entries."""
+
+    new_cell_composition = luigi.Parameter(
+        default="new_cell_composition.yaml",
+        description=":str: Filename to the new cell composition file with modified entries.",
+    )
+
+    def requires(self):
+        """ """
+        return GetSynthesisInputs()
+
+    def run(self):
+        """ """
+        if not Path(CircuitConfig().cell_composition_path).exists():
+            cell_composition_path = str(
+                self.input().pathlib_path / CircuitConfig().cell_composition_path
+            )
+        else:
+            cell_composition_path = CircuitConfig().cell_composition_path
+
+        with open(cell_composition_path) as comp_p:
+            cell_comp = yaml.safe_load(comp_p)
+        if SynthesisConfig().mtypes is not None:
+            new_cell_comp = {"version": cell_comp["version"], "neurons": []}
+            for entry in cell_comp["neurons"]:
+                if entry["traits"]["mtype"] in SynthesisConfig().mtypes:
+                    new_cell_comp["neurons"].append(entry)
+        else:
+            new_cell_comp = cell_comp
+        with open(self.output().path, "w") as comp_p:
+            yaml.safe_dump(new_cell_comp, comp_p)
+
+    def output(self):
+        """ """
+        return OutputLocalTarget(self.new_cell_composition)
 
 
 class PathConfig(luigi.Config):
     """Morphology path configuration."""
 
     # Input paths
-    mtype_taxonomy_path = luigi.Parameter(
-        default="mtype_taxonomy.tsv",
-        description=":str: Path to the taxonomy file (TSV).",
-    )
     local_synthesis_input_path = luigi.Parameter(
         default="synthesis_input",
         description=":str: Path to the synthesis input directory.",

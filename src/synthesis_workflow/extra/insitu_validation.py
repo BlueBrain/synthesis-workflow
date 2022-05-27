@@ -17,7 +17,7 @@ from tqdm import tqdm
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import Atlas
 
-from synthesis_workflow.tools import get_layer_tags
+from synthesis_workflow.circuit import get_layer_tags
 
 matplotlib.use("Agg")
 
@@ -72,6 +72,7 @@ def plot_extents(results_df, pdf_name="extents.pdf", bins=200):
             pdf.savefig()
 
 
+# pylint: disable=too-many-locals
 def get_layer_morpho_counts(
     sonata_path,
     morphology_path,
@@ -81,6 +82,7 @@ def get_layer_morpho_counts(
     region=None,
     hemisphere="right",
     ext=".h5",
+    region_structure_path="region_structure.yaml",
 ):
     """For each layer, compute the fraction of crossing morphologies.
 
@@ -93,6 +95,7 @@ def get_layer_morpho_counts(
         region (str): is not None, must be the name of a region to filter morphologies
         hemisphere (str): left/right hemisphere
         ext (str): extension of morphology files
+        region_structure_path (str): path to region_structure.yaml file
 
     Returns:
         pandas.DataFrame: dafaframe with the counts, mtype and layers information
@@ -101,7 +104,7 @@ def get_layer_morpho_counts(
     cells = CellCollection.load(sonata_path).as_dataframe()
     morph_path = Path(morphology_path)
 
-    layer_annotation, _ = get_layer_tags(atlas_path)
+    layer_annotation, _ = get_layer_tags(atlas_path, region_structure_path)
 
     dfs = []
     for mtype in tqdm(cells.mtype.unique()):
@@ -205,6 +208,7 @@ def plot_layer_collage(
     shift=200,
     dpi=200,
     ext=".h5",
+    region_structure_path="region_structure.yaml",
 ):
     """Plot morphologies next to each other with points colored by layer.
 
@@ -221,6 +225,7 @@ def plot_layer_collage(
         shift (float): x-shift between morphologies
         dpi (int): dpi to save rasterized pdf
         ext (str): extension of morphology files
+        region_structure_path (str): path to region_structure.yaml file
     """
     if section_types is None:
         section_types = ["basal_dendrite", "apical_dendrite"]
@@ -228,8 +233,8 @@ def plot_layer_collage(
 
     cells = CellCollection.load(sonata_path).as_dataframe()
     morph_path = Path(morphology_path)
-    layer_annotation, _ = get_layer_tags(atlas_path)
-    atlas = AtlasHelper(Atlas().open(atlas_path))
+    layer_annotation, _ = get_layer_tags(atlas_path, region_structure_path)
+    atlas = AtlasHelper(Atlas().open(atlas_path), region_structure_path=region_structure_path)
 
     cmap = matplotlib.colors.ListedColormap(["C0", "C1", "C2", "C3", "C4", "C5", "C6"])
     with PdfPages(pdf_name) as pdf:

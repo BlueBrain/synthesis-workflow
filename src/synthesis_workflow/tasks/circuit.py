@@ -6,31 +6,26 @@ import yaml
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
 from voxcell import VoxelData
-from voxcell.nexus.voxelbrain import LocalAtlas
 
 from synthesis_workflow.circuit import build_circuit
 from synthesis_workflow.circuit import circuit_slicer
 from synthesis_workflow.circuit import create_atlas_thickness_mask
 from synthesis_workflow.circuit import create_planes
-from synthesis_workflow.circuit import get_centerline_bounds
+from synthesis_workflow.circuit import get_layer_tags
 from synthesis_workflow.circuit import halve_atlas
 from synthesis_workflow.circuit import slice_circuit
 from synthesis_workflow.tasks.config import AtlasLocalTarget
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import CircuitLocalTarget
-from synthesis_workflow.tasks.config import PathConfig
+from synthesis_workflow.tasks.config import GetCellComposition
+from synthesis_workflow.tasks.config import GetSynthesisInputs
 from synthesis_workflow.tasks.config import SynthesisConfig
-from synthesis_workflow.tasks.luigi_tools import BoolParameter
-from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalPathParameter
-from synthesis_workflow.tasks.luigi_tools import OptionalStrParameter
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import PathParameter
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import copy_params
-from synthesis_workflow.tasks.utils import GetSynthesisInputs
-from synthesis_workflow.tools import get_layer_tags
 
 
 class CreateAtlasLayerAnnotations(WorkflowTask):
@@ -40,25 +35,19 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
         default="layer_annotation.nrrd",
         description=":str: Path to save layer annotations constructed from atlas.",
     )
-    use_half = BoolParameter(
-        default=False,
-        description=":bool: Set to True to use half of the atlas (left or right hemisphere).",
-    )
-    half_axis = luigi.IntParameter(
-        default=0,
-        description=":int: Direction to select half of the atlas (can be 0, 1 or 2).",
-    )
-    half_side = luigi.IntParameter(
-        default=0,
-        description=":int: Side to choose to halve the atlas (0=left, 1=right).",
-    )
+
+    def requires(self):
+        return GetSynthesisInputs()
 
     def run(self):
         """ """
-        annotation, layer_mapping = get_layer_tags(CircuitConfig().atlas_path)
-
-        if self.use_half:
-            annotation.raw = halve_atlas(annotation.raw, axis=self.half_axis, side=self.half_side)
+        annotation, layer_mapping = get_layer_tags(
+            CircuitConfig().atlas_path,
+            self.input().pathlib_path / CircuitConfig().region_structure_path,
+            CircuitConfig().region,
+        )
+        if CircuitConfig().hemisphere is not None:
+            annotation.raw = halve_atlas(annotation.raw, side=CircuitConfig().hemisphere)
 
         annotation_path = self.output()["annotations"].path
         annotation.save_nrrd(annotation_path)
@@ -119,10 +108,6 @@ class CreateAtlasPlanes(WorkflowTask):
     atlas_planes_path = PathParameter(
         default="atlas_planes", description=":str: Path to save atlas planes."
     )
-    region = luigi.Parameter(default=None, description=":str: Name of region to consider")
-    hemisphere = luigi.Parameter(
-        default=None, description=":str: Hemisphere to considere (left/right)"
-    )
 
     def requires(self):
         """ """
@@ -130,17 +115,10 @@ class CreateAtlasPlanes(WorkflowTask):
 
     def run(self):
         """ """
-
         if self.plane_count < 1:
             raise Exception("Number of planes should be larger than one")
 
         layer_annotation = VoxelData.load_nrrd(self.input()["annotations"].path)
-
-        atlas = LocalAtlas(CircuitConfig().atlas_path)
-        if self.centerline_first_bound is None and self.centerline_last_bound is None:
-            self.centerline_first_bound, self.centerline_last_bound = get_centerline_bounds(
-                atlas, layer_annotation, self.region, hemisphere=self.hemisphere
-            )
         planes, centerline = create_planes(
             layer_annotation,
             self.plane_type,
@@ -155,23 +133,16 @@ class CreateAtlasPlanes(WorkflowTask):
 
     def output(self):
         """ """
-        return AtlasLocalTarget(f"{self.atlas_planes_path}_{self.region}.npz")
+        if CircuitConfig().region is not None:
+            suffix = f"_{CircuitConfig().region}"
+        else:
+            suffix = ""
+        return AtlasLocalTarget(f"{self.atlas_planes_path}{suffix}.npz")
 
 
-@copy_params(
-    mtype_taxonomy_path=ParamRef(PathConfig),
-)
 class BuildCircuit(WorkflowTask):
-    """Generate cell positions and me-types from atlas, compositions and taxonomy.
+    """Generate cell positions and me-types from atlas, compositions and taxonomy."""
 
-    Attributes:
-        mtype_taxonomy_path (str): Path to the taxonomy file (TSV).
-    """
-
-    cell_composition_path = PathParameter(
-        default="cell_composition.yaml",
-        description=":str: Path to the cell composition file (YAML).",
-    )
     density_factor = RatioParameter(
         default=0.01,
         left_op=luigi.parameter.operator.lt,
@@ -181,16 +152,18 @@ class BuildCircuit(WorkflowTask):
         default=None, description=":str: Path to save thickness mask (NCx only)."
     )
     seed = luigi.IntParameter(default=None, description=":int: Pseudo-random generator seed.")
-    region = OptionalStrParameter(default=None, description=":str: Region to use.")
+    mtype_taxonomy_file = luigi.Parameter(
+        default="mtype_taxonomy.tsv",
+        description=":str: Filename of taxonomy file to provide to BrainBuilder",
+    )
 
     def requires(self):
         """ """
-        return GetSynthesisInputs()
+        return {"synthesis": GetSynthesisInputs(), "composition": GetCellComposition()}
 
     def run(self):
         """ """
-        cell_composition_path = self.input().pathlib_path / self.cell_composition_path
-        mtype_taxonomy_path = self.input().pathlib_path / self.mtype_taxonomy_path
+        mtype_taxonomy_path = self.input()["synthesis"].pathlib_path / self.mtype_taxonomy_file
 
         thickness_mask_path = None
         if self.mask_path is not None:
@@ -199,13 +172,13 @@ class BuildCircuit(WorkflowTask):
             thickness_mask_path = self.mask_path.stem
 
         cells = build_circuit(
-            cell_composition_path,
+            self.input()["composition"].path,
             mtype_taxonomy_path,
             CircuitConfig().atlas_path,
             self.density_factor,
             mask=thickness_mask_path,
             seed=self.seed,
-            region=self.region,
+            region=CircuitConfig().region,
         )
         cells.save(self.output().path)
 
@@ -231,11 +204,6 @@ class SliceCircuit(WorkflowTask):
     n_cells = luigi.IntParameter(
         default=10, description=":int: Number of cells per mtype to consider."
     )
-    hemisphere = OptionalChoiceParameter(
-        default=None,
-        choices=["left", "right"],
-        description=":str: The hemisphere side.",
-    )
 
     def requires(self):
         """ """
@@ -253,7 +221,7 @@ class SliceCircuit(WorkflowTask):
             n_cells=self.n_cells,
             mtypes=self.mtypes,
             planes=planes,
-            hemisphere=self.hemisphere,
+            hemisphere=CircuitConfig().hemisphere,
         )
 
         cells = slice_circuit(self.input()["circuit"].path, self.output().path, _slicer)

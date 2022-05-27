@@ -2,12 +2,12 @@
 import luigi
 import pandas as pd
 
+from synthesis_workflow.tasks.config import GetSynthesisInputs
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import WorkflowWrapperTask
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
-from synthesis_workflow.tasks.utils import GetSynthesisInputs
 from synthesis_workflow.tasks.vacuum_synthesis import PlotVacuumMorphologies
 from synthesis_workflow.tasks.validation import MorphologyValidationReports
 from synthesis_workflow.tasks.validation import PlotCollage

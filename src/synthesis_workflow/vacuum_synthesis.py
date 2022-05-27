@@ -1,4 +1,6 @@
 """Functions for synthesis in vacuum to be used by luigi tasks."""
+import itertools
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -43,19 +45,8 @@ def _grow_morphology(
     vacuum_synth_morphs_df.loc[gid, "name"] = name
     vacuum_synth_morphs_df.loc[gid, "mtype"] = mtype
     vacuum_synth_morphs_df.loc[gid, vacuum_morphology_path] = morphology_path
-    # vacuum_synth_morphs_df.loc[gid, 'apical_point'] = grower.apical_points
 
     return vacuum_synth_morphs_df
-
-
-def _external_diametrizer(neuron, neurite_type, model_all, random_generator, diameter_params=None):
-    return build_diameters.build(
-        neuron,
-        model_all,
-        [neurite_type],
-        diameter_params,
-        random_generator,
-    )
 
 
 def grow_vacuum_morphologies(
@@ -111,16 +102,30 @@ def grow_vacuum_morphologies(
 
 def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_filename, morphology_path):
     """Plot synthesized morphologies on top of each others."""
+    # pylint: disable=cell-var-from-loop
     with PdfPages(pdf_filename) as pdf:
         for mtype in tqdm(sorted(vacuum_synth_morphs_df.mtype.unique())):
+
+            ids = vacuum_synth_morphs_df[vacuum_synth_morphs_df.mtype == mtype].index
+            if len(ids) <= 5:
+                sqrt_n = len(ids)
+                sqrt_m = 1
+            else:
+                sqrt_n = int(np.sqrt(len(ids)) + 1)
+                sqrt_m = sqrt_n
             plt.figure()
             ax = plt.gca()
-            for gid in vacuum_synth_morphs_df[vacuum_synth_morphs_df.mtype == mtype].index:
+            for gid, (n, m) in zip(ids, itertools.product(range(sqrt_n), range(sqrt_m))):
                 morphology = load_morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
-                matplotlib_impl.plot_morph(morphology, ax, plane="zy")
+                matplotlib_impl.plot_morph(
+                    morphology.transform(lambda p: p + np.array([500 * n, 500 * m, 0])),
+                    ax,
+                    realistic_diameters=True,
+                    soma_outline=False,
+                )
             ax.set_title(mtype)
-            ax.set_rasterized(True)
-            plt.axis([-800, 800, -800, 2000])
+            plt.axis("equal")
+            plt.tight_layout()
             with DisableLogger():
                 pdf.savefig()
             plt.close()

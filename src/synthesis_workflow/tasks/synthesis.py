@@ -10,6 +10,7 @@ import pandas as pd
 import yaml
 from diameter_synthesis.build_models import build as build_diameter_models
 from neurots import extract_input
+from placement_algorithm.app.compact_annotations import _collect_annotations
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import NumpyEncoder
 
@@ -23,6 +24,8 @@ from synthesis_workflow.synthesis import rescale_morphologies
 from synthesis_workflow.tasks.circuit import SliceCircuit
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import DiametrizerConfig
+from synthesis_workflow.tasks.config import GetCellComposition
+from synthesis_workflow.tasks.config import GetSynthesisInputs
 from synthesis_workflow.tasks.config import MorphsDfLocalTarget
 from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import RunnerConfig
@@ -30,13 +33,12 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.luigi_tools import BoolParameter
 from synthesis_workflow.tasks.luigi_tools import OptionalPathParameter
+from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
 from synthesis_workflow.tasks.luigi_tools import ParamRef
 from synthesis_workflow.tasks.luigi_tools import PathParameter
 from synthesis_workflow.tasks.luigi_tools import RatioParameter
 from synthesis_workflow.tasks.luigi_tools import WorkflowTask
 from synthesis_workflow.tasks.luigi_tools import copy_params
-from synthesis_workflow.tasks.utils import CreateAnnotationsFile
-from synthesis_workflow.tasks.utils import GetSynthesisInputs
 from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
 
@@ -45,15 +47,8 @@ morphio.set_maximum_warnings(0)
 L = logging.getLogger(__name__)
 
 
-@copy_params(
-    mtype_taxonomy_path=ParamRef(PathConfig),
-)
 class BuildMorphsDF(WorkflowTask):
-    """Generate the list of morphologies with their mtypes and paths.
-
-    Attributes:
-        mtype_taxonomy_path (str): Path to the mtype_taxonomy.tsv file.
-    """
+    """Generate the list of morphologies with their mtypes and paths."""
 
     neurondb_path = luigi.Parameter(description=":str: Path to the neuronDB file (XML).")
     morphology_dirs = luigi.DictParameter(
@@ -75,16 +70,12 @@ class BuildMorphsDF(WorkflowTask):
 
         L.debug("Build morphology dataframe from %s", neurondb_path)
 
-        mtype_taxonomy_path = self.input().pathlib_path / self.mtype_taxonomy_path
         morphs_df = load_neurondb_to_dataframe(
-            neurondb_path,
-            self.morphology_dirs,
-            mtype_taxonomy_path,
-            self.apical_points_path,
+            neurondb_path, self.morphology_dirs, self.apical_points_path
         )
 
-        # Remove duplicated morphologies in L23
-        morphs_df.drop_duplicates(subset=["name"], inplace=True)
+        # Remove possibly duplicated morphologies
+        morphs_df = morphs_df.drop_duplicates(subset=["name"])
 
         # Only use wanted mtypes
         if SynthesisConfig().mtypes is not None:
@@ -120,13 +111,13 @@ class ApplySubstitutionRules(WorkflowTask):
         substitution_rules_path = (
             self.input()["synthesis_input"].pathlib_path / self.substitution_rules_path
         )
-        with open(substitution_rules_path, "rb") as sub_file:
-            substitution_rules = yaml.full_load(sub_file)
+        df = pd.read_csv(self.input()["morphs_df"].path)
+        if substitution_rules_path.exists():
+            with open(substitution_rules_path, "rb") as sub_file:
+                substitution_rules = yaml.full_load(sub_file)
+            df = apply_substitutions(df, substitution_rules)
 
-        substituted_morphs_df = apply_substitutions(
-            pd.read_csv(self.input()["morphs_df"].path), substitution_rules
-        )
-        substituted_morphs_df.to_csv(self.output().path, index=False)
+        df.to_csv(self.output().path, index=False)
 
     def output(self):
         """ """
@@ -161,7 +152,10 @@ class BuildSynthesisParameters(WorkflowTask):
         """ """
         morphs_df = pd.read_csv(self.input()["morphologies"].path)
         mtypes = sorted(morphs_df.mtype.unique())
-        neurite_types = get_neurite_types(morphs_df, mtypes)
+        neurite_types = get_neurite_types(morphs_df)
+        if SynthesisConfig().with_axons:
+            for neurite_type in neurite_types.items():
+                neurite_type.append("axon")
 
         if self.input_tmd_parameters_path is not None:
             L.info("Using custom tmd parameters")
@@ -214,30 +208,31 @@ class BuildSynthesisDistributions(WorkflowTask):
 
     def requires(self):
         """ """
-        return ApplySubstitutionRules()
+        return {"rules": ApplySubstitutionRules(), "synthesis": GetSynthesisInputs()}
 
     def run(self):
         """ """
-        L.debug("reading morphs df from: %s", self.input().path)
-        morphs_df = pd.read_csv(self.input().path)
+        morphs_df = pd.read_csv(self.input()["rules"].path)
 
         mtypes = sorted(morphs_df.mtype.unique())
         L.debug("mtypes found: %s", mtypes)
 
-        neurite_types = get_neurite_types(morphs_df, mtypes)
+        neurite_types = get_neurite_types(morphs_df)
+        if SynthesisConfig().with_axons:
+            for neurite_type in neurite_types.items():
+                neurite_type.append("axon")
         L.debug("neurite_types found: %s", neurite_types)
 
         diameter_model_function = partial(
             build_diameter_models, config=DiametrizerConfig().config_model
         )
-
         tmd_distributions = build_distributions(
             mtypes,
             morphs_df,
             neurite_types,
             diameter_model_function,
             self.morphology_path,
-            SynthesisConfig().cortical_thickness,
+            self.input()["synthesis"].pathlib_path / CircuitConfig().region_structure_path,
             nb_jobs=self.nb_jobs,
             trunk_method=self.trunk_method,
         )
@@ -261,6 +256,26 @@ class BuildAxonMorphsDF(BuildMorphsDF):
     def output(self):
         """ """
         return MorphsDfLocalTarget(self.axon_morphs_df_path)
+
+
+class CreateAnnotationsFile(WorkflowTask):
+    """Task to compact annotations into a single JSON file."""
+
+    annotation_dir = luigi.Parameter(description=(":str: Path to annotations folder."))
+    morph_db = luigi.OptionalParameter(default=None, description=":str: Path to MorphDB file.")
+    destination = luigi.Parameter(description=":str: Path to output JSON file.")
+
+    def run(self):
+        """ """
+        # pylint: disable=protected-access
+        annotations = _collect_annotations(self.annotation_dir, self.morph_db)
+
+        with open(self.destination, "w") as f:
+            json.dump(annotations, f, indent=4, sort_keys=True)
+
+    def output(self):
+        """ """
+        return OutputLocalTarget(self.destination)
 
 
 class BuildAxonMorphologies(WorkflowTask):
@@ -472,22 +487,34 @@ class Synthesize(WorkflowTask):
         description=":float: The std value of the scaling jitter to apply (in degrees).",
     )
     seed = luigi.IntParameter(default=0, description=":int: Pseudo-random generator seed.")
+    axon_method = luigi.ChoiceParameter(
+        default="reconstructed",
+        description=":str: The method used to handle axons.",
+        choices=["no_axon", "reconstructed", "synthesis"],
+    )
 
     def requires(self):
         """ """
 
-        return {
+        tasks = {
+            "synthesis_input": GetSynthesisInputs(),
             "substituted_cells": ApplySubstitutionRules(),
-            "circuit": SliceCircuit(),
             "tmd_parameters": AddScalingRulesToParameters(),
             "tmd_distributions": BuildSynthesisDistributions(),
-            "axons": BuildAxonMorphologies(),
+            "circuit": SliceCircuit(),
+            "composition": GetCellComposition(),
         }
+        if self.axon_method == "reconstructed":
+            tasks["axons"] = BuildAxonMorphologies()
+            tasks["axon_cells"] = BuildAxonMorphsDF(
+                neurondb_path=BuildAxonMorphologies().get_neuron_db_path("xml"),
+                morphology_dirs={"clone_path": BuildAxonMorphologies().axon_cells_path},
+            )
+
+        return tasks
 
     def run(self):
         """ """
-
-        axon_morphs_path = self.input()["axons"]["morphs"].path
         out_mvd3 = self.output()["out_mvd3"]
         out_morphologies = self.output()["out_morphologies"]
         out_apical_points = self.output()["apical_points"]
@@ -498,18 +525,18 @@ class Synthesize(WorkflowTask):
         else:
             debug_scales_path = None
 
-        # Get base-morph-dir argument value
-        if self.axon_morphs_base_dir is None:
-            axon_morphs_base_dir = get_axon_base_dir(
-                pd.read_csv(self.requires()["axons"].input()["axon_cells"].path),
-                "clone_path",
-            )
-        else:
-            axon_morphs_base_dir = self.axon_morphs_base_dir
+        axon_morphs_path = None
+        axon_morphs_base_dir = None
+        if self.axon_method == "reconstructed":
+            axon_morphs_path = self.input()["axons"]["morphs"].path
+            if self.axon_morphs_base_dir is None:
+                axon_morphs_base_dir = get_axon_base_dir(
+                    pd.read_csv(self.input()["axon_cells"].path), "clone_path"
+                )
+            else:
+                axon_morphs_base_dir = self.axon_morphs_base_dir
+            L.debug("axon_morphs_base_dir = %s", axon_morphs_base_dir)
 
-        L.debug("axon_morphs_base_dir = %s", axon_morphs_base_dir)
-
-        # Build arguments for region_grower.synthesize_morphologies.SynthesizeMorphologies
         kwargs = {
             "input_cells": self.input()["circuit"].path,
             "tmd_parameters": self.input()["tmd_parameters"].path,
@@ -526,9 +553,10 @@ class Synthesize(WorkflowTask):
             "max_drop_ratio": self.max_drop_ratio,
             "seed": self.seed,
             "nb_processes": self.nb_jobs,
+            "region_structure": self.input()["synthesis_input"].pathlib_path
+            / CircuitConfig().region_structure_path,
         }
-
-        if self.apply_jitter:
+        if self.axon_method == "reconstructed" and self.apply_jitter:
             kwargs["scaling_jitter_std"] = self.scaling_jitter_std
             kwargs["rotational_jitter_std"] = self.rotational_jitter_std
 
@@ -584,15 +612,15 @@ class AddScalingRulesToParameters(WorkflowTask):
         """ """
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
 
+        scaling_rules = {}
         if self.scaling_rules_path is not None:
             scaling_rules_path = (
                 self.input()["synthesis_input"].pathlib_path / self.scaling_rules_path
             )
-            L.debug("Load scaling rules from %s", scaling_rules_path)
-            with open(scaling_rules_path, "r") as f:
-                scaling_rules = yaml.full_load(f)
-        else:
-            scaling_rules = {}
+            if scaling_rules_path.exists():
+                L.debug("Load scaling rules from %s", scaling_rules_path)
+                with open(scaling_rules_path, "r") as f:
+                    scaling_rules = yaml.full_load(f)
 
         add_scaling_rules_to_parameters(
             tmd_parameters,

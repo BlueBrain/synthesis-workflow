@@ -16,6 +16,8 @@ from morphval import validation_main as morphval_validation
 from synthesis_workflow.tasks.circuit import CreateAtlasLayerAnnotations
 from synthesis_workflow.tasks.circuit import CreateAtlasPlanes
 from synthesis_workflow.tasks.config import CircuitConfig
+from synthesis_workflow.tasks.config import GetCellComposition
+from synthesis_workflow.tasks.config import GetSynthesisInputs
 from synthesis_workflow.tasks.config import MorphsDfLocalTarget
 from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import RunnerConfig
@@ -315,6 +317,8 @@ class PlotSingleCollage(WorkflowTask):
             "synthesis": Synthesize(),
             "planes": CreateAtlasPlanes(),
             "layers": CreateAtlasLayerAnnotations(),
+            "composition": GetCellComposition(),
+            "synthesis_input": GetSynthesisInputs(),
         }
 
     def run(self):
@@ -336,6 +340,7 @@ class PlotSingleCollage(WorkflowTask):
         planes = load_planes_centerline(planes_path)["planes"]
 
         layer_annotation_path = self.input()["layers"]["annotations"].path
+        layer_mappings = yaml.safe_load(self.input()["layers"]["layer_mapping"].open())
         L.debug("Load layer annotations from %s", layer_annotation_path)
         layer_annotation = VoxelData.load_nrrd(layer_annotation_path)
 
@@ -355,6 +360,9 @@ class PlotSingleCollage(WorkflowTask):
                 "linewidth": self.linewidth,
                 "diameter_scale": self.diameter_scale,
             },
+            layer_mappings=layer_mappings,
+            region_structure_path=self.input()["synthesis_input"].pathlib_path
+            / CircuitConfig().region_structure_path,
         )
 
     def output(self):
@@ -807,8 +815,6 @@ class PlotSingleCollageFromCircuit(WorkflowTask):
                 "linewidth": self.linewidth,
                 "diameter_scale": self.diameter_scale,
             },
-            region=self.region,
-            hemisphere=self.hemisphere,
             with_y_field=self.with_y_field,
             with_cells=self.with_cells,
         )

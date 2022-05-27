@@ -8,11 +8,14 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pandas as pd
+import yaml
 from joblib import Parallel
 from joblib import delayed
 from morphio.mut import Morphology
 from neuroc.scale import ScaleParameters
 from neuroc.scale import scale_section
+from neurom import load_morphology
+from neurom.check.morphology_checks import has_apical_dendrite
 from neurom.core.dataformat import COLS
 from neurots import extract_input
 from placement_algorithm.app import utils
@@ -29,14 +32,25 @@ L = logging.getLogger(__name__)
 matplotlib.use("Agg")
 
 
-def get_neurite_types(morphs_df, mtypes):
-    """Get the neurite types to consider for PC or IN cells."""
-    return {
-        mtype: ["basal", "axon"]
-        if morphs_df.loc[morphs_df.mtype == mtype, "morph_class"].tolist()[0] == "IN"
-        else ["basal", "apical", "axon"]
-        for mtype in mtypes
-    }
+def get_neurite_types(morphs_df):
+    """Get the neurite types to consider for PC or IN cells by checking if apical exists."""
+
+    def _get_morph_class(path):
+        return "PC" if has_apical_dendrite(load_morphology(path)) else "IN"
+
+    morphs_df["morph_class"] = morphs_df["path"].apply(_get_morph_class)
+    neurite_types = {}
+    for mtype, _df in morphs_df.groupby("mtype"):
+        morph_class = list(set(_df["morph_class"]))
+
+        if len(morph_class) > 1:
+            raise Exception("f{mtype} has not consistent morph_class, we stop here")
+
+        if morph_class[0] == "IN":
+            neurite_types[mtype] = ["basal"]
+        if morph_class[0] == "PC":
+            neurite_types[mtype] = ["basal", "apical"]
+    return neurite_types
 
 
 def apply_substitutions(original_morphs_df, substitution_rules=None):
@@ -72,16 +86,27 @@ def _build_distributions_single_mtype(
     trunk_method="simple",
 ):
     """Internal function for multiprocessing of tmd_distribution building."""
-    morphology_paths = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
-    kwargs = {
-        "neurite_types": neurite_types[mtype],
-        "diameter_input_morph": morphology_paths,
-        "diameter_model": diameter_model_function,
-    }
-    if trunk_method != "simple":
-        kwargs["trunk_method"] = trunk_method
+    data = {}
+    for neurite_type in neurite_types[mtype]:
+        if "use_axon" in morphs_df.columns:
+            morphology_paths = morphs_df.loc[
+                (morphs_df.mtype == mtype) & morphs_df.use_axon, morphology_path
+            ].to_list()
+        else:
+            morphology_paths = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
+        kwargs = {
+            "neurite_types": neurite_types[mtype],
+            "diameter_input_morph": morphology_paths,
+            "diameter_model": diameter_model_function,
+        }
+        if trunk_method != "simple":
+            kwargs["trunk_method"] = trunk_method
 
-    return mtype, extract_input.distributions(morphology_paths, **kwargs)
+        _data = extract_input.distributions(morphology_paths, **kwargs)
+        data[neurite_type] = _data[neurite_type]
+        data["diameter"] = _data["diameter"]
+        data["soma"] = _data["soma"]
+    return mtype, data
 
 
 def build_distributions(
@@ -90,7 +115,7 @@ def build_distributions(
     neurite_types,
     diameter_model_function,
     morphology_path,
-    cortical_thickness,
+    region_structure_path,
     nb_jobs=-1,
     joblib_verbose=10,
     trunk_method="simple",
@@ -102,7 +127,10 @@ def build_distributions(
         morphs_df (DataFrame): morphology dataframe with reconstruction to use
         diameter_model_function (function): diametrizer function (from diameter-synthesis)
         morphology_path (str): name of the column in morphs_df to use for paths to morphologies
-        cortical_thickness (list): list of cortical thicknesses for reference scaling
+        region_structure_path (str): path to region_structure yaml file with thicknesses
+        nb_jobs (int): number of jobs to run in parallal with joblib
+        joblib_verbose (int): verbose level of joblib
+        trunk_method (str): method to set trunk on soma for synthesis (simple|3d_angle)
 
     Returns:
         dict: dict to save to tmd_distribution.json
@@ -115,11 +143,15 @@ def build_distributions(
         morphology_path=morphology_path,
         trunk_method=trunk_method,
     )
+    thicknesses = []
+    if Path(region_structure_path).exists():
+        with open(region_structure_path, "r") as r_p:
+            region_structure = yaml.safe_load(r_p)
+        thicknesses = [
+            region_structure["thicknesses"][layer] for layer in region_structure["layers"]
+        ]
 
-    tmd_distributions = {
-        "mtypes": {},
-        "metadata": {"cortical_thickness": cortical_thickness},
-    }
+    tmd_distributions = {"mtypes": {}, "metadata": {"cortical_thickness": thicknesses}}
     for mtype, distribution in Parallel(nb_jobs, verbose=joblib_verbose)(
         delayed(build_distributions_single_mtype)(mtype) for mtype in mtypes
     ):

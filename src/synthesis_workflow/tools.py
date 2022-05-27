@@ -17,24 +17,8 @@ from joblib import cpu_count
 from joblib import delayed
 from morph_tool.morphdb import MorphDB
 from morph_tool.utils import find_morph
-from voxcell import VoxelData
-from voxcell.nexus.voxelbrain import LocalAtlas
 
 L = logging.getLogger(__name__)
-
-
-def add_mtype_taxonomy(morphs_df, mtype_taxonomy):
-    """From a dict with mtype to morph_class, fill in the morphs_df dataframe.
-
-    Args:
-        morphs_df (pandas.DataFrame): the morphs_df DataFrame
-        mtype_taxonomy (pandas.DataFrame): with columns mtype and mClass
-    """
-    morphs_df = morphs_df[morphs_df["mtype"].isin(mtype_taxonomy.mtype)]
-    morphs_df["morph_class"] = morphs_df["mtype"].map(
-        lambda mtype: mtype_taxonomy.loc[mtype_taxonomy.mtype == mtype, "mClass"].to_list()[0]
-    )
-    return morphs_df
 
 
 def add_morphology_paths(morphs_df, morphology_dirs):
@@ -66,16 +50,13 @@ def add_apical_points(morphs_df, apical_points):
     return morphs_df
 
 
-def load_neurondb_to_dataframe(
-    neurondb_path, morphology_dirs=None, pc_in_types_path=None, apical_points_path=None
-):
+def load_neurondb_to_dataframe(neurondb_path, morphology_dirs=None, apical_points_path=None):
     """Loads morphology release to a dataframe.
 
     Args:
         neurondb_path (str): path to a neurondb.xml file
         morphology_dirs (dict): If passed, a column with the path to each morphology file
             will be added for each entry of the dict, where the column name is the dict key
-        pc_in_types_path (str): path to mtype_taxonomy.tsv file
         apical_points_path (str): path to JSON file containing apical points
     """
     morphs_df = MorphDB.from_neurondb(neurondb_path).df[
@@ -90,14 +71,7 @@ def load_neurondb_to_dataframe(
             apical_points = json.load(f)
         morphs_df = add_apical_points(morphs_df, apical_points)
 
-    if pc_in_types_path is not None:
-        mtype_taxonomy = pd.read_csv(pc_in_types_path, sep="\t")
-        morphs_df = add_mtype_taxonomy(morphs_df, mtype_taxonomy)
-
     return morphs_df
-
-
-L = logging.getLogger(__name__)
 
 
 def load_circuit(
@@ -162,21 +136,6 @@ def find_case_insensitive_file(path):
 def update_morphs_df(morphs_df_path, new_morphs_df):
     """Updates a morphs_df with new entries to preserve duplicates."""
     return pd.read_csv(morphs_df_path).merge(new_morphs_df, how="left")
-
-
-def get_layer_tags(atlas_dir):
-    """Creates a VoxelData with layer tags."""
-    atlas = LocalAtlas(atlas_dir)
-
-    names, ids = atlas.get_layers()  # pylint: disable=no-member
-    br = VoxelData.load_nrrd(Path(atlas_dir) / "brain_regions.nrrd")
-    layers = np.zeros_like(br.raw, dtype="uint8")
-    layer_mapping = {}
-    for layer_id, (ids_set, layer) in enumerate(zip(ids, names)):
-        layer_mapping[layer_id] = layer
-        layers[np.isin(br.raw, list(ids_set))] = layer_id + 1
-    br.raw = layers
-    return br, layer_mapping
 
 
 class IdProcessingFormatter(logging.Formatter):

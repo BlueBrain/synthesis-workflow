@@ -1,6 +1,12 @@
 {
   "L1_DAC": {
     "basal_dendrite": {
+      "bifurcation_partitions": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
       "local_bifurcation_angles": {
         "bins": 40,
         "criterion": "dist",
@@ -20,12 +26,6 @@
         "threshold": 0.1
       },
       "number_of_sections_per_neurite": {
-        "bins": 40,
-        "criterion": "dist",
-        "stat_test": "StatTests.ks",
-        "threshold": 0.1
-      },
-      "bifurcation_partitions": {
         "bins": 40,
         "criterion": "dist",
         "stat_test": "StatTests.ks",
@@ -89,6 +89,12 @@
   },
   "L3_TPC:A": {
     "basal_dendrite": {
+      "bifurcation_partitions": {
+        "bins": 40,
+        "criterion": "dist",
+        "stat_test": "StatTests.ks",
+        "threshold": 0.1
+      },
       "local_bifurcation_angles": {
         "bins": 40,
         "criterion": "dist",
@@ -108,12 +114,6 @@
         "threshold": 0.1
       },
       "number_of_sections_per_neurite": {
-        "bins": 40,
-        "criterion": "dist",
-        "stat_test": "StatTests.ks",
-        "threshold": 0.1
-      },
-      "bifurcation_partitions": {
         "bins": 40,
         "criterion": "dist",
         "stat_test": "StatTests.ks",

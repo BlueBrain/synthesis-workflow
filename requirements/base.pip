@@ -17,7 +17,7 @@ neurom>=3,<4
 pandas
 placement_algorithm>=2.2.0
 PyYAML
-region_grower>=0.3.1
+region_grower>=0.4.0
 scipy
 seaborn
 tmd
