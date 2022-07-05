@@ -13,6 +13,7 @@ include:
    - project: neuromath/ci
      file:
         - /ci/jobs/auto-release.yml
+        - /ci/jobs/check-merge-request-title.yml
         - /ci/lib/pytest-template.yml
         - /ci/jobs/py38.yml
         - /ci/jobs/py39.yml
