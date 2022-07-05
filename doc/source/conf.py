@@ -21,8 +21,7 @@ from pkg_resources import get_distribution
 import morphval
 import synthesis_workflow
 import synthesis_workflow.tasks
-from synthesis_workflow.tasks.cli import _PARAM_NO_VALUE
-from synthesis_workflow.tasks.cli import _process_param
+from synthesis_workflow.tasks import cli
 
 # -- Project information -----------------------------------------------------
 
@@ -150,23 +149,19 @@ def maybe_skip_member(app, what, name, obj, skip, options):
             actual_module = importlib.import_module(root_package.__name__ + "." + module)
             task = getattr(actual_module, path[-2])
             actual_obj = getattr(task, path[-1])
-            if isinstance(actual_obj, luigi.Parameter):
-                if hasattr(actual_obj, "description") and actual_obj.description:
-                    help_str, param_type, choices, interval, optional = _process_param(actual_obj)
-                    if optional:
-                        help_str = "(optional) " + help_str
-                    if param_type is not None:
-                        help_str += f"\n\n:type: {param_type}"
-                    if choices is not None:
-                        help_str += f"\n\n:choices: {choices}"
-                    if interval is not None:
-                        help_str += f"\n\n:permitted values: {interval}"
-                    if (
-                        hasattr(actual_obj, "_default")
-                        and actual_obj._default not in _PARAM_NO_VALUE
-                    ):
-                        help_str += f"\n\n:default value: {actual_obj._default}"
-                    obj.docstring = help_str
+            if (
+                isinstance(actual_obj, luigi.Parameter)
+                and hasattr(actual_obj, "description")
+                and actual_obj.description
+            ):
+                obj.docstring = cli.format_description(
+                    actual_obj,
+                    default_str="{doc}\n\n:default value: {default}",
+                    optional_str="(optional) {doc}",
+                    type_str="{doc}\n\n:type: {type}",
+                    choices_str="{doc}\n\n:choices: {choices}",
+                    interval_str="{doc}\n\n:permitted values: {interval}",
+                )
         except Exception:  # pylint: disable=broad-except
             pass
 
@@ -174,5 +169,5 @@ def maybe_skip_member(app, what, name, obj, skip, options):
 
 
 def setup(app):
-    """Sphinx events setup."""
+    """Setup Sphinx by connecting functions to events."""
     app.connect("autoapi-skip-member", maybe_skip_member)
