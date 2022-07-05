@@ -8,6 +8,14 @@ import pandas as pd
 import pkg_resources
 import yaml
 from atlas_analysis.planes.planes import load_planes_centerline
+from luigi.parameter import OptionalNumericalParameter
+from luigi.parameter import PathParameter
+from luigi_tools.parameter import BoolParameter
+from luigi_tools.task import ParamRef
+from luigi_tools.task import WorkflowTask
+from luigi_tools.task import WorkflowWrapperTask
+from luigi_tools.task import copy_params
+from luigi_tools.util import WorkflowError
 from neurom.view import matplotlib_impl
 from voxcell import CellCollection
 from voxcell import VoxelData
@@ -24,14 +32,6 @@ from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import ValidationConfig
 from synthesis_workflow.tasks.config import ValidationLocalTarget
-from synthesis_workflow.tasks.luigi_tools import BoolParameter
-from synthesis_workflow.tasks.luigi_tools import OptionalNumericalParameter
-from synthesis_workflow.tasks.luigi_tools import ParamRef
-from synthesis_workflow.tasks.luigi_tools import PathParameter
-from synthesis_workflow.tasks.luigi_tools import WorkflowError
-from synthesis_workflow.tasks.luigi_tools import WorkflowTask
-from synthesis_workflow.tasks.luigi_tools import WorkflowWrapperTask
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.synthesis import AddScalingRulesToParameters
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
 from synthesis_workflow.tasks.synthesis import BuildMorphsDF

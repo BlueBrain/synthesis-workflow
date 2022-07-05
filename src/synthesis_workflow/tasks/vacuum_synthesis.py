@@ -5,16 +5,16 @@ import logging
 import luigi
 import morphio
 import pandas as pd
+from luigi.parameter import PathParameter
+from luigi_tools.task import ParamRef
+from luigi_tools.task import WorkflowTask
+from luigi_tools.task import copy_params
 
 from synthesis_workflow.tasks.config import MorphsDfLocalTarget
 from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tasks.config import ValidationLocalTarget
-from synthesis_workflow.tasks.luigi_tools import ParamRef
-from synthesis_workflow.tasks.luigi_tools import PathParameter
-from synthesis_workflow.tasks.luigi_tools import WorkflowTask
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
 from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH

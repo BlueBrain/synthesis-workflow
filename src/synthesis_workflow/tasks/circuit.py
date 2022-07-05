@@ -5,6 +5,12 @@ import luigi
 import yaml
 from atlas_analysis.planes.planes import load_planes_centerline
 from atlas_analysis.planes.planes import save_planes_centerline
+from luigi.parameter import OptionalPathParameter
+from luigi.parameter import PathParameter
+from luigi_tools.parameter import RatioParameter
+from luigi_tools.task import ParamRef
+from luigi_tools.task import WorkflowTask
+from luigi_tools.task import copy_params
 from voxcell import VoxelData
 
 from synthesis_workflow.circuit import build_circuit
@@ -20,12 +26,6 @@ from synthesis_workflow.tasks.config import CircuitLocalTarget
 from synthesis_workflow.tasks.config import GetCellComposition
 from synthesis_workflow.tasks.config import GetSynthesisInputs
 from synthesis_workflow.tasks.config import SynthesisConfig
-from synthesis_workflow.tasks.luigi_tools import OptionalPathParameter
-from synthesis_workflow.tasks.luigi_tools import ParamRef
-from synthesis_workflow.tasks.luigi_tools import PathParameter
-from synthesis_workflow.tasks.luigi_tools import RatioParameter
-from synthesis_workflow.tasks.luigi_tools import WorkflowTask
-from synthesis_workflow.tasks.luigi_tools import copy_params
 
 
 class CreateAtlasLayerAnnotations(WorkflowTask):

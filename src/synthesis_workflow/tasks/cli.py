@@ -52,6 +52,37 @@ def _process_param(param):
     return param_doc, param_type, choices, interval, optional
 
 
+def format_description(
+    param,
+    default_str="{doc} Default value: {default}.",
+    optional_str="(optional) {doc}",
+    type_str="({type}) {doc}",
+    choices_str="{doc} Choices: {choices}.",
+    interval_str="{doc} Permitted values: {interval}.",
+    param_no_value=None,
+):
+    """Format the description of a parameter."""
+    if param_no_value is None:
+        param_no_value = _PARAM_NO_VALUE
+
+    try:
+        param_doc, param_type, choices, interval, optional = _process_param(param)
+        if optional:
+            param_doc = optional_str + param_doc
+        if param_type is not None:
+            param_doc = type_str.format(doc=param_doc, type=param_type.replace(":", ""))
+        if choices is not None:
+            param_doc = choices_str.format(doc=param_doc, choices=choices)
+        if interval is not None:
+            param_doc = interval_str.format(doc=param_doc, interval=interval)
+        # pylint: disable=protected-access
+        if hasattr(param, "_default") and param._default not in param_no_value:
+            param_doc = default_str.format(doc=param_doc, default=param._default)
+    except AttributeError:
+        param_doc = param.description
+    return param_doc
+
+
 class ArgParser:
     """Class to build parser and parse arguments."""
 
@@ -102,8 +133,8 @@ class ArgParser:
             "--create-dependency-graph",
             help=(
                 "Create the dependency graph of a workflow instead of running it. "
-                "Pass either 'ascii' to print the graph to screen or a path to render "
-                "it as an image (depending on the extension of the given path)."
+                "Pass a path to render it as an image (depending on the extension of the given "
+                "path)."
             ),
         )
 
@@ -126,29 +157,20 @@ class ArgParser:
 
         workflow_parser = parser.add_subparsers(help="Possible workflows", dest="workflow")
 
-        def format_description(param):
-            try:
-                param_doc, param_type, choices, interval, optional = _process_param(param)
-                if optional:
-                    param_doc = "(optional) " + param_doc
-                if param_type is not None:
-                    param_type = f"({param_type.replace(':', '')})"
-                    param_doc = f"{param_type} {param_doc}"
-                if choices is not None:
-                    param_doc = f"{param_doc} Choices: {choices}."
-                if interval is not None:
-                    param_doc = f"{param_doc} Permitted values: {interval}."
-                # pylint: disable=protected-access
-                if hasattr(param, "_default") and param._default not in _PARAM_NO_VALUE:
-                    param_doc = f"{param_doc} Default value: {param._default}."
-            except AttributeError:
-                param_doc = param.description
-            return param_doc
-
         for workflow_name, task in WORKFLOW_TASKS.items():
             try:
                 task_name = task.__name__
                 doc = task.__doc__
+                if ".. graphviz::" in doc:
+                    doc = re.sub(
+                        (
+                            "The complete phase has the following dependency graph:"
+                            r"\n\n    .. graphviz:: .*\.dot"
+                        ),
+                        "",
+                        doc,
+                        flags=re.DOTALL,
+                    ).strip()
                 subparser = workflow_parser.add_parser(workflow_name, help=doc)
                 for param, param_obj in task.get_params():
                     param_name = "--" + param.replace("_", "-")
@@ -156,7 +178,7 @@ class ArgParser:
                         param_name,
                         help=format_description(param_obj),
                         # pylint: disable=protected-access
-                        **param_obj._parser_kwargs(param_name, task_name),
+                        **param_obj._parser_kwargs(param, task_name),
                     )
                 parsers[workflow_name] = subparser
             except (AttributeError, TypeError):
@@ -174,6 +196,12 @@ class ArgParser:
 def _setup_logging(log_level, log_file=None, log_file_level=None):
     """Setup logging."""
     setup_logging(log_level, log_file, log_file_level)
+
+
+def _build_parser():
+    """Build the parser."""
+    tmp = ArgParser().parser
+    return tmp
 
 
 def main(arguments=None):
@@ -201,30 +229,36 @@ def main(arguments=None):
     luigi_config = {k: v for k, v in vars(args).items() if k in LUIGI_PARAMETERS}
 
     # Prepare workflow task and aguments
-    task = WORKFLOW_TASKS[args.workflow]
-    args_dict = {k: v for k, v in vars(args).items() if k in task.get_param_names()}
+    task_cls = WORKFLOW_TASKS[args.workflow]
+    args_dict = {k.split(task_cls.get_task_family() + "_")[-1]: v for k, v in vars(args).items()}
+    args_dict = {
+        k: v for k, v in args_dict.items() if v is not None and k in task_cls.get_param_names()
+    }
+    task = WORKFLOW_TASKS[args.workflow](**args_dict)
 
     # Export the dependency graph of the workflow instead of running it
     if args.create_dependency_graph is not None:
-        task = WORKFLOW_TASKS[args.workflow](**args_dict)
-        g = get_dependency_graph(task)
+        g = get_dependency_graph(task, allow_orphans=True)
 
         # Create URLs
         base_f = Path(inspect.getfile(synthesis_workflow)).parent
         node_kwargs = {}
         for _, child in g:
+            if child is None:
+                continue
             url = (
                 Path(inspect.getfile(child.__class__)).relative_to(base_f).with_suffix("")
                 / "index.html"
             )
             anchor = "#" + ".".join(child.__module__.split(".")[1:] + [child.__class__.__name__])
             node_kwargs[child] = {"URL": "../../" + url.as_posix() + anchor}
+
         dot = graphviz_dependency_graph(g, node_kwargs=node_kwargs)
         render_dependency_graph(dot, args.create_dependency_graph)
-        sys.exit()
+        return
 
     # Run the luigi task
-    luigi.build([WORKFLOW_TASKS[args.workflow](**args_dict)], **luigi_config)
+    luigi.build([task], **luigi_config)
 
 
 if __name__ == "__main__":

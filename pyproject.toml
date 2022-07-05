@@ -6,7 +6,6 @@ target-version = ["py38"]
 # PYLINT
 [tool.pylint.messages-control]
 disable=[
-	"bad-continuation",
 	"duplicate-code",
 	"empty-docstring",
 	"fixme",

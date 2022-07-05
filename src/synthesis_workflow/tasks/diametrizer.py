@@ -15,6 +15,10 @@ from diameter_synthesis.build_models import build as build_diameter_model
 from diameter_synthesis.plotting import plot_distribution_fit
 from joblib import Parallel
 from joblib import delayed
+from luigi_tools.parameter import BoolParameter
+from luigi_tools.task import ParamRef
+from luigi_tools.task import WorkflowTask
+from luigi_tools.task import copy_params
 from morphio.mut import Morphology
 from neurom import load_morphologies
 from tqdm import tqdm
@@ -22,10 +26,6 @@ from tqdm import tqdm
 from synthesis_workflow.tasks.config import DiametrizerConfig
 from synthesis_workflow.tasks.config import OutputLocalTarget
 from synthesis_workflow.tasks.config import RunnerConfig
-from synthesis_workflow.tasks.luigi_tools import BoolParameter
-from synthesis_workflow.tasks.luigi_tools import ParamRef
-from synthesis_workflow.tasks.luigi_tools import WorkflowTask
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tools import update_morphs_df
 
 matplotlib.use("Agg")

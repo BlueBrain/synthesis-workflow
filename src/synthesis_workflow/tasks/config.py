@@ -8,12 +8,11 @@ from tempfile import TemporaryDirectory
 import luigi
 import yaml
 from git import Repo
-
-from synthesis_workflow.tasks.luigi_tools import ExtParameter
-from synthesis_workflow.tasks.luigi_tools import OptionalChoiceParameter
-from synthesis_workflow.tasks.luigi_tools import OptionalIntParameter
-from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
-from synthesis_workflow.tasks.luigi_tools import WorkflowTask
+from luigi.parameter import OptionalChoiceParameter
+from luigi.parameter import OptionalIntParameter
+from luigi_tools.parameter import ExtParameter
+from luigi_tools.target import OutputLocalTarget
+from luigi_tools.task import WorkflowTask
 
 # Add some warning filters
 warnings.filterwarnings("ignore", module="diameter_synthesis.build_diameters")

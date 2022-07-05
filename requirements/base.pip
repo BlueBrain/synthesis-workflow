@@ -7,7 +7,7 @@ diameter_synthesis>=0.4.1,<1
 gitpython
 jinja2
 joblib
-luigi
+luigi>=3.1
 luigi-tools>=0.0.15
 matplotlib
 morph_tool>=2.9.0,<3

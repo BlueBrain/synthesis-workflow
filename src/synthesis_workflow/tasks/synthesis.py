@@ -9,6 +9,14 @@ import morphio
 import pandas as pd
 import yaml
 from diameter_synthesis.build_models import build as build_diameter_models
+from luigi.parameter import OptionalPathParameter
+from luigi.parameter import PathParameter
+from luigi_tools.parameter import BoolParameter
+from luigi_tools.parameter import RatioParameter
+from luigi_tools.target import OutputLocalTarget
+from luigi_tools.task import ParamRef
+from luigi_tools.task import WorkflowTask
+from luigi_tools.task import copy_params
 from neurots import extract_input
 from placement_algorithm.app.compact_annotations import _collect_annotations
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
@@ -31,14 +39,6 @@ from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
-from synthesis_workflow.tasks.luigi_tools import BoolParameter
-from synthesis_workflow.tasks.luigi_tools import OptionalPathParameter
-from synthesis_workflow.tasks.luigi_tools import OutputLocalTarget
-from synthesis_workflow.tasks.luigi_tools import ParamRef
-from synthesis_workflow.tasks.luigi_tools import PathParameter
-from synthesis_workflow.tasks.luigi_tools import RatioParameter
-from synthesis_workflow.tasks.luigi_tools import WorkflowTask
-from synthesis_workflow.tasks.luigi_tools import copy_params
 from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
 
