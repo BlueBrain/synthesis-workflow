@@ -24,3 +24,4 @@ tmd
 neurots>=3.1,<4
 tqdm
 voxcell>=3,<4
+bluepy-configfile

@@ -72,8 +72,8 @@ class CreateAtlasPlanes(WorkflowTask):
     """Create plane cuts of an atlas."""
 
     plane_type = luigi.ChoiceParameter(
-        default="centerline",
-        choices=["aligned", "centerline"],
+        default="aligned",
+        choices=["aligned", "centerline_straight", "centerline_curved"],
         description=(
             ":str: Type of planes creation algorithm. It can take the value 'centerline', "
             "so the center line is computed between first_bound and last_bound with internal "

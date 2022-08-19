@@ -4,6 +4,8 @@ import logging
 import numpy as np
 import pandas as pd
 import yaml
+from atlas_analysis.planes.planes import _smoothing
+from atlas_analysis.planes.planes import create_centerline
 from atlas_analysis.planes.planes import create_planes as _create_planes
 from brainbuilder.app.cells import _place as place
 from region_grower.atlas_helper import AtlasHelper
@@ -224,7 +226,12 @@ def get_centerline_bounds(layer):
     """Find centerline bounds using PCA of the voxell position of a given layer in the region."""
     _ls = np.unique(layer.raw[layer.raw > 0])
     central_layer = _ls[int(len(_ls) / 2)]
-    ids = np.column_stack(np.where(layer.raw == central_layer))
+
+    # we select voxels which are on the boundary of the region, to prevent picking them in y dir
+    layer_raw = np.array(layer.raw, dtype=float)
+    layer_raw[layer_raw == 0] = -10000  # large number to be safe
+    boundary_mask = sum(abs(g) for g in np.gradient(layer_raw)) > 1000
+    ids = np.column_stack(np.where((layer.raw == central_layer) & boundary_mask))
     points = layer.indices_to_positions(ids)
     _align = points.dot(_get_principal_direction(points))
     return ids[_align.argmin()], ids[_align.argmax()]
@@ -269,7 +276,7 @@ def create_planes(
             for centerline (in voxcell index)
         centerline_axis (str): (for plane_type = aligned) axis along which to create planes
     """
-    if plane_type == "centerline":
+    if plane_type == "centerline_straight":
         if centerline_first_bound is None and centerline_last_bound is None:
             centerline_first_bound, centerline_last_bound = get_centerline_bounds(layer_annotation)
         centerline = np.array(
@@ -278,6 +285,13 @@ def create_planes(
                 layer_annotation.indices_to_positions(centerline_last_bound),
             ]
         )
+    elif plane_type == "centerline_curved":
+        if centerline_first_bound is None and centerline_last_bound is None:
+            centerline_first_bound, centerline_last_bound = get_centerline_bounds(layer_annotation)
+        centerline = create_centerline(
+            layer_annotation, [centerline_first_bound, centerline_last_bound]
+        )
+        centerline = _smoothing(centerline)
 
     elif plane_type == "aligned":
         centerline = np.zeros([2, 3])

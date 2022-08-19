@@ -1,13 +1,23 @@
 """Luigi tasks for validation workflows."""
+import os
+
 import luigi
+import numpy as np
 import pandas as pd
+from atlas_analysis.planes.planes import load_planes_centerline
+from bluepy_configfile.configfile import BlueConfig
+from luigi.parameter import PathParameter
 from luigi_tools.parameter import BoolParameter
+from luigi_tools.target import OutputLocalTarget
 from luigi_tools.task import WorkflowTask
 from luigi_tools.task import WorkflowWrapperTask
 
+from synthesis_workflow.tasks.circuit import CreateAtlasPlanes
+from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import GetSynthesisInputs
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
+from synthesis_workflow.tasks.synthesis import Synthesize
 from synthesis_workflow.tasks.vacuum_synthesis import PlotVacuumMorphologies
 from synthesis_workflow.tasks.validation import MorphologyValidationReports
 from synthesis_workflow.tasks.validation import PlotCollage
@@ -18,6 +28,49 @@ from synthesis_workflow.tasks.validation import PlotScales
 from synthesis_workflow.tasks.validation import PlotScoreMatrix
 from synthesis_workflow.tasks.validation import TrunkValidation
 from synthesis_workflow.validation import plot_morphometrics
+
+
+class CreateBlueConfig(WorkflowTask):
+    """Create a CircuitConfig file to be read with other BBP tools (bluepy, etc.)."""
+
+    circuitconfig_path = PathParameter("CircuitConfig")
+
+    def requires(self):
+        """ """
+        return {"synthesis": Synthesize(), "planes": CreateAtlasPlanes()}
+
+    def run(self):
+        """ """
+        bc = BlueConfig()
+        morph_path = self.input()["synthesis"]["out_morphologies"].pathlib_path.parent / "ascii"
+        if morph_path.exists():
+            os.remove(morph_path)
+
+        contents = {
+            "MorphologyPath": str(morph_path.parent.resolve()),
+            "CircuitPath": str(self.input()["synthesis"]["out_mvd3"].pathlib_path.resolve()),
+            "Atlas": CircuitConfig().atlas_path,
+            "nrnPath": "N/A",
+            "METypePath": "N/A",
+        }
+        morph_path.symlink_to(self.input()["synthesis"]["out_morphologies"].pathlib_path.resolve())
+        bc.add_section("Run", "default", contents)
+        with open(self.output().path, "w") as out_file:
+            out_file.write(str(bc))
+
+        # convert plane data for collage
+        planes = load_planes_centerline(self.input()["planes"].path)
+        np.savetxt(
+            self.input()["planes"].pathlib_path.parent / "centerline.dat", planes["centerline"]
+        )
+        _planes = []
+        for plane in planes["planes"]:
+            _planes.append(np.hstack([plane.point, plane.normal]))
+        np.savetxt(self.input()["planes"].pathlib_path.parent / "planes.dat", _planes)
+
+    def output(self):
+        """ """
+        return OutputLocalTarget(self.circuitconfig_path)
 
 
 class ValidateSynthesis(WorkflowWrapperTask):
@@ -68,6 +121,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
             tasks.append(PlotScoreMatrix(in_atlas=True))
         if self.with_trunk_validation:
             tasks.append(TrunkValidation(in_atlas=True))
+        tasks.append(CreateBlueConfig())
         return tasks
 
 
