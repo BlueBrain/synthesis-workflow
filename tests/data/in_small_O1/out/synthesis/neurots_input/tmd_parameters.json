@@ -1,8 +1,8 @@
 {
     "L1_DAC": {
-        "apical": {},
+        "apical_dendrite": {},
         "axon": {},
-        "basal": {
+        "basal_dendrite": {
             "branching_method": "bio_oriented",
             "growth_method": "tmd",
             "metric": "path_distances",
@@ -20,13 +20,13 @@
             "tree_type": 3
         },
         "context_constraints": {
-            "apical": {
+            "apical_dendrite": {
                 "hard_limit_max": {
                     "fraction": 0.99,
                     "layer": 1
                 }
             },
-            "basal": {
+            "basal_dendrite": {
                 "hard_limit_max": {
                     "fraction": 0.99,
                     "layer": 1
@@ -34,23 +34,17 @@
             }
         },
         "diameter_params": {
-            "asymmetry_threshold": {
-                "apical": 0.2,
-                "basal": 1.0
-            },
             "method": "external",
             "models": [
-                "generic"
+                "simpler"
             ],
-            "n_samples": 2,
             "neurite_types": [
-                "basal",
-                "apical"
-            ],
-            "trunk_max_tries": 100
+                "basal_dendrite",
+                "apical_dendrite"
+            ]
         },
         "grow_types": [
-            "basal"
+            "basal_dendrite"
         ],
         "origin": [
             0.0,
@@ -59,7 +53,7 @@
         ]
     },
     "L3_TPC:A": {
-        "apical": {
+        "apical_dendrite": {
             "apical_distance": 0.0,
             "bias": 0.6,
             "bias_length": 0.2,
@@ -87,7 +81,7 @@
             "tree_type": 4
         },
         "axon": {},
-        "basal": {
+        "basal_dendrite": {
             "branching_method": "bio_oriented",
             "growth_method": "tmd",
             "metric": "path_distances",
@@ -105,7 +99,7 @@
             "tree_type": 3
         },
         "context_constraints": {
-            "apical": {
+            "apical_dendrite": {
                 "extent_to_target": {
                     "fraction": 0.8,
                     "intercept": 0,
@@ -121,7 +115,7 @@
                     "layer": 1
                 }
             },
-            "basal": {
+            "basal_dendrite": {
                 "hard_limit_max": {
                     "fraction": 0.99,
                     "layer": 1
@@ -129,24 +123,18 @@
             }
         },
         "diameter_params": {
-            "asymmetry_threshold": {
-                "apical": 0.2,
-                "basal": 1.0
-            },
             "method": "external",
             "models": [
-                "generic"
+                "simpler"
             ],
-            "n_samples": 2,
             "neurite_types": [
-                "basal",
-                "apical"
-            ],
-            "trunk_max_tries": 100
+                "basal_dendrite",
+                "apical_dendrite"
+            ]
         },
         "grow_types": [
-            "apical",
-            "basal"
+            "apical_dendrite",
+            "basal_dendrite"
         ],
         "origin": [
             0.0,

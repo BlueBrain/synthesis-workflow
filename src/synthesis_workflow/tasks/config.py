@@ -97,13 +97,13 @@ class GetSynthesisInputs(WorkflowTask):
 class DiametrizerConfig(luigi.Config):
     """Diametrizer configuration."""
 
-    model = luigi.Parameter(default="generic")
+    model = luigi.ChoiceParameter(default="simpler", choices=["generic", "simpler"])
     terminal_threshold = luigi.FloatParameter(default=2.0)
     taper_min = luigi.FloatParameter(default=-0.01)
     taper_max = luigi.FloatParameter(default=1e-6)
     asymmetry_threshold_basal = luigi.FloatParameter(default=1.0)
     asymmetry_threshold_apical = luigi.FloatParameter(default=0.2)
-    neurite_types = luigi.ListParameter(default=["basal", "apical"])
+    neurite_types = luigi.ListParameter(default=["basal_dendrite", "apical_dendrite"])
 
     trunk_max_tries = luigi.IntParameter(default=100)
     n_samples = luigi.IntParameter(default=2)
@@ -111,27 +111,31 @@ class DiametrizerConfig(luigi.Config):
     def __init__(self, *args, **kwargs):
         """Init."""
         super().__init__(*args, **kwargs)
-        self.config_model = {
-            "models": [self.model],
-            "neurite_types": self.neurite_types,
-            "terminal_threshold": self.terminal_threshold,
-            "taper": {"max": self.taper_max, "min": self.taper_min},
-            "asymmetry_threshold": {
-                "apical": self.asymmetry_threshold_apical,
-                "basal": self.asymmetry_threshold_basal,
-            },
-        }
+        self.config_model = {"models": [self.model], "neurite_types": self.neurite_types}
+        if self.model == "generic":
+            self.config_model.update(
+                {
+                    "terminal_threshold": self.terminal_threshold,
+                    "taper": {"max": self.taper_max, "min": self.taper_min},
+                    "asymmetry_threshold": {
+                        "apical_dendrite": self.asymmetry_threshold_apical,
+                        "basal_dendrite": self.asymmetry_threshold_basal,
+                    },
+                }
+            )
 
-        self.config_diametrizer = {
-            "models": [self.model],
-            "neurite_types": self.neurite_types,
-            "asymmetry_threshold": {
-                "apical": self.asymmetry_threshold_apical,
-                "basal": self.asymmetry_threshold_basal,
-            },
-            "trunk_max_tries": self.trunk_max_tries,
-            "n_samples": self.n_samples,
-        }
+        self.config_diametrizer = {"models": [self.model], "neurite_types": self.neurite_types}
+        if self.model == "generic":
+            self.config_diametrizer.update(
+                {
+                    "asymmetry_threshold": {
+                        "apical_dendrite": self.asymmetry_threshold_apical,
+                        "basal_dendrite": self.asymmetry_threshold_basal,
+                    },
+                    "trunk_max_tries": self.trunk_max_tries,
+                    "n_samples": self.n_samples,
+                }
+            )
 
 
 class RunnerConfig(luigi.Config):

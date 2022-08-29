@@ -1,8 +1,8 @@
 {
     "L1_DAC": {
-        "apical": {},
+        "apical_dendrite": {},
         "axon": {},
-        "basal": {
+        "basal_dendrite": {
             "branching_method": "bio_oriented",
             "growth_method": "tmd",
             "metric": "path_distances",
@@ -21,16 +21,16 @@
         },
         "diameter_params": {
             "asymmetry_threshold": {
-                "apical": 0.2,
-                "basal": 1.0
+                "apical_dendrite": 0.2,
+                "basal_dendrite": 1.0
             },
             "models": [
                 "generic"
             ],
             "n_samples": 5,
             "neurite_types": [
-                "basal",
-                "apical"
+                "basal_dendrite",
+                "apical_dendrite"
             ],
             "taper": {
                 "max": 1e-06,
@@ -41,7 +41,7 @@
             "method": "external"
         },
         "grow_types": [
-            "basal"
+            "basal_dendrite"
         ],
         "origin": [
             0.0,
@@ -50,7 +50,7 @@
         ]
     },
     "L3_TPC:A": {
-        "apical": {
+        "apical_dendrite": {
             "apical_distance": 0.0,
             "bias": 0.6,
             "bias_length": 0.2,
@@ -78,7 +78,7 @@
             "tree_type": 4
         },
         "axon": {},
-        "basal": {
+        "basal_dendrite": {
             "branching_method": "bio_oriented",
             "growth_method": "tmd",
             "metric": "path_distances",
@@ -97,16 +97,16 @@
         },
         "diameter_params": {
             "asymmetry_threshold": {
-                "apical": 0.2,
-                "basal": 1.0
+                "apical_dendrite": 0.2,
+                "basal_dendrite": 1.0
             },
             "models": [
                 "generic"
             ],
             "n_samples": 5,
             "neurite_types": [
-                "basal",
-                "apical"
+                "basal_dendrite",
+                "apical_dendrite"
             ],
             "taper": {
                 "max": 1e-06,
@@ -117,8 +117,8 @@
             "method": "external"
         },
         "grow_types": [
-            "apical",
-            "basal"
+            "apical_dendrite",
+            "basal_dendrite"
         ],
         "origin": [
             0.0,

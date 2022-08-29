@@ -11,7 +11,7 @@ from tmd.Population.Population import Population
 def _get_tmd_feature(input_population: Population, feature: str) -> np.array:
     """Returns a list of features using tmd."""
     f = [
-        tmd.methods.get_persistence_diagram(n.apical[0], feature=feature)
+        tmd.methods.get_persistence_diagram(n.apical_dendrite[0], feature=feature)
         for n in input_population.neurons
     ]
 

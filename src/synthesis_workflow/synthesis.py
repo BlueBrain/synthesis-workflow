@@ -24,7 +24,6 @@ from tmd.io.io import load_population
 from tqdm import tqdm
 from voxcell import CellCollection
 
-from synthesis_workflow import STR_TO_TYPES
 from synthesis_workflow.fit_utils import fit_path_distance_to_extent
 from synthesis_workflow.tools import run_master
 
@@ -47,9 +46,9 @@ def get_neurite_types(morphs_df):
             raise Exception("f{mtype} has not consistent morph_class, we stop here")
 
         if morph_class[0] == "IN":
-            neurite_types[mtype] = ["basal"]
+            neurite_types[mtype] = ["basal_dendrite"]
         if morph_class[0] == "PC":
-            neurite_types[mtype] = ["basal", "apical"]
+            neurite_types[mtype] = ["basal_dendrite", "apical_dendrite"]
     return neurite_types
 
 
@@ -359,13 +358,13 @@ def rescale_neurites(morphology, neurite_type, target_length, scaling_mode="y"):
     """Rescale neurites of morphologies to match target length."""
     max_length = -100
     for neurite in morphology.root_sections:
-        if neurite.type == STR_TO_TYPES[neurite_type]:
+        if neurite.type.name == neurite_type:
             max_length = max(max_length, get_max_len(neurite, mode=scaling_mode))
 
     scale = target_length / max_length
     if 0.1 < scale < 10:
         for neurite in morphology.root_sections:
-            if neurite.type == STR_TO_TYPES[neurite_type]:
+            if neurite.type.name == neurite_type:
                 scale_section(
                     neurite,
                     ScaleParameters(),
@@ -540,9 +539,9 @@ def add_scaling_rules_to_parameters(
             )
             continue
         context = tmd_parameters[mtype].get("context_constraints", {})
-        neurite_type_params = context.get("apical", {}).get("extent_to_target", {})
+        neurite_type_params = context.get("apical_dendrite", {}).get("extent_to_target", {})
         neurite_type_params.update({"slope": slope, "intercept": intercept})
-        context["apical"]["extent_to_target"] = neurite_type_params
+        context["apical_dendrite"]["extent_to_target"] = neurite_type_params
         tmd_parameters[mtype]["context_constraints"] = context
         L.debug(
             "Fitting parameters for %s: slope=%s ; intercept=%s",

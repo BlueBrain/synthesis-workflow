@@ -1,15 +1,15 @@
 default:  # this will be applied on all mtypes if corresponding key is not present below
-    apical:
+    apical_dendrite:
         hard_limit_max:
             layer: L1
             fraction: 0.99
-    basal:
+    basal_dendrite:
         hard_limit_max:
             layer: L1
             fraction: 0.99
 
 L3_TPC:A:
-    apical:
+    apical_dendrite:
         hard_limit_min:
             layer: L1
             fraction: 0.1

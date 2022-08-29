@@ -869,15 +869,17 @@ def _generate_synthetic_random_population(
     """Generate a synthetic population with random projections."""
     files = []
     y_synth = []
-    slope = tmd_parameters["context_constraints"]["apical"]["extent_to_target"]["slope"]
-    intercept = tmd_parameters["context_constraints"]["apical"]["extent_to_target"]["intercept"]
+    slope = tmd_parameters["context_constraints"]["apical_dendrite"]["extent_to_target"]["slope"]
+    intercept = tmd_parameters["context_constraints"]["apical_dendrite"]["extent_to_target"][
+        "intercept"
+    ]
     for i in range(nb):
         tmp_name = str((Path(dir_path) / str(i)).with_suffix(".h5"))
         files.append(tmp_name)
         projection = np.random.randint(proj_min, proj_max)
         y_synth.append(projection)
         target_path_distance = get_path_distance_from_extent(slope, intercept, projection)
-        tmd_parameters["apical"].update(
+        tmd_parameters["apical_dendrite"].update(
             {
                 "modify": {
                     "funct": scale_target_barcode,
@@ -904,7 +906,9 @@ def _get_fit_population(mtype, files, outlier_percentage, tmd_parameters, tmd_di
     else:
         return return_error + (f"No file to load for mtype='{mtype}'",)
     if (
-        tmd_parameters.get("context_constraints", {}).get("apical", {}).get("extent_to_target")
+        tmd_parameters.get("context_constraints", {})
+        .get("apical_dendrite", {})
+        .get("extent_to_target")
         is None
     ):
         return return_error + (f"No fit for mtype='{mtype}'",)
@@ -959,7 +963,7 @@ def plot_path_distance_fits(
                 for mtype in morphs_df.mtype.unique().tolist()
                 if tmd_parameters.get(mtype, {})
                 .get("context_constraints", {})
-                .get("apical", {})
+                .get("apical_dendrite", {})
                 .get("extent_to_target")
                 is not None
             ]
@@ -1000,10 +1004,10 @@ def plot_path_distance_fits(
                 plt.plot(
                     [
                         get_path_distance_from_extent(
-                            tmd_parameters[mtype]["context_constraints"]["apical"][
+                            tmd_parameters[mtype]["context_constraints"]["apical_dendrite"][
                                 "extent_to_target"
                             ]["slope"],
-                            tmd_parameters[mtype]["context_constraints"]["apical"][
+                            tmd_parameters[mtype]["context_constraints"]["apical_dendrite"][
                                 "extent_to_target"
                             ]["intercept"],
                             i,

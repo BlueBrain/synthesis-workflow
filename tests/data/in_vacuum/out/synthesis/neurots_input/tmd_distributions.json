@@ -11,8 +11,9 @@
     },
     "mtypes": {
         "L1_DAC": {
-            "basal": {
+            "basal_dendrite": {
                 "filtration_metric": "path_distances",
+                "min_bar_length": 5.122588634490967,
                 "num_trees": {
                     "data": {
                         "bins": [
@@ -691,80 +692,11 @@
                 }
             },
             "diameter": {
-                "diameter_power_relation": {
-                    "apical": {},
-                    "basal": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 4.0,
-                            "loc": 2.5908563288801734,
-                            "max": 9.189130357830956,
-                            "min": 2.5250375906714853,
-                            "num_value": 51,
-                            "scale": 0.5243368547854691
-                        },
-                        "sequential": null
-                    }
-                },
-                "method": "external",
-                "sibling_ratios": {
-                    "apical": {},
-                    "basal": {
-                        "distribution": "expon_rev",
-                        "params": {
-                            "loc": -1.0,
-                            "max": 1.0,
-                            "min": 0.38914811611175537,
-                            "num_value": 51.0,
-                            "scale": 0.2681257128715515
-                        },
-                        "sequential": null
-                    }
-                },
-                "tapers": {
-                    "apical": {},
-                    "basal": {
-                        "distribution": "expon_rev",
-                        "params": {
-                            "loc": -4.1364226645387197e-16,
-                            "max": 4.1364226645387197e-16,
-                            "min": -0.006207112688571215,
-                            "num_value": 81.0,
-                            "scale": 0.0017335106385871768
-                        },
-                        "sequential": null
-                    }
-                },
-                "terminal_diameters": {
-                    "apical": {},
-                    "basal": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 2.5545662002746754,
-                            "loc": 0.2836270950866221,
-                            "max": 0.9799999952316284,
-                            "min": 0.25,
-                            "num_value": 65,
-                            "scale": 0.08480139754424451
-                        },
-                        "sequential": null
-                    }
-                },
-                "trunk_diameters": {
-                    "apical": {},
-                    "basal": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 4.0,
-                            "loc": 0.7130976076221143,
-                            "max": 3.432500028610228,
-                            "min": 0.7835000157356262,
-                            "num_value": 10,
-                            "scale": 0.24388822746698835
-                        },
-                        "sequential": null
-                    }
-                }
+                "basal_dendrite": [
+                    0.16661595994860395,
+                    0.5615741685621016
+                ],
+                "method": "external"
             },
             "soma": {
                 "size": {
@@ -776,8 +708,9 @@
             }
         },
         "L3_TPC:A": {
-            "apical": {
+            "apical_dendrite": {
                 "filtration_metric": "path_distances",
+                "min_bar_length": 30.53233367204666,
                 "num_trees": {
                     "data": {
                         "bins": [
@@ -1073,8 +1006,9 @@
                     }
                 }
             },
-            "basal": {
+            "basal_dendrite": {
                 "filtration_metric": "path_distances",
+                "min_bar_length": 44.947918355464935,
                 "num_trees": {
                     "data": {
                         "bins": [
@@ -1383,133 +1317,16 @@
                 }
             },
             "diameter": {
-                "diameter_power_relation": {
-                    "apical": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 3.025473974134832,
-                            "loc": 2.6792316283590853,
-                            "max": 6.8283410071195405,
-                            "min": 2.59282536057285,
-                            "num_value": 16,
-                            "scale": 0.4946756034963907
-                        },
-                        "sequential": null
-                    },
-                    "basal": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 0.3,
-                            "loc": 4.7481553671990335,
-                            "max": 6.954199059768282,
-                            "min": 3.298277053636806,
-                            "num_value": 15,
-                            "scale": 1.2588979761680408
-                        },
-                        "sequential": null
-                    }
-                },
-                "method": "external",
-                "sibling_ratios": {
-                    "apical": {
-                        "distribution": "expon_rev",
-                        "params": {
-                            "loc": -0.9813085794448853,
-                            "max": 0.9813085794448853,
-                            "min": 0.42478740215301514,
-                            "num_value": 16.0,
-                            "scale": 0.2519545555114746
-                        },
-                        "sequential": null
-                    },
-                    "basal": {
-                        "distribution": "expon_rev",
-                        "params": {
-                            "loc": -0.9940024614334106,
-                            "max": 0.9940024614334106,
-                            "min": 0.5938866108655929,
-                            "num_value": 15.0,
-                            "scale": 0.17557752132415771
-                        },
-                        "sequential": null
-                    }
-                },
-                "tapers": {
-                    "apical": {
-                        "distribution": "expon_rev",
-                        "params": {
-                            "loc": -6.408057363246223e-18,
-                            "max": 6.408057363246223e-18,
-                            "min": -0.004344724677503109,
-                            "num_value": 25.0,
-                            "scale": 0.001989777898415923
-                        },
-                        "sequential": null
-                    },
-                    "basal": {
-                        "distribution": "expon_rev",
-                        "params": {
-                            "loc": -1.595922966237103e-16,
-                            "max": 1.595922966237103e-16,
-                            "min": -0.0037232576403766872,
-                            "num_value": 25.0,
-                            "scale": 0.0019644065760076046
-                        },
-                        "sequential": null
-                    }
-                },
-                "terminal_diameters": {
-                    "apical": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 0.3,
-                            "loc": 0.3712710851761293,
-                            "max": 0.46310911774635316,
-                            "min": 0.3127447128295898,
-                            "num_value": 17,
-                            "scale": 0.04979673193593169
-                        },
-                        "sequential": null
-                    },
-                    "basal": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 1.0308705775946878,
-                            "loc": 0.34120020826448,
-                            "max": 0.4988087698817253,
-                            "min": 0.3039841204881668,
-                            "num_value": 18,
-                            "scale": 0.04537444854582963
-                        },
-                        "sequential": null
-                    }
-                },
-                "trunk_diameters": {
-                    "apical": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 1.3007585163212707,
-                            "loc": 1.3899999969093868,
-                            "max": 1.3899999856948853,
-                            "min": 1.3899999856948853,
-                            "num_value": 1,
-                            "scale": 1.2917495160173924e-27
-                        },
-                        "sequential": null
-                    },
-                    "basal": {
-                        "distribution": "exponnorm",
-                        "params": {
-                            "a": 4.0,
-                            "loc": 1.3742617033956122,
-                            "max": 1.7910000443458556,
-                            "min": 1.4039999842643738,
-                            "num_value": 3,
-                            "scale": 0.04733665039362104
-                        },
-                        "sequential": null
-                    }
-                }
+                "apical_dendrite": [
+                    0.19042290485575533,
+                    0.11693302113175946,
+                    0.495111106181108
+                ],
+                "basal_dendrite": [
+                    -0.21870750044643034,
+                    0.8605355919891156
+                ],
+                "method": "external"
             },
             "soma": {
                 "size": {
