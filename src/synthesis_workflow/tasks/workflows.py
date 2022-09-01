@@ -55,7 +55,7 @@ class CreateBlueConfig(WorkflowTask):
         }
         morph_path.symlink_to(self.input()["synthesis"]["out_morphologies"].pathlib_path.resolve())
         bc.add_section("Run", "default", contents)
-        with open(self.output().path, "w") as out_file:
+        with open(self.output().path, "w", encoding="utf-8") as out_file:
             out_file.write(str(bc))
 
         # convert plane data for collage

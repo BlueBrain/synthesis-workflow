@@ -1,5 +1,5 @@
 """Configuration file for the Sphinx documentation builder."""
-#
+
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -9,14 +9,12 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# pylint: disable=protected-access
 
 import importlib
 import re
+from importlib import metadata
 
 import luigi
-from pkg_resources import get_distribution
 
 import morphval
 import synthesis_workflow
@@ -25,10 +23,10 @@ from synthesis_workflow.tasks import cli
 
 # -- Project information -----------------------------------------------------
 
-project = "synthesis-workflow"
+project = "Synthesis Workflow"
 
 # The short X.Y version
-version = get_distribution("synthesis_workflow").version
+version = metadata.version("synthesis-workflow")
 
 # The full version, including alpha/beta/rc tags
 release = version
@@ -44,6 +42,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
     "m2r2",
 ]
 
@@ -67,6 +66,8 @@ autoapi_options = [
     "special-members",
     "undoc-members",
 ]
+
+todo_include_todos = True
 
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ['_templates']
@@ -93,7 +94,7 @@ html_theme_options = {
     "metadata_distribution": "synthesis-workflow",
 }
 
-html_title = "Synthesis Workflow"
+html_title = project
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False

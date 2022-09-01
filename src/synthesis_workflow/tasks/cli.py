@@ -228,7 +228,7 @@ def main(arguments=None):
     # Get arguments to configure luigi
     luigi_config = {k: v for k, v in vars(args).items() if k in LUIGI_PARAMETERS}
 
-    # Prepare workflow task and aguments
+    # Prepare workflow task and arguments
     task_cls = WORKFLOW_TASKS[args.workflow]
     args_dict = {k.split(task_cls.get_task_family() + "_")[-1]: v for k, v in vars(args).items()}
     args_dict = {

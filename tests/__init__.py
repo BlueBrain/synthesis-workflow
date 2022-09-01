@@ -1,1 +1,1 @@
-"""Tests for the synthesis-workflow package."""
+"""Tests suite for the synthesis-workflow package."""

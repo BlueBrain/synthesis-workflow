@@ -1,4 +1,5 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
+# pylint: disable=too-many-lines
 import itertools
 import json
 import logging
@@ -182,7 +183,7 @@ def _expand_lists(data):
 
 
 def _normalize(data):
-    """Normalize data witht mean and std."""
+    """Normalize data with mean and std."""
     if len(data) == 0:
         return data
     data_tmp = data.set_index(["feature", "neurite_type", "mtype"])
@@ -946,11 +947,11 @@ def plot_path_distance_fits(
 ):
     """Plot path-distance fits."""
     # Read TMD parameters
-    with open(tmd_parameters_path) as f:
+    with open(tmd_parameters_path, "r", encoding="utf-8") as f:
         tmd_parameters = json.load(f)
 
     # Read TMD distributions
-    with open(tmd_distributions_path) as f:
+    with open(tmd_distributions_path, "r", encoding="utf-8") as f:
         tmd_distributions = json.load(f)
 
     # Read morphology DataFrame

@@ -144,7 +144,7 @@ def build_distributions(
     )
     thicknesses = []
     if Path(region_structure_path).exists():
-        with open(region_structure_path, "r") as r_p:
+        with open(region_structure_path, "r", encoding="utf-8") as r_p:
             region_structure = yaml.safe_load(r_p)
         thicknesses = [
             region_structure["thicknesses"][layer] for layer in region_structure["layers"]

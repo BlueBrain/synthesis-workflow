@@ -1,9 +1,9 @@
-atlas_analysis>0.0.1
+atlas_analysis>=0.0.3
 bluepy>=2.3,<3
 bluepymm
 bluepyparallel>=0.0.7
 brainbuilder>=0.14
-diameter_synthesis>=0.4.1,<1
+diameter_synthesis==0.5.1
 gitpython
 jinja2
 joblib

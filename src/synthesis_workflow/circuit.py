@@ -22,7 +22,7 @@ def halve_atlas(annotated_volume, axis=2, side=LEFT):
     """Return the half of the annotated volume along the x-axis.
 
     The identifiers of the voxels located on the left half or the right half
-    of the annotated volume are zeroed depending on which `side` is choosen.
+    of the annotated volume are zeroed depending on which `side` is chosen.
 
     Args:
         annotated_volume: integer array of shape (W, L, D) holding the annotation
@@ -91,7 +91,7 @@ def create_atlas_thickness_mask(atlas_dir):
 
 def get_regions_from_composition(cell_composition_path):
     """Get list of region regex from cell_composition."""
-    with open(cell_composition_path, "r") as comp_p:
+    with open(cell_composition_path, "r", encoding="utf-8") as comp_p:
         cell_composition = yaml.safe_load(comp_p)
 
     region_regex = "@"

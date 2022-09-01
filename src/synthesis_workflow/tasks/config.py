@@ -219,7 +219,7 @@ class GetCellComposition(luigi.Task):
         else:
             cell_composition_path = CircuitConfig().cell_composition_path
 
-        with open(cell_composition_path) as comp_p:
+        with open(cell_composition_path, "r", encoding="utf-8") as comp_p:
             cell_comp = yaml.safe_load(comp_p)
         if SynthesisConfig().mtypes is not None:
             new_cell_comp = {"version": cell_comp["version"], "neurons": []}
@@ -228,7 +228,7 @@ class GetCellComposition(luigi.Task):
                     new_cell_comp["neurons"].append(entry)
         else:
             new_cell_comp = cell_comp
-        with open(self.output().path, "w") as comp_p:
+        with open(self.output().path, "w", encoding="utf-8") as comp_p:
             yaml.safe_dump(new_cell_comp, comp_p)
 
     def output(self):

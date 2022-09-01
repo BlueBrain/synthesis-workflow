@@ -53,11 +53,12 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
         annotation.save_nrrd(annotation_path)
 
         layer_mapping_path = self.output()["layer_mapping"].path
-        with open(layer_mapping_path, "w") as f:
+        with open(layer_mapping_path, "w", encoding="utf-8") as f:
             yaml.dump(layer_mapping, f)
 
     def output(self):
         """ """
+        # pylint: disable=no-member
         annotation_base_name = self.layer_annotations_path.stem
         layer_mapping_path = self.layer_annotations_path.with_name(
             annotation_base_name + "_layer_mapping"
@@ -163,6 +164,7 @@ class BuildCircuit(WorkflowTask):
 
     def run(self):
         """ """
+        # pylint: disable=no-member
         mtype_taxonomy_path = self.input()["synthesis"].pathlib_path / self.mtype_taxonomy_file
 
         thickness_mask_path = None

@@ -67,7 +67,7 @@ def load_neurondb_to_dataframe(neurondb_path, morphology_dirs=None, apical_point
         morphs_df = add_morphology_paths(morphs_df, morphology_dirs)
 
     if apical_points_path is not None:
-        with open(apical_points_path, "r") as f:
+        with open(apical_points_path, "r", encoding="utf-8") as f:
             apical_points = json.load(f)
         morphs_df = add_apical_points(morphs_df, apical_points)
 
@@ -142,7 +142,7 @@ class IdProcessingFormatter(logging.Formatter):
     """Logging formatter class."""
 
     def __init__(self, fmt=None, datefmt=None, current_id=None):
-        """Cretate a new IdProcessingFormatter object."""
+        """Create a new IdProcessingFormatter object."""
         if fmt is None:
             fmt = "%(asctime)s - %(name)s - %(levelname)s -- %(message)s"
         if datefmt is None:
@@ -253,7 +253,7 @@ def run_master(
     verbose=10,
     logger_kwargs=None,
 ):
-    """Runing the parallel computation, (adapted from placement_algorithm).
+    """Running the parallel computation, (adapted from placement_algorithm).
 
     Args:
         master_cls (class): The Master application
@@ -317,7 +317,7 @@ def run_master(
         master.finalize(dict(results))
 
     finally:
-        # This is usefull only when using joblib with 1 process
+        # This is useful only when using joblib with 1 process
         if logger_kwargs is not None:
             for i in logger.handlers:
                 if i not in handlers:

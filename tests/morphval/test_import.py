@@ -1,2 +1,2 @@
 def test_import_morphval():
-    import morphval
+    import morphval  # noqa

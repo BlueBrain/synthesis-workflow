@@ -1,0 +1,26 @@
+# Changes here will be overwritten by Copier
+
+_commit: 0.1.13
+_src_path: git@bbpgitlab.epfl.ch:neuromath/python-template.git
+author_email: bbp-ou-cells@groupes.epfl.ch
+author_name: bbp-ou-cells
+copyright_license: BBP-internal-confidential
+copyright_year: '2022'
+distribution_name: synthesis-workflow
+download_url: https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow
+init_git: false
+maintainer: null
+package_name: synthesis_workflow
+project_description: Workflow used for synthesis and its validation.
+project_name: Synthesis Workflow
+project_url: https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow
+repository_name: synthesis-workflow
+repository_namespace: neuromath
+repository_provider: gitlab
+ssh_url: git@bbpgitlab.epfl.ch:neuromath/synthesis-workflow.git
+support_py37: false
+team_name: neuromath
+tracker_url: https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues
+version: 0.1.2.dev1
+
+# End of Copier answers

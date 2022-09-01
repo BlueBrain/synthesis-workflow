@@ -399,7 +399,7 @@ class PlotScales(WorkflowTask):
     extra_stat_cols = luigi.ListParameter(
         default=tuple(),
         description=(
-            ":str: The extra columns that should be ploted (these columns must exist in the debug "
+            ":str: The extra columns that should be plotted (these columns must exist in the debug "
             "data)."
         ),
     )
@@ -543,7 +543,7 @@ class MorphologyValidationReports(WorkflowTask):
             test_morphs_df = test_morphs_df.loc[test_morphs_df["mtype"].isin(self.mtypes)]
 
         if self.config_path is not None:
-            with open(self.config_path) as f:
+            with open(self.config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
         else:
             with pkg_resources.resource_stream(
@@ -633,7 +633,7 @@ class PlotScoreMatrix(WorkflowTask):
             file_path_col_name = VACUUM_SYNTH_MORPHOLOGY_PATH
 
         if self.config_path is not None:
-            with open(self.config_path) as f:
+            with open(self.config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
         else:
             with pkg_resources.resource_stream(

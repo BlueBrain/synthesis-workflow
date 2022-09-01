@@ -12,7 +12,7 @@ BUILDDIR      = build
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
+.PHONY: help Makefile clean
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
@@ -27,9 +27,12 @@ help:
 	pdftocairo -png -r 300 -f 1 -l 1 ../tests/data/in_small_O1/out/validation/score_matrix_reports.pdf source/autoapi/tasks/validation/score_matrix_reports
 
 	# Generate dependency graphs
-	cd ../tests/data/in_small_O1; synthesis_workflow -dg ../../../doc/source/autoapi/tasks/workflows/ValidateSynthesis.dot ValidateSynthesis; cd ../../../doc
-	cd ../tests/data/in_small_O1; synthesis_workflow -dg ../../../doc/source/autoapi/tasks/workflows/ValidateRescaling.dot ValidateRescaling; cd ../../../doc
-	cd ../tests/data/in_vacuum; synthesis_workflow -dg ../../../doc/source/autoapi/tasks/workflows/ValidateVacuumSynthesis.dot ValidateVacuumSynthesis; cd ../../../doc
+	cd ../tests/data/in_small_O1; synthesis_workflow -dg ../../../docs/source/autoapi/tasks/workflows/ValidateSynthesis.dot ValidateSynthesis; cd ../../../docs
+	cd ../tests/data/in_small_O1; synthesis_workflow -dg ../../../docs/source/autoapi/tasks/workflows/ValidateRescaling.dot ValidateRescaling; cd ../../../docs
+	cd ../tests/data/in_vacuum; synthesis_workflow -dg ../../../docs/source/autoapi/tasks/workflows/ValidateVacuumSynthesis.dot ValidateVacuumSynthesis; cd ../../../docs
 
 	# Generate the documentation
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+clean:
+	@rm -rf $(BUILDDIR) $(SOURCEDIR)/examples $(SOURCEDIR)/generated

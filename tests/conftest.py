@@ -1,4 +1,4 @@
-"""Prepare fixtures for the tests of the synthesis-workflow package."""
+"""Configuration for the pytest test suite."""
 # pylint: disable=redefined-outer-name
 import json
 import os
@@ -26,7 +26,7 @@ DATA = TEST_ROOT / "data"
 
 def export_config(params, filepath):
     """Export params to a file."""
-    with open(filepath, "w") as configfile:
+    with open(filepath, "w", encoding="utf-8") as configfile:
         params.write(configfile)
 
 
@@ -47,7 +47,7 @@ def small_O1(tmp_path):
     """Dump a small O1 atlas in folder path."""
     atlas_dir = tmp_path / "small_O1"
     # fmt: off
-    with open(os.devnull, "w") as f:
+    with open(os.devnull, "w", encoding="utf-8") as f:
         call(["brainbuilder", "atlases",
               "-n", "6,5,4,3,2,1",
               "-t", "200,100,100,100,100,200",

@@ -4,13 +4,17 @@
 
 > 5 July 2022
 
-- Add multi-project trigger to ensure SynthDB is compatible with each new tag (Adrien Berchet - [15ec479](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/15ec4798e9f575b5946bdde6b86f78a41cd1fc9f))
-- Trunk validation (Alexis Arnaudon - [b0b407e](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/b0b407e2ead89803053ccdf264d9993c145f8125))
-- Fix the multi-project trigger (Adrien Berchet - [95b95a3](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/95b95a35ee5c2d66029d44e7575310d6f45f894b))
+### Uncategorized Changes
+
 - Any region handling (v2) (Alexis Arnaudon - [3fd475a](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/3fd475a6f7711b21d04e989959cf6bd05528b4fa))
-- Add commitlint on MR titles (Adrien Berchet - [0f1e9d4](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/0f1e9d448002c5348ceb00c7736994f332862e98))
+- Trunk validation (Alexis Arnaudon - [b0b407e](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/b0b407e2ead89803053ccdf264d9993c145f8125))
 - Bump luigi-tools (Adrien Berchet - [9a19543](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/9a1954344f41ff5bc31d444b16d0fd4fecc62746))
+- Add commitlint on MR titles (Adrien Berchet - [0f1e9d4](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/0f1e9d448002c5348ceb00c7736994f332862e98))
 - Fix doc generation (Adrien Berchet - [daf066f](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/daf066f48ae4b7d4988bcf5652dbf981ca4afbfb))
+- Add multi-project trigger to ensure SynthDB is compatible with each new tag (Adrien Berchet - [15ec479](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/15ec4798e9f575b5946bdde6b86f78a41cd1fc9f))
+- Fix the multi-project trigger (Adrien Berchet - [95b95a3](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/95b95a35ee5c2d66029d44e7575310d6f45f894b))
+
+<!-- auto-changelog-above -->
 
 ## [synthesis-workflow-v0.1.0](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.0.11...synthesis-workflow-v0.1.0)
 
@@ -45,7 +49,7 @@
 - Black the code with line length of 100 (Adrien Berchet - [f269215](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/f26921556cae9336da843117b1779c8e5942f387))
 - Fix compatibility with Py38 (Adrien Berchet - [cd07dec](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/cd07dec2146dbdc73cb3e263b4f08ce5ed78f1a4))
 - Fix Py38 (Adrien Berchet - [3b93726](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/3b93726730961760069b4fbb3631a4208d849350))
-- Use workflow rendering functions that were transfered to luigi-tools (Adrien Berchet - [fd582e5](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/fd582e532c316ac33b56cbbfbcee2020e863c797))
+- Use workflow rendering functions that were transferred to luigi-tools (Adrien Berchet - [fd582e5](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/fd582e532c316ac33b56cbbfbcee2020e863c797))
 - Use dir-diff-content, update to py38 and bump dependencies. (Adrien Berchet - [a9be8db](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/a9be8db524ed2800c5a3726f78bf2d6d9ef78898))
 - Merge "density map tool" (Alexis Arnaudon - [16af2e3](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/16af2e3b73a94fa347979ae9ad547cbae7d05193))
 - Import morph-validator functions, fix the tests and fix dependencies (Adrien Berchet - [c8d3fee](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/c8d3fee829ef1ca10f9be45fbfa9d556cfb105d5))

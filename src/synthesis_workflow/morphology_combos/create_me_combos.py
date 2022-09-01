@@ -1,4 +1,4 @@
-"""Functions to create and mofify combos dataframe."""
+"""Functions to create and modify combos dataframe."""
 import json
 import logging
 from pathlib import Path

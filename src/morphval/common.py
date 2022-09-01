@@ -54,7 +54,7 @@ def dump2json(data_dir, var_name, data):
         data : the data dictionary
     """
     fname = os.path.join(data_dir, var_name + ".json")
-    with open(fname, "w") as fd:
+    with open(fname, "w", encoding="utf-8") as fd:
         json.dump(data, fd, cls=NumpyEncoder, indent=2, sort_keys=True)
     return fname
 
@@ -65,7 +65,7 @@ def load_json(fname):
     Returns:
         The results dictionary
     """
-    with open(fname, "r") as fd:
+    with open(fname, "r", encoding="utf-8") as fd:
         return json.load(fd)
 
 

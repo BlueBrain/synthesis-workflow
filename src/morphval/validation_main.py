@@ -374,7 +374,7 @@ class Validation:
         for mtype in self.results:
             output_text = self.render_mtype_report(template_file, mtype, validation_report)
             output_files.append(os.path.join(report_dir, prefix + mtype + ".html"))
-            with open(output_files[-1], "w") as outputFile:
+            with open(output_files[-1], "w", encoding="utf-8") as outputFile:
                 outputFile.write(output_text)
         return output_files
 

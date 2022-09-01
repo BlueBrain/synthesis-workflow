@@ -162,7 +162,7 @@ class BuildSynthesisParameters(WorkflowTask):
             input_tmd_parameters_path = (
                 self.input()["synthesis_input"].pathlib_path / self.input_tmd_parameters_path
             )
-            with open(input_tmd_parameters_path, "r") as f:
+            with open(input_tmd_parameters_path, "r", encoding="utf-8") as f:
                 custom_tmd_parameters = json.load(f)
 
         tmd_parameters = {}
@@ -270,7 +270,7 @@ class CreateAnnotationsFile(WorkflowTask):
         # pylint: disable=protected-access
         annotations = _collect_annotations(self.annotation_dir, self.morph_db)
 
-        with open(self.destination, "w") as f:
+        with open(self.destination, "w", encoding="utf-8") as f:
             json.dump(annotations, f, indent=4, sort_keys=True)
 
     def output(self):
@@ -293,7 +293,7 @@ class BuildAxonMorphologies(WorkflowTask):
         description=(
             ":str: Path to annotations file used by "
             "``placementAlgorithm.app.choose_morphologies``. "
-            "If None, random axons will be choosen."
+            "If None, random axons will be chosen."
         ),
         exists=True,
     )
@@ -619,7 +619,7 @@ class AddScalingRulesToParameters(WorkflowTask):
             )
             if scaling_rules_path.exists():
                 L.debug("Load scaling rules from %s", scaling_rules_path)
-                with open(scaling_rules_path, "r") as f:
+                with open(scaling_rules_path, "r", encoding="utf-8") as f:
                     scaling_rules = yaml.full_load(f)
 
         add_scaling_rules_to_parameters(
@@ -687,7 +687,7 @@ class RescaleMorphologies(WorkflowTask):
     def run(self):
         """ """
         morphs_df = pd.read_csv(self.input().path)
-        with open(self.scaling_rules_path, "r") as f:
+        with open(self.scaling_rules_path, "r", encoding="utf-8") as f:
             scaling_rules = yaml.full_load(f)
         rescaled_morphs_df = rescale_morphologies(
             morphs_df,

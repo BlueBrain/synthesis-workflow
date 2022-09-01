@@ -1,38 +1,30 @@
 """Setup for the synthesis-workflow package."""
 import importlib
-import sys
+from pathlib import Path
 
-from setuptools import find_packages
+from setuptools import find_namespace_packages
 from setuptools import setup
 
-if sys.version_info < (3, 6):
-    sys.exit("Sorry, Python < 3.6 is not supported")
-
-# Read the contents of the README file
-with open("README.rst", encoding="utf-8") as f:
-    README = f.read()
+VERSION = importlib.import_module("src.version").VERSION
 
 # Read the requirements
-with open("requirements/base.pip") as f:
+with open("requirements/base.pip", "r", encoding="utf-8") as f:
     reqs = f.read().splitlines()
 
 # Read the requirements for doc
-with open("requirements/doc.pip") as f:
+with open("requirements/doc.pip", "r", encoding="utf-8") as f:
     doc_reqs = f.read().splitlines()
 
 # Read the requirements for tests
-with open("requirements/test.pip") as f:
+with open("requirements/test.pip", "r", encoding="utf-8") as f:
     test_reqs = f.read().splitlines()
-
-VERSION = importlib.import_module("src.version").VERSION
 
 setup(
     name="synthesis-workflow",
     author="bbp-ou-cells",
     author_email="bbp-ou-cells@groupes.epfl.ch",
-    version=VERSION,
     description="Workflow used for synthesis and its validation.",
-    long_description=README,
+    long_description=Path("README.rst").read_text(encoding="utf-8"),
     long_description_content_type="text/x-rst",
     url="https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow",
     project_urls={
@@ -40,12 +32,15 @@ setup(
         "Source": "https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow",
     },
     license="BBP-internal-confidential",
-    packages=find_packages("src", exclude=["tests"]),
+    packages=find_namespace_packages("src"),
     package_dir={"": "src"},
     python_requires=">=3.8",
+    version=VERSION,
     install_requires=reqs,
-    tests_require=test_reqs,
-    extras_require={"docs": doc_reqs, "test": test_reqs},
+    extras_require={
+        "docs": doc_reqs,
+        "test": test_reqs,
+    },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Education",

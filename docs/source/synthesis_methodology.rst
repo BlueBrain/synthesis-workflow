@@ -46,7 +46,7 @@ Synthesis in atlas
 When cells are synthesized inside an atlas, their shapes must be adapted according to their
 positions in order to fit in this atlas. Currently, the shapes are just rescaled in order
 to fit in a defined interval. This interval depends on the ``mtype`` and on the cell position
-because the depths of the atlas layers also depend on this position. The informations on
+because the depths of the atlas layers also depend on this position. The information on
 how each ``mtype`` can be rescaled are inserted in the ``tmd_parameters.json`` file by the task
 :py:class:`tasks.synthesis.AddScalingRulesToParameters`.
 

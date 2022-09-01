@@ -2,7 +2,6 @@ from copy import deepcopy
 
 import pytest
 from neurom import stats
-from neurom.core.types import NeuriteType
 
 from morphval import validation
 
