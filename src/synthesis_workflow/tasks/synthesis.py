@@ -1,7 +1,6 @@
 """Luigi tasks for morphology synthesis."""
 import json
 import logging
-from functools import partial
 from pathlib import Path
 
 import luigi
@@ -17,10 +16,14 @@ from luigi_tools.target import OutputLocalTarget
 from luigi_tools.task import ParamRef
 from luigi_tools.task import WorkflowTask
 from luigi_tools.task import copy_params
+from neurom import load_morphology
+from neurom.check.morphology_checks import has_apical_dendrite
 from neurots import extract_input
+from neurots.validator import validate_neuron_params
 from placement_algorithm.app.compact_annotations import _collect_annotations
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import NumpyEncoder
+from tqdm import tqdm
 
 from synthesis_workflow.synthesis import add_scaling_rules_to_parameters
 from synthesis_workflow.synthesis import apply_substitutions
@@ -41,6 +44,7 @@ from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
+from synthesis_workflow.utils import apply_parameter_diff
 
 morphio.set_maximum_warnings(0)
 
@@ -76,10 +80,6 @@ class BuildMorphsDF(WorkflowTask):
 
         # Remove possibly duplicated morphologies
         morphs_df = morphs_df.drop_duplicates(subset=["name"])
-
-        # Only use wanted mtypes
-        if SynthesisConfig().mtypes is not None:
-            morphs_df = morphs_df[morphs_df.mtype.isin(SynthesisConfig().mtypes)]
 
         morphs_df.to_csv(self.output().path)
 
@@ -117,6 +117,10 @@ class ApplySubstitutionRules(WorkflowTask):
                 substitution_rules = yaml.full_load(sub_file)
             df = apply_substitutions(df, substitution_rules)
 
+        # Only use wanted mtypes
+        if SynthesisConfig().mtypes is not None:
+            df = df[df.mtype.isin(SynthesisConfig().mtypes)]
+
         df.to_csv(self.output().path, index=False)
 
     def output(self):
@@ -124,20 +128,16 @@ class ApplySubstitutionRules(WorkflowTask):
         return MorphsDfLocalTarget(PathConfig().substituted_morphs_df_path)
 
 
-@copy_params(tmd_parameters_path=ParamRef(SynthesisConfig))
-class BuildSynthesisParameters(WorkflowTask):
+class GetDefaultParameters(WorkflowTask):
     """Build the tmd_parameter.json for synthesis.
 
     Attributes:
         tmd_parameters_path (str): The path to the TMD parameters.
     """
 
-    input_tmd_parameters_path = luigi.Parameter(
-        default=None,
-        description=(
-            ":str: Custom path to input tmd_parameters. If not given, take the default"
-            "parameters from TNS."
-        ),
+    default_tmd_parameters_path = luigi.PathParameter(
+        default="neurots_input/tmd_parameters_default.json",
+        description=":str: Path to default tmd_parameters.json.",
     )
     trunk_method = luigi.ChoiceParameter(default="simple", choices=["simple", "3d_angle"])
 
@@ -157,32 +157,45 @@ class BuildSynthesisParameters(WorkflowTask):
             for neurite_type in neurite_types.items():
                 neurite_type.append("axon")
 
-        if self.input_tmd_parameters_path is not None:
-            L.info("Using custom tmd parameters")
-            input_tmd_parameters_path = (
-                self.input()["synthesis_input"].pathlib_path / self.input_tmd_parameters_path
-            )
-            with open(input_tmd_parameters_path, "r", encoding="utf-8") as f:
-                custom_tmd_parameters = json.load(f)
-
         tmd_parameters = {}
-        for mtype in mtypes:
-            if self.input_tmd_parameters_path is None:
-                kwargs = {
-                    "neurite_types": neurite_types[mtype],
-                    "diameter_parameters": DiametrizerConfig().config_diametrizer,
-                }
-                if self.trunk_method != "simple":
-                    kwargs["trunk_method"] = self.trunk_method
-                tmd_parameters[mtype] = extract_input.parameters(**kwargs)
-            else:
-                try:
-                    tmd_parameters[mtype] = custom_tmd_parameters[mtype]
-                except KeyError:
-                    L.error("%s is not in the given tmd_parameter.json", mtype)
-                    tmd_parameters[mtype] = {}
-                tmd_parameters[mtype]["diameter_params"] = DiametrizerConfig().config_diametrizer
-                tmd_parameters[mtype]["diameter_params"]["method"] = "external"
+        for mtype in tqdm(mtypes):
+            neurite_types = ["basal_dendrite"]
+            if has_apical_dendrite(
+                load_morphology(morphs_df.loc[morphs_df.mtype == mtype, "path"].to_list()[0])
+            ):
+                neurite_types.append("apical_dendrite")
+            if SynthesisConfig().with_axons:
+                neurite_types.append("axon")
+
+            config = DiametrizerConfig().config_diametrizer
+            config["neurite_types"] = neurite_types
+            kwargs = {"neurite_types": neurite_types, "diameter_parameters": config}
+            if self.trunk_method != "simple":
+                kwargs["trunk_method"] = self.trunk_method
+            tmd_parameters[mtype] = extract_input.parameters(**kwargs)
+
+        with self.output().open("w") as f:
+            json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
+
+    def output(self):
+        """ """
+        return SynthesisLocalTarget(self.default_tmd_parameters_path)
+
+
+@copy_params(tmd_parameters_path=ParamRef(SynthesisConfig))
+class BuildSynthesisParameters(WorkflowTask):
+    """Build the tmd_parameters.json for synthesis."""
+
+    def requires(self):
+        """ """
+        return {"tmd_parameters": OverwriteCustomParameters()}
+
+    def run(self):
+        """ """
+        # possibly other fine tuning here or validate intermediate steps
+        tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
+        for mtype in tmd_parameters:
+            validate_neuron_params(tmd_parameters[mtype])
 
         with self.output().open("w") as f:
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
@@ -223,14 +236,12 @@ class BuildSynthesisDistributions(WorkflowTask):
                 neurite_type.append("axon")
         L.debug("neurite_types found: %s", neurite_types)
 
-        diameter_model_function = partial(
-            build_diameter_models, config=DiametrizerConfig().config_model
-        )
         tmd_distributions = build_distributions(
             mtypes,
             morphs_df,
             neurite_types,
-            diameter_model_function,
+            build_diameter_models,
+            DiametrizerConfig().config_model,
             self.morphology_path,
             self.input()["synthesis"].pathlib_path / CircuitConfig().region_structure_path,
             nb_jobs=self.nb_jobs,
@@ -499,7 +510,7 @@ class Synthesize(WorkflowTask):
         tasks = {
             "synthesis_input": GetSynthesisInputs(),
             "substituted_cells": ApplySubstitutionRules(),
-            "tmd_parameters": AddScalingRulesToParameters(),
+            "tmd_parameters": BuildSynthesisParameters(),
             "tmd_distributions": BuildSynthesisDistributions(),
             "circuit": SliceCircuit(),
             "composition": GetCellComposition(),
@@ -582,7 +593,6 @@ class Synthesize(WorkflowTask):
 
 @copy_params(
     morphology_path=ParamRef(PathConfig),
-    tmd_parameters_path=ParamRef(SynthesisConfig),
     nb_jobs=ParamRef(RunnerConfig),
 )
 class AddScalingRulesToParameters(WorkflowTask):
@@ -595,6 +605,11 @@ class AddScalingRulesToParameters(WorkflowTask):
         nb_jobs (int): Number of threads used for synthesis.
     """
 
+    scaling_tmd_parameters_path = luigi.PathParameter(
+        default="neurots_input/tmd_parameters_scaling.json",
+        description=":str: Path to tmd_parameters.json with scaling rules added.",
+    )
+
     scaling_rules_path = luigi.Parameter(
         default="scaling_rules.yaml",
         description=":str: Path to the file containing the scaling rules.",
@@ -605,7 +620,7 @@ class AddScalingRulesToParameters(WorkflowTask):
         return {
             "synthesis_input": GetSynthesisInputs(),
             "morphologies": ApplySubstitutionRules(),
-            "tmd_parameters": BuildSynthesisParameters(),
+            "tmd_parameters": GetDefaultParameters(),
         }
 
     def run(self):
@@ -635,7 +650,45 @@ class AddScalingRulesToParameters(WorkflowTask):
 
     def output(self):
         """ """
-        return SynthesisLocalTarget(self.tmd_parameters_path)
+        return SynthesisLocalTarget(self.scaling_tmd_parameters_path)
+
+
+class OverwriteCustomParameters(WorkflowTask):
+    """Overwrite parameters with custom parameters.
+
+    Attributes:
+        tmd_parameters_path (str): The path to the TMD parameters.
+    """
+
+    custom_tmd_parameters_path = luigi.PathParameter(
+        default="neurots_input/tmd_parameters_overwriten.json",
+        description=":str: Path to tmd_parameters.json with custom parameters overwritten.",
+    )
+    custom_parameters_path = luigi.PathParameter(
+        default="custom_parameters.csv",
+        description=":str: Path to the file containing the custom parameters.",
+    )
+
+    def requires(self):
+        """ """
+        return {
+            "synthesis_input": GetSynthesisInputs(),
+            "tmd_parameters": AddScalingRulesToParameters(),
+        }
+
+    def run(self):
+        tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
+        custom_path = self.input()["synthesis_input"].pathlib_path / self.custom_parameters_path
+        if custom_path.exists():
+            custom_parameters = pd.read_csv(custom_path)
+            apply_parameter_diff(tmd_parameters, custom_parameters)
+
+        with self.output().open("w") as f:
+            json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
+
+    def output(self):
+        """ """
+        return SynthesisLocalTarget(self.custom_tmd_parameters_path)
 
 
 @copy_params(

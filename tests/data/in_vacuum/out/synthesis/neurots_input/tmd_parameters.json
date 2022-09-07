@@ -19,6 +19,20 @@
             "targeting": 0.14,
             "tree_type": 3
         },
+        "context_constraints": {
+            "apical_dendrite": {
+                "hard_limit_max": {
+                    "fraction": 0.99,
+                    "layer": 1
+                }
+            },
+            "basal_dendrite": {
+                "hard_limit_max": {
+                    "fraction": 0.99,
+                    "layer": 1
+                }
+            }
+        },
         "diameter_params": {
             "method": "external",
             "models": [
@@ -84,6 +98,30 @@
             "targeting": 0.14,
             "tree_type": 3
         },
+        "context_constraints": {
+            "apical_dendrite": {
+                "extent_to_target": {
+                    "fraction": 0.8,
+                    "intercept": 0,
+                    "layer": 1,
+                    "slope": 1.0459828761132874
+                },
+                "hard_limit_max": {
+                    "fraction": 0.99,
+                    "layer": 1
+                },
+                "hard_limit_min": {
+                    "fraction": 0.1,
+                    "layer": 1
+                }
+            },
+            "basal_dendrite": {
+                "hard_limit_max": {
+                    "fraction": 0.99,
+                    "layer": 1
+                }
+            }
+        },
         "diameter_params": {
             "method": "external",
             "models": [
@@ -95,8 +133,8 @@
             ]
         },
         "grow_types": [
-            "apical_dendrite",
-            "basal_dendrite"
+            "basal_dendrite",
+            "apical_dendrite"
         ],
         "origin": [
             0.0,

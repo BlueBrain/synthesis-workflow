@@ -133,8 +133,8 @@
             ]
         },
         "grow_types": [
-            "apical_dendrite",
-            "basal_dendrite"
+            "basal_dendrite",
+            "apical_dendrite"
         ],
         "origin": [
             0.0,

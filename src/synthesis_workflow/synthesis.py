@@ -31,11 +31,12 @@ L = logging.getLogger(__name__)
 matplotlib.use("Agg")
 
 
+def _get_morph_class(path):
+    return "PC" if has_apical_dendrite(load_morphology(path)) else "IN"
+
+
 def get_neurite_types(morphs_df):
     """Get the neurite types to consider for PC or IN cells by checking if apical exists."""
-
-    def _get_morph_class(path):
-        return "PC" if has_apical_dendrite(load_morphology(path)) else "IN"
 
     morphs_df["morph_class"] = morphs_df["path"].apply(_get_morph_class)
     neurite_types = {}
@@ -66,13 +67,10 @@ def apply_substitutions(original_morphs_df, substitution_rules=None):
         return original_morphs_df
 
     new_morphs_df = original_morphs_df.copy()
-    for gid in original_morphs_df.index:
-        mtype_orig = original_morphs_df.loc[gid, "mtype"]
-        if mtype_orig in substitution_rules:
-            for mtype in substitution_rules[mtype_orig]:
-                new_cell = original_morphs_df.loc[gid].copy()
-                new_cell["mtype"] = mtype
-                new_morphs_df = new_morphs_df.append(new_cell)
+    for mtype_orig, mtypes in substitution_rules.items():
+        df = original_morphs_df[original_morphs_df.mtype.isin(mtypes)].copy()
+        df["mtype"] = mtype_orig
+        new_morphs_df = pd.concat([new_morphs_df, df])
     return new_morphs_df
 
 
@@ -81,6 +79,7 @@ def _build_distributions_single_mtype(
     morphs_df=None,
     neurite_types=None,
     diameter_model_function=None,
+    config=None,
     morphology_path=None,
     trunk_method="simple",
 ):
@@ -93,10 +92,11 @@ def _build_distributions_single_mtype(
             ].to_list()
         else:
             morphology_paths = morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list()
+        config["neurite_types"] = neurite_types[mtype]
         kwargs = {
             "neurite_types": neurite_types[mtype],
             "diameter_input_morph": morphology_paths,
-            "diameter_model": diameter_model_function,
+            "diameter_model": partial(diameter_model_function, config=config),
         }
         if trunk_method != "simple":
             kwargs["trunk_method"] = trunk_method
@@ -113,6 +113,7 @@ def build_distributions(
     morphs_df,
     neurite_types,
     diameter_model_function,
+    config,
     morphology_path,
     region_structure_path,
     nb_jobs=-1,
@@ -139,6 +140,7 @@ def build_distributions(
         morphs_df=morphs_df,
         neurite_types=neurite_types,
         diameter_model_function=diameter_model_function,
+        config=config,
         morphology_path=morphology_path,
         trunk_method=trunk_method,
     )
@@ -425,7 +427,7 @@ def rescale_morphologies(
 def _fit_population(mtype, file_names):
     # Load neurons
     if len(file_names) > 0:
-        input_population = load_population(file_names)
+        input_population = load_population(file_names, use_morphio=True)
     else:
         return (mtype, None, None)
 

@@ -1,9 +1,11 @@
 atlas_analysis>=0.0.3
 bluepy>=2.3,<3
+bluepy-configfile
 bluepymm
 bluepyparallel>=0.0.7
 brainbuilder>=0.14
-diameter_synthesis==0.5.1
+diameter_synthesis>=0.5.2
+dictdiffer
 gitpython
 jinja2
 joblib
@@ -17,6 +19,7 @@ neurom>=3,<4
 pandas
 placement_algorithm>=2.2.0
 PyYAML
+jsonpath_ng
 region_grower>=0.4.1
 scipy
 seaborn
@@ -24,4 +27,3 @@ tmd
 neurots>=3.2,<4
 tqdm
 voxcell>=3,<4
-bluepy-configfile

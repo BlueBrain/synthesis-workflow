@@ -1,0 +1,64 @@
+{
+    "L5_TPC:A": {
+        "apical_dendrite": {
+            "branching_method": "directional",
+            "growth_method": "tmd_apical",
+            "metric": "path_distances",
+            "modify": null,
+            "orientation": [
+                [
+                    0.0,
+                    1.0,
+                    0.0
+                ]
+            ],
+            "radius": 0.3,
+            "randomness": 0.24,
+            "step_size": {
+                "norm": {
+                    "mean": 1.0,
+                    "std": 0.2
+                }
+            },
+            "targeting": 0.14,
+            "tree_type": 4
+        },
+        "axon": {},
+        "basal_dendrite": {
+            "branching_method": "bio_oriented",
+            "growth_method": "tmd",
+            "metric": "path_distances",
+            "modify": null,
+            "orientation": null,
+            "radius": 0.3,
+            "randomness": 0.24,
+            "step_size": {
+                "norm": {
+                    "mean": 1.0,
+                    "std": 0.2
+                }
+            },
+            "targeting": 0.14,
+            "tree_type": 3
+        },
+        "diameter_params": {
+            "method": "external",
+            "models": [
+                "simpler"
+            ],
+            "neurite_types": [
+                "basal_dendrite",
+                "apical_dendrite"
+            ]
+        },
+        "grow_types": [
+            "basal_dendrite",
+            "apical_dendrite"
+        ],
+        "origin": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    }
+}

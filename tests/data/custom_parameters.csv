@@ -1,0 +1,9 @@
+mtype,entry,value
+L5_TPC:A,apical_dendrite.branching_method,bio_oriented
+L5_TPC:A,apical_dendrite.growth_method,tmd_gradient
+L5_TPC:A,apical_dendrite.targeting,0.16
+L5_TPC:A,apical_dendrite.apical_distance,0.0
+L5_TPC:A,apical_dendrite.bias,0.5
+L5_TPC:A,apical_dendrite.bias_length,0.2
+L5_TPC:A,apical_dendrite.has_apical_tuft,True
+L5_TPC:A,basal_dendrite.targeting,0.16
