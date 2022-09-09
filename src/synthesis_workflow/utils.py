@@ -3,6 +3,7 @@ import json
 import logging
 
 import dictdiffer
+import numpy as np
 import pandas as pd
 from jsonpath_ng import parse
 
@@ -128,3 +129,41 @@ def apply_parameter_diff(param, custom_values):
                 val = val == "True"
 
             entry.update(param[mtype], val)
+
+
+def save_planes(planes, path):
+    """Save planes to txt files."""
+    np.savetxt(path / "centerline.dat", planes["centerline"])
+    _planes_left = []
+    _planes_center = []
+    _planes_right = []
+    for plane in planes["planes"]:
+        _planes_left.append(np.hstack([plane["left"].point, plane["left"].normal]))
+        _planes_center.append(np.hstack([plane["center"].point, plane["center"].normal]))
+        _planes_right.append(np.hstack([plane["right"].point, plane["right"].normal]))
+    np.savetxt(path / "planes_left.dat", _planes_left)
+    np.savetxt(path / "planes_center.dat", _planes_center)
+    np.savetxt(path / "planes_right.dat", _planes_right)
+
+
+def create_circuit_config(nodes_file, morphology_path):
+    """Create simple circuit config."""
+    return {
+        "networks": {
+            "nodes": [
+                {
+                    "nodes_file": str(nodes_file),
+                    "populations": {
+                        "default": {
+                            "type": "biophysical",
+                            "biophysical_neuron_models_dir": ".",
+                            "alternate_morphologies": {
+                                "neurolucida-asc": str(morphology_path),
+                            },
+                        }
+                    },
+                }
+            ],
+            "edges": [],
+        }
+    }

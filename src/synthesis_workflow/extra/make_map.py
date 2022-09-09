@@ -5,9 +5,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from neurocollage.collage import get_annotation_info
 from pyquaternion import Quaternion
-
-from synthesis_workflow.validation import get_annotation_info
 
 matplotlib.use("Agg")
 

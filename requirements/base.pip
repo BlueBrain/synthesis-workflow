@@ -1,4 +1,4 @@
-atlas_analysis>=0.0.3
+atlas_analysis>=0.0.4
 bluepy>=2.3,<3
 bluepy-configfile
 bluepymm
@@ -15,6 +15,7 @@ matplotlib
 morph_tool>=2.9.0,<3
 morphio>=3,<4
 neuroc>=0.2.8,<1
+neurocollage>=0.2.0
 neurom>=3,<4
 pandas
 placement_algorithm>=2.2.0

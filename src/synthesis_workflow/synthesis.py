@@ -316,7 +316,7 @@ def create_axon_morphologies_tsv(
     else:
         L.info("Do not use placement algorithm for axons (use random choice instead)")
 
-        cells_df = CellCollection.load_mvd3(circuit_path).properties
+        cells_df = CellCollection.load(circuit_path).properties
         axon_morphs = pd.DataFrame(index=cells_df.index, columns=["morphology"])
 
         morphs_df = pd.read_csv(morphs_df_path)
@@ -520,6 +520,7 @@ def add_scaling_rules_to_parameters(
 
     # Build the file list for each mtype
     morphs_df = pd.read_csv(morphs_df_path)
+
     file_lists = [
         (mtype, morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
         for mtype in scaling_rules.keys()

@@ -11,7 +11,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from bluepy import Circuit
 from joblib import Parallel
 from joblib import cpu_count
 from joblib import delayed
@@ -72,24 +71,6 @@ def load_neurondb_to_dataframe(neurondb_path, morphology_dirs=None, apical_point
         morphs_df = add_apical_points(morphs_df, apical_points)
 
     return morphs_df
-
-
-def load_circuit(
-    path_to_mvd3=None,
-    path_to_morphologies=None,
-    path_to_atlas=None,
-    circuit_config=None,
-):
-    """Loads a circuit with bluepy."""
-    if circuit_config:
-        return Circuit(circuit_config)
-    return Circuit(
-        {
-            "cells": path_to_mvd3,
-            "morphologies": path_to_morphologies,
-            "atlas": path_to_atlas,
-        }
-    )
 
 
 def ensure_dir(file_path):

@@ -1,11 +1,10 @@
 """Luigi tasks for validation workflows."""
-import os
+import configparser
+import json
+import pickle
 
 import luigi
-import numpy as np
 import pandas as pd
-from atlas_analysis.planes.planes import load_planes_centerline
-from bluepy_configfile.configfile import BlueConfig
 from luigi.parameter import PathParameter
 from luigi_tools.parameter import BoolParameter
 from luigi_tools.target import OutputLocalTarget
@@ -13,8 +12,10 @@ from luigi_tools.task import WorkflowTask
 from luigi_tools.task import WorkflowWrapperTask
 
 from synthesis_workflow.tasks.circuit import CreateAtlasPlanes
+from synthesis_workflow.tasks.circuit import SliceCircuit
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import GetSynthesisInputs
+from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
 from synthesis_workflow.tasks.synthesis import Synthesize
@@ -27,46 +28,70 @@ from synthesis_workflow.tasks.validation import PlotPathDistanceFits
 from synthesis_workflow.tasks.validation import PlotScales
 from synthesis_workflow.tasks.validation import PlotScoreMatrix
 from synthesis_workflow.tasks.validation import TrunkValidation
+from synthesis_workflow.utils import create_circuit_config
+from synthesis_workflow.utils import save_planes
 from synthesis_workflow.validation import plot_morphometrics
 
 
-class CreateBlueConfig(WorkflowTask):
+class CreateCircuitConfig(WorkflowTask):
     """Create a CircuitConfig file to be read with other BBP tools (bluepy, etc.)."""
 
-    circuitconfig_path = PathParameter("CircuitConfig")
+    circuitconfig_path = PathParameter(default="circuit_config.json")
+    collageconfig_path = PathParameter(default="collage_config.ini")
 
     def requires(self):
         """ """
-        return {"synthesis": Synthesize(), "planes": CreateAtlasPlanes()}
+        return {
+            "synthesis": Synthesize(),
+            "planes": CreateAtlasPlanes(),
+            "synthesis_input": GetSynthesisInputs(),
+        }
 
     def run(self):
         """ """
-        bc = BlueConfig()
-        morph_path = self.input()["synthesis"]["out_morphologies"].pathlib_path.parent / "ascii"
-        if morph_path.exists():
-            os.remove(morph_path)
-
-        contents = {
-            "MorphologyPath": str(morph_path.parent.resolve()),
-            "CircuitPath": str(self.input()["synthesis"]["out_mvd3"].pathlib_path.resolve()),
-            "Atlas": CircuitConfig().atlas_path,
-            "nrnPath": "N/A",
-            "METypePath": "N/A",
-        }
-        morph_path.symlink_to(self.input()["synthesis"]["out_morphologies"].pathlib_path.resolve())
-        bc.add_section("Run", "default", contents)
-        with open(self.output().path, "w", encoding="utf-8") as out_file:
-            out_file.write(str(bc))
-
         # convert plane data for collage
-        planes = load_planes_centerline(self.input()["planes"].path)
-        np.savetxt(
-            self.input()["planes"].pathlib_path.parent / "centerline.dat", planes["centerline"]
+        with open(self.input()["planes"].path, "rb") as f_planes:
+            planes = pickle.load(f_planes)
+        save_planes(planes, self.input()["planes"].pathlib_path.parent)
+
+        config = configparser.ConfigParser()
+        config["atlas"] = {
+            "path": CircuitConfig().atlas_path,
+            "structure_path": self.input()["synthesis_input"].pathlib_path
+            / CircuitConfig().region_structure_path,
+        }
+        config["circuit"] = {
+            "path": self.output().path,
+            "region": CircuitConfig().region if CircuitConfig().region is not None else "",
+            "hemisphere": CircuitConfig().hemisphere
+            if CircuitConfig().hemisphere is not None
+            else "",
+        }
+        sample = PlotCollage().sample
+        if sample is None:
+            sample = SliceCircuit().n_cells
+        config["cells"] = {
+            "mtype": SynthesisConfig().mtypes[0] if SynthesisConfig().mtypes is not None else "",
+            "sample": str(sample),
+        }
+        config["planes"] = {
+            "count": CreateAtlasPlanes().plane_count,
+            "type": CreateAtlasPlanes().plane_type,
+            "slice_thickness": CreateAtlasPlanes().slice_thickness,
+        }
+        config["collage"] = {"pdf_filename": "collage.pdf"}
+        with open(
+            self.output().pathlib_path.parent / self.collageconfig_path, "w", encoding="utf-8"
+        ) as configfile:
+            config.write(configfile)
+
+        config_dict = create_circuit_config(
+            self.input()["synthesis"]["circuit"].pathlib_path.resolve(),
+            self.input()["synthesis"]["out_morphologies"].pathlib_path.resolve(),
         )
-        _planes = []
-        for plane in planes["planes"]:
-            _planes.append(np.hstack([plane.point, plane.normal]))
-        np.savetxt(self.input()["planes"].pathlib_path.parent / "planes.dat", _planes)
+
+        with open(self.output().path, "w", encoding="utf-8") as config_file:
+            json.dump(config_dict, config_file, indent=2)
 
     def output(self):
         """ """
@@ -121,7 +146,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
             tasks.append(PlotScoreMatrix(in_atlas=True))
         if self.with_trunk_validation:
             tasks.append(TrunkValidation(in_atlas=True))
-        tasks.append(CreateBlueConfig())
+        tasks.append(CreateCircuitConfig())
         return tasks
 
 

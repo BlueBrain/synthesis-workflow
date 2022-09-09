@@ -1,24 +1,25 @@
 """Luigi tasks for circuit and atlas processings."""
+import pickle
+from copy import deepcopy
 from functools import partial
+from pathlib import Path
 
 import luigi
+import pandas as pd
 import yaml
-from atlas_analysis.planes.planes import load_planes_centerline
-from atlas_analysis.planes.planes import save_planes_centerline
 from luigi.parameter import OptionalPathParameter
 from luigi.parameter import PathParameter
 from luigi_tools.parameter import RatioParameter
 from luigi_tools.task import ParamRef
 from luigi_tools.task import WorkflowTask
 from luigi_tools.task import copy_params
+from neurocollage import create_planes
+from neurocollage.planes import get_layer_annotation
 from voxcell import VoxelData
 
 from synthesis_workflow.circuit import build_circuit
 from synthesis_workflow.circuit import circuit_slicer
 from synthesis_workflow.circuit import create_atlas_thickness_mask
-from synthesis_workflow.circuit import create_planes
-from synthesis_workflow.circuit import get_layer_tags
-from synthesis_workflow.circuit import halve_atlas
 from synthesis_workflow.circuit import slice_circuit
 from synthesis_workflow.tasks.config import AtlasLocalTarget
 from synthesis_workflow.tasks.config import CircuitConfig
@@ -41,20 +42,21 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
 
     def run(self):
         """ """
-        annotation, layer_mapping = get_layer_tags(
-            CircuitConfig().atlas_path,
-            self.input().pathlib_path / CircuitConfig().region_structure_path,
-            CircuitConfig().region,
-        )
-        if CircuitConfig().hemisphere is not None:
-            annotation.raw = halve_atlas(annotation.raw, side=CircuitConfig().hemisphere)
 
+        annotation = get_layer_annotation(
+            {
+                "atlas": CircuitConfig().atlas_path,
+                "structure": self.input().pathlib_path / CircuitConfig().region_structure_path,
+            },
+            CircuitConfig().region,
+            CircuitConfig().hemisphere,
+        )
         annotation_path = self.output()["annotations"].path
-        annotation.save_nrrd(annotation_path)
+        annotation["annotation"].save_nrrd(annotation_path)
 
         layer_mapping_path = self.output()["layer_mapping"].path
         with open(layer_mapping_path, "w", encoding="utf-8") as f:
-            yaml.dump(layer_mapping, f)
+            yaml.dump(annotation["mapping"], f)
 
     def output(self):
         """ """
@@ -120,8 +122,10 @@ class CreateAtlasPlanes(WorkflowTask):
             raise Exception("Number of planes should be larger than one")
 
         layer_annotation = VoxelData.load_nrrd(self.input()["annotations"].path)
+        layer_mappings = yaml.safe_load(self.input()["layer_mapping"].open())
+
         planes, centerline = create_planes(
-            layer_annotation,
+            {"annotation": layer_annotation, "mapping": layer_mappings},
             self.plane_type,
             self.plane_count,
             self.slice_thickness,
@@ -130,7 +134,8 @@ class CreateAtlasPlanes(WorkflowTask):
             self.centerline_axis,
         )
 
-        save_planes_centerline(self.output().path, planes, centerline)
+        with open(self.output().path, "wb") as f_planes:
+            pickle.dump({"planes": planes, "centerline": centerline}, f_planes)
 
     def output(self):
         """ """
@@ -173,6 +178,30 @@ class BuildCircuit(WorkflowTask):
             thickness_mask.save_nrrd(self.mask_path)
             thickness_mask_path = self.mask_path.stem
 
+        # create uniform densities if they don't exist
+        mtypes = SynthesisConfig().mtypes
+        if not mtypes:
+            mtypes = pd.read_csv(mtype_taxonomy_path, sep="\t")["mtype"].to_list()
+
+        for mtype in mtypes:
+            nrrd_path = Path(CircuitConfig().atlas_path) / f"[cell_density]{mtype.upper()}.nrrd"
+            if not nrrd_path.exists():
+                annotation = get_layer_annotation(
+                    {
+                        "atlas": CircuitConfig().atlas_path,
+                        "structure": self.input()["synthesis"].pathlib_path
+                        / CircuitConfig().region_structure_path,
+                    },
+                    CircuitConfig().region,
+                    CircuitConfig().hemisphere,
+                )
+                layer = mtype[1]
+                keys = [k + 1 for k, d in annotation["mapping"].items() if d.endswith(layer)]
+                density_annotation = deepcopy(annotation["annotation"])
+                density_annotation.raw[annotation["annotation"].raw == keys[0]] = 1000
+                density_annotation.raw[annotation["annotation"].raw != keys[0]] = 0
+                density_annotation.save_nrrd(str(nrrd_path))
+
         cells = build_circuit(
             self.input()["composition"].path,
             mtype_taxonomy_path,
@@ -193,15 +222,15 @@ class BuildCircuit(WorkflowTask):
     mtypes=ParamRef(SynthesisConfig),
 )
 class SliceCircuit(WorkflowTask):
-    """Create a smaller circuit .mvd3 file for subsampling.
+    """Create a smaller circuit file for subsampling.
 
     Attributes:
         mtypes (list): List of mtypes to consider.
     """
 
     sliced_circuit_path = PathParameter(
-        default="sliced_circuit_somata.mvd3",
-        description=":str: Path to save sliced circuit somata mvd3.",
+        default="sliced_circuit_somata.h5",
+        description=":str: Path to save sliced circuit.",
     )
     n_cells = luigi.IntParameter(
         default=10, description=":int: Number of cells per mtype to consider."
@@ -216,7 +245,8 @@ class SliceCircuit(WorkflowTask):
 
     def run(self):
         """ """
-        planes = load_planes_centerline(self.input()["atlas_planes"].path)["planes"]
+        with open(self.input()["atlas_planes"].path, "rb") as f_planes:
+            planes = pickle.load(f_planes)["planes"]
 
         _slicer = partial(
             circuit_slicer,

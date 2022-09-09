@@ -25,7 +25,6 @@ from joblib import Parallel
 from joblib import delayed
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
-from morph_tool.resampling import resample_linear_density
 from morphio.mut import Morphology
 from neurom import load_morphologies
 from neurom.apps import morph_stats
@@ -33,18 +32,12 @@ from neurom.apps.morph_stats import extract_dataframe
 from neurom.check.morphology_checks import has_apical_dendrite
 from neurom.core.dataformat import COLS
 from neurom.core.types import tree_type_checker as is_type
-from neurom.view import matplotlib_impl
 from neurots import NeuronGrower
-from pyquaternion import Quaternion
-from region_grower.atlas_helper import AtlasHelper
 from region_grower.modify import scale_target_barcode
 from scipy.ndimage import correlate
-from scipy.optimize import fmin
 from tmd.io.io import load_population
 from voxcell import CellCollection
-from voxcell.exceptions import VoxcellError
 
-from synthesis_workflow.circuit import get_cells_between_planes
 from synthesis_workflow.fit_utils import clean_outliers
 from synthesis_workflow.fit_utils import get_path_distance_from_extent
 from synthesis_workflow.fit_utils import get_path_distances
@@ -61,18 +54,18 @@ VacuumCircuit = namedtuple("VacuumCircuit", ["cells", "morphs_df", "morphology_p
 SYNTH_MORPHOLOGY_PATH = "synth_morphology_path"
 
 
-def convert_mvd3_to_morphs_df(mvd3_path, synth_output_path, ext="asc"):
-    """Convert the list of morphologies from mvd3 to morphology dataframe.
+def convert_circuit_to_morphs_df(circuit_path, synth_output_path, ext="asc"):
+    """Convert the list of morphologies from circuit to morphology dataframe.
 
     Args:
-        mvd3_path (str): path to mvd3 (somata) file
+        circuit_path (str): path to circuit file
         synth_output_path (str): path to morphology files
         ext( str): extension of morphology files
 
     Returns:
         DataFrame: morphology dataframe
     """
-    cells_df = CellCollection.load_mvd3(mvd3_path).as_dataframe()
+    cells_df = CellCollection.load(circuit_path).as_dataframe()
     cells_df[SYNTH_MORPHOLOGY_PATH] = cells_df["morphology"].apply(
         lambda morph: (Path(synth_output_path) / morph).with_suffix("." + ext)
     )
@@ -568,299 +561,6 @@ def plot_density_profiles(circuit, sample, region, sample_distance, output_path,
         for fig in Parallel(nb_jobs)(delayed(f)(mtype) for mtype in sorted(circuit.cells.mtypes)):
             with DisableLogger():
                 pdf.savefig(fig, bbox_inches="tight")
-            plt.close(fig)
-
-
-def get_plane_rotation_matrix(plane, current_rotation, target=None):
-    """Get basis vectors best aligned to target direction.
-
-    We define a direct orthonormal basis of the plane (e_1, e_2) such
-    that || e_2 - target || is minimal. The positive axes along the
-    vectors e_1  and e_2 correspond respectively to the horizontal and
-    vertical dimensions of the image.
-
-    Args:
-        plane (atlas_analysis.plane.maths.Plane): plane object
-        current_rotation (ndarray): rotation matrix at the location
-        target (list): target vector to align each plane
-
-    Return:
-        np.ndarray: rotation matrix to map VoxelData coordinates to plane coordinates
-    """
-    if target is None:
-        target = [0, 1, 0]
-    target /= np.linalg.norm(target)
-
-    current_direction = current_rotation.dot(target)
-
-    rotation_matrix = plane.get_quaternion().rotation_matrix.T
-
-    def _get_rot_matrix(angle):
-        """Get rotation matrix for a given angle along [0, 0, 1]."""
-        return Quaternion(axis=[0, 0, 1], angle=angle).rotation_matrix
-
-    def _cost(angle):
-        return 1 - (_get_rot_matrix(angle).dot(rotation_matrix).dot(current_direction)).dot(target)
-
-    angle = fmin(_cost, 1.0, disp=False)[0]
-    return _get_rot_matrix(angle).dot(rotation_matrix)
-
-
-def _get_plane_grid(annotation, plane_origin, rotation_matrix, n_pixels):
-    ids = np.vstack(np.where(annotation.raw > 0)).T
-    pts = annotation.indices_to_positions(ids)
-    pts = (pts - plane_origin).dot(rotation_matrix.T)
-    pts_dot_x = pts.dot([1.0, 0.0, 0.0])
-    pts_dot_y = pts.dot([0.0, 1.0, 0.0])
-    x_min = pts[np.argmin(pts_dot_x)][0]
-    x_max = pts[np.argmax(pts_dot_x)][0]
-    y_min = pts[np.argmin(pts_dot_y)][1]
-    y_max = pts[np.argmax(pts_dot_y)][1]
-
-    xs_plane = np.linspace(x_min, x_max, n_pixels)
-    ys_plane = np.linspace(y_min, y_max, n_pixels)
-    X, Y = np.meshgrid(xs_plane, ys_plane)
-    points = np.array(
-        [
-            np.array([x, y, 0]).dot(rotation_matrix) + plane_origin
-            for x, y in zip(X.flatten(), Y.flatten())
-        ]
-    )
-    return X, Y, points
-
-
-def get_annotation_info(annotation, plane_origin, rotation_matrix, n_pixels=1024):
-    """Get information to plot annotation on a plane.
-
-    Args:
-        annotation (VoxelData): atlas annotations
-        plane_origin (np.ndarray): origin of plane (Plane.point)
-        rotation_matrix (3*3 np.ndarray): rotation matrix to transform from real coordinates
-            to plane coordinates
-        n_pixels (int): number of pixel on each axis of the plane for plotting layers
-    """
-    X, Y, points = _get_plane_grid(annotation, plane_origin, rotation_matrix, n_pixels)
-    data = annotation.lookup(points, outer_value=0).astype(float).reshape(n_pixels, n_pixels)
-    return X, Y, data
-
-
-def get_y_info(annotation, atlas, plane_origin, rotation_matrix, n_pixels=64):
-    """Get direction of y axis on a grid on the atlas planes."""
-    X, Y, points = _get_plane_grid(annotation, plane_origin, rotation_matrix, n_pixels)
-    orientations = []
-    for point in points:
-        try:
-            orientations.append(
-                rotation_matrix.dot(np.dot(atlas.orientations.lookup(point)[0], [0.0, 1.0, 0.0]))
-            )
-        except VoxcellError:
-            orientations.append([0.0, 1.0, 0.0])
-    orientations = np.array(orientations)
-    orientation_u = orientations[:, 0].reshape(n_pixels, n_pixels)
-    orientation_v = orientations[:, 1].reshape(n_pixels, n_pixels)
-    return X, Y, orientation_u, orientation_v
-
-
-# pylint: disable=too-many-locals
-def plot_cells(
-    ax,
-    circuit,
-    plane_left,
-    plane_right,
-    rotation_matrix=None,
-    mtype=None,
-    sample=10,
-    plot_neuron_kwargs=None,
-    linear_density=None,
-    wire_plot=False,
-):
-    """Plot cells for collage."""
-    if mtype is not None:
-        cells = circuit.cells.get({"mtype": mtype})
-    else:
-        cells = circuit.cells.get()
-
-    if plot_neuron_kwargs is None:
-        plot_neuron_kwargs = {}
-
-    _cells = get_cells_between_planes(cells, plane_left, plane_right)
-
-    gids = []
-    if len(_cells.index) > 0:
-        _cells = _cells.sample(n=min(sample, len(_cells.index)))
-        gids = _cells.index
-
-    def _wire_plot(morph, ax, lw=0.1):
-        for sec in morph.sections:
-            ax.plot(*sec.points.T[:2], c=matplotlib_impl.TREE_COLOR[sec.type], lw=lw)
-
-    for gid in gids:
-        m = circuit.morph.get(gid, transform=True, source="ascii")
-        if linear_density is not None:
-            m = resample_linear_density(m, linear_density)
-        morphology = neurom.core.Morphology(m)
-
-        def _to_plane_coord(p):
-            return np.dot(p - plane_left.point, rotation_matrix.T)
-
-        # transform morphology in the plane coordinates
-        morphology = morphology.transform(_to_plane_coord)
-        if wire_plot:
-            ax.scatter(
-                *_to_plane_coord([_cells.loc[gid, ["x", "y", "z"]].values])[0, :2], c="k", s=5
-            )
-            _wire_plot(morphology, ax=ax)
-        else:
-            matplotlib_impl.plot_morph(morphology, ax, plane="xy", **plot_neuron_kwargs)
-
-
-# pylint: disable=too-many-arguments,too-many-locals
-def _plot_collage(
-    planes,
-    layer_annotation=None,
-    circuit=None,
-    mtype=None,
-    sample=None,
-    n_pixels=200,
-    n_pixels_y=20,
-    with_y_field=True,
-    with_cells=True,
-    plot_neuron_kwargs=None,
-    figsize=(20, 20),
-    layer_mappings=None,
-    cells_linear_density=None,
-    cells_wire_plot=False,
-    region_structure_path="region_structure.yaml",
-):
-    """Internal plot collage for multiprocessing."""
-    left_plane, right_plane = planes
-    plane_point = left_plane.point
-    atlas = AtlasHelper(circuit.atlas, region_structure_path=region_structure_path)
-    rotation_matrix = get_plane_rotation_matrix(
-        left_plane, atlas.orientations.lookup(plane_point)[0]
-    )
-
-    X, Y, layers = get_annotation_info(layer_annotation, plane_point, rotation_matrix, n_pixels)
-    layer_ids = np.array([-1] + list(layer_mappings.keys())) + 1
-
-    cmap = matplotlib.colors.ListedColormap(["0.8"] + [f"C{i}" for i in layer_mappings])
-
-    fig = plt.figure(figsize=figsize)
-    plt.pcolormesh(X, Y, layers, shading="nearest", cmap=cmap, alpha=0.3)
-    bounds = list(layer_ids - 0.5) + [layer_ids[-1] + 0.5]
-    norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
-    cbar = plt.colorbar(
-        matplotlib.cm.ScalarMappable(cmap=cmap, norm=norm),
-        ticks=layer_ids,
-        boundaries=bounds,
-        shrink=0.3,
-        alpha=0.3,
-    )
-    cbar.ax.set_yticklabels(["outside"] + list(layer_mappings.values()))
-
-    if with_cells:
-        plot_cells(
-            plt.gca(),
-            circuit,
-            left_plane,
-            right_plane,
-            rotation_matrix=rotation_matrix,
-            mtype=mtype,
-            sample=sample,
-            plot_neuron_kwargs=plot_neuron_kwargs,
-            linear_density=cells_linear_density,
-            wire_plot=cells_wire_plot,
-        )
-    if with_y_field:
-        X_y, Y_y, orientation_u, orientation_v = get_y_info(
-            layer_annotation, atlas, left_plane.point, rotation_matrix, n_pixels_y
-        )
-        arrow_len = abs(X_y[0, 1] - X_y[0, 0]) * 0.5
-        plt.quiver(
-            X_y,
-            Y_y,
-            orientation_u * arrow_len,
-            orientation_v * arrow_len,
-            width=0.0005,
-            angles="xy",
-            scale_units="xy",
-            scale=1,
-        )
-
-    ax = plt.gca()
-    ax.set_aspect("equal")
-    ax.set_rasterized(True)
-    ax.set_title(f"plane coord: {left_plane.point}")
-
-    return fig
-
-
-# pylint: disable=too-many-arguments
-def plot_collage(
-    circuit,
-    planes,
-    layer_annotation,
-    mtype,
-    pdf_filename="collage.pdf",
-    sample=10,
-    nb_jobs=-1,
-    joblib_verbose=10,
-    dpi=100,
-    n_pixels=200,
-    with_y_field=True,
-    n_pixels_y=20,
-    plot_neuron_kwargs=None,
-    with_cells=True,
-    layer_mappings=None,
-    cells_linear_density=None,
-    cells_wire_plot=False,
-    region_structure_path="region_structure.yaml",
-):
-    """Plot collage of an mtype and a list of planes.
-
-    Args:
-        circuit (circuit): should contain location of soma and mtypes
-        planes (list): list of plane objects from atlas_analysis
-        layer_annotation (VoxelData): layer annotation on atlas
-        mtype (str): mtype of cells to plot
-        pdf_filename (str): pdf filename
-        sample (int): maximum number of cells to plot
-        nb_jobs (int): number of joblib workers
-        joblib_verbose (int): verbose level of joblib
-        dpi (int): dpi for pdf rendering (rasterized)
-        n_pixels (int): number of pixels for plotting layers
-        with_y_field (bool): plot y field
-        n_pixels_y (int): number of pixels for plotting y field
-        plot_neuron_kwargs (dict): dict given to ``neurom.viewer.plot_neuron`` as kwargs
-        with_cells (bool): plot cells or not
-        layer_mappings (dict): mapping between layer id and layer names to display
-        cells_linear_density (float): apply resampling to plot less points
-        cells_wire_plot (bool): if true, do not use neurom.view, but plt.plot
-        region_structure_path (str): path to region_structure.yaml file
-    """
-    ensure_dir(pdf_filename)
-    with PdfPages(pdf_filename) as pdf:
-        f = partial(
-            _plot_collage,
-            layer_annotation=layer_annotation,
-            circuit=circuit,
-            mtype=mtype,
-            sample=sample,
-            n_pixels=n_pixels,
-            n_pixels_y=n_pixels_y,
-            with_y_field=with_y_field,
-            plot_neuron_kwargs=plot_neuron_kwargs,
-            with_cells=with_cells,
-            layer_mappings=layer_mappings,
-            cells_linear_density=cells_linear_density,
-            cells_wire_plot=cells_wire_plot,
-            region_structure_path=region_structure_path,
-        )
-        for fig in Parallel(nb_jobs, verbose=joblib_verbose)(
-            delayed(f)(planes) for planes in zip(planes[:-1:3], planes[2::3])
-        ):
-            with DisableLogger():
-                pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
             plt.close(fig)
 
 

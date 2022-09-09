@@ -9,7 +9,6 @@ import luigi
 import yaml
 from git import Repo
 from luigi.parameter import OptionalChoiceParameter
-from luigi.parameter import OptionalIntParameter
 from luigi_tools.parameter import ExtParameter
 from luigi_tools.target import OutputLocalTarget
 from luigi_tools.task import WorkflowTask
@@ -293,12 +292,6 @@ class PathConfig(luigi.Config):
             "are stored."
         ),
     )
-
-
-class ValidationConfig(luigi.Config):
-    """Validation configuration."""
-
-    sample = OptionalIntParameter(default=None)
 
 
 class AtlasLocalTarget(OutputLocalTarget):

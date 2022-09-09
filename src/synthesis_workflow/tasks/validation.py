@@ -1,24 +1,25 @@
 """Luigi tasks for validation of synthesis."""
 import json
 import logging
+import pickle
 from pathlib import Path
 
 import luigi
 import pandas as pd
 import pkg_resources
 import yaml
-from atlas_analysis.planes.planes import load_planes_centerline
+from bluepy import Circuit
 from luigi.parameter import OptionalNumericalParameter
 from luigi.parameter import PathParameter
 from luigi_tools.parameter import BoolParameter
 from luigi_tools.task import ParamRef
 from luigi_tools.task import WorkflowTask
-from luigi_tools.task import WorkflowWrapperTask
 from luigi_tools.task import copy_params
 from luigi_tools.util import WorkflowError
+from neurocollage import plot_2d_collage
 from neurom.view import matplotlib_impl
-from voxcell import CellCollection
 from voxcell import VoxelData
+from voxcell.cell_collection import CellCollection
 
 from morphval import validation_main as morphval_validation
 from synthesis_workflow.tasks.circuit import CreateAtlasLayerAnnotations
@@ -30,7 +31,6 @@ from synthesis_workflow.tasks.config import MorphsDfLocalTarget
 from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
-from synthesis_workflow.tasks.config import ValidationConfig
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.synthesis import AddScalingRulesToParameters
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
@@ -38,13 +38,11 @@ from synthesis_workflow.tasks.synthesis import BuildMorphsDF
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
 from synthesis_workflow.tasks.synthesis import Synthesize
 from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
-from synthesis_workflow.tools import load_circuit
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
 from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
 from synthesis_workflow.validation import VacuumCircuit
-from synthesis_workflow.validation import convert_mvd3_to_morphs_df
+from synthesis_workflow.validation import convert_circuit_to_morphs_df
 from synthesis_workflow.validation import get_debug_data
-from synthesis_workflow.validation import plot_collage
 from synthesis_workflow.validation import plot_density_profiles
 from synthesis_workflow.validation import plot_morphometrics
 from synthesis_workflow.validation import plot_path_distance_fits
@@ -58,8 +56,8 @@ L = logging.getLogger(__name__)
 @copy_params(
     ext=ParamRef(PathConfig),
 )
-class ConvertMvd3(WorkflowTask):
-    """Convert synthesize mvd3 file to morphs_df.csv file.
+class ConvertCircuit(WorkflowTask):
+    """Convert synthesize circuit file to morphs_df.csv file.
 
     Attributes:
         ext (str): Extension for morphology files.
@@ -71,10 +69,8 @@ class ConvertMvd3(WorkflowTask):
 
     def run(self):
         """ """
-        synth_morphs_df = convert_mvd3_to_morphs_df(
-            self.input()["out_mvd3"].path,
-            self.input()["out_morphologies"].path,
-            self.ext,
+        synth_morphs_df = convert_circuit_to_morphs_df(
+            self.input()["circuit"].path, self.input()["out_morphologies"].path, self.ext
         )
 
         synth_morphs_df.to_csv(self.output().path, index=False)
@@ -123,7 +119,7 @@ class PlotMorphometrics(WorkflowTask):
     def requires(self):
         """ """
         if self.in_atlas:
-            return {"morphs": BuildMorphsDF(), "mvd3": ConvertMvd3()}
+            return {"morphs": BuildMorphsDF(), "circuit": ConvertCircuit()}
         else:
             return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
 
@@ -131,7 +127,7 @@ class PlotMorphometrics(WorkflowTask):
         """ """
         morphs_df = pd.read_csv(self.input()["morphs"].path)
         if self.in_atlas:
-            synth_morphs_df = pd.read_csv(self.input()["mvd3"].path)
+            synth_morphs_df = pd.read_csv(self.input()["circuit"].path)
             comp_key = self.comp_key
         else:
             synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)
@@ -155,20 +151,19 @@ class PlotMorphometrics(WorkflowTask):
         return ValidationLocalTarget(self.morphometrics_path)
 
 
-@copy_params(
-    nb_jobs=ParamRef(RunnerConfig),
-    sample=ParamRef(ValidationConfig),
-)
+@copy_params(nb_jobs=ParamRef(RunnerConfig))
 class PlotDensityProfiles(WorkflowTask):
     """Plot density profiles of neurites in an atlas.
 
     Attributes:
-        sample (float): Number of cells to use. if None, use all available cells.
         nb_jobs (int) : Number of joblib workers.
     """
 
+    n_cells = luigi.OptionalIntParameter(
+        default=None, description=":int: Number of cells to use. If None, use all cells."
+    )
     density_profiles_path = PathParameter(
-        default="density_profiles.pdf", description=":str: Path for pdf file."
+        default="density_profiles.pdf", description=":str:  Path for pdf file."
     )
     sample_distance = luigi.FloatParameter(
         default=10,
@@ -186,11 +181,14 @@ class PlotDensityProfiles(WorkflowTask):
     def run(self):
         """ """
         if self.in_atlas:
-            circuit = load_circuit(
-                path_to_mvd3=self.input()["out_mvd3"].path,
-                path_to_morphologies=self.input()["out_morphologies"].path,
-                path_to_atlas=CircuitConfig().atlas_path,
+            circuit = Circuit(
+                {
+                    "cells": self.input()["circuit"].path,
+                    "morphologies": self.input()["out_morphologies"].path,
+                    "atlas": CircuitConfig().atlas_path,
+                }
             )
+
         else:
             df = pd.read_csv(self.input()["out_morphs_df"].path)
             circuit = VacuumCircuit(
@@ -201,7 +199,7 @@ class PlotDensityProfiles(WorkflowTask):
 
         plot_density_profiles(
             circuit,
-            self.sample,
+            self.n_cells,
             self.in_atlas,
             self.sample_distance,
             self.output().path,
@@ -217,7 +215,6 @@ class PlotDensityProfiles(WorkflowTask):
     mtypes=ParamRef(SynthesisConfig),
     nb_jobs=ParamRef(RunnerConfig),
     joblib_verbose=ParamRef(RunnerConfig),
-    sample=ParamRef(ValidationConfig, default=20),
 )
 class PlotCollage(WorkflowTask):
     """Plot collage for all given mtypes.
@@ -228,13 +225,13 @@ class PlotCollage(WorkflowTask):
         mtypes (list(str)): Mtypes to plot.
         nb_jobs (int): Number of joblib workers.
         joblib_verbose (int): Verbosity level of joblib.
-        sample (float): Number of cells to use, if None, all available.
     """
 
     collage_base_path = PathParameter(
         default="collages", description=":str: Path to the output folder."
     )
     dpi = luigi.IntParameter(default=100, description=":int: Dpi for pdf rendering (rasterized).")
+    sample = luigi.OptionalIntParameter(default=None, description=":int: Number of cells to plot")
     realistic_diameters = BoolParameter(
         default=True,
         description=":bool: Set or unset realistic diameter when NeuroM plot neurons.",
@@ -258,7 +255,7 @@ class PlotCollage(WorkflowTask):
 
     def requires(self):
         """ """
-        return ConvertMvd3()
+        return ConvertCircuit()
 
     def run(self):
         """ """
@@ -289,11 +286,11 @@ class PlotCollage(WorkflowTask):
     nb_jobs=ParamRef(RunnerConfig),
     joblib_verbose=ParamRef(RunnerConfig),
     collage_base_path=ParamRef(PlotCollage),
-    sample=ParamRef(ValidationConfig),
     dpi=ParamRef(PlotCollage),
     realistic_diameters=ParamRef(PlotCollage),
     linewidth=ParamRef(PlotCollage),
     diameter_scale=ParamRef(PlotCollage),
+    sample=ParamRef(PlotCollage),
 )
 class PlotSingleCollage(WorkflowTask):
     """Plot collage for a single mtype.
@@ -323,33 +320,35 @@ class PlotSingleCollage(WorkflowTask):
 
     def run(self):
         """ """
-        mvd3_path = self.input()["synthesis"]["out_mvd3"].path
+        circuit_path = self.input()["synthesis"]["circuit"].path
         morphologies_path = self.input()["synthesis"]["out_morphologies"].path
         atlas_path = CircuitConfig().atlas_path
-        L.debug("Load circuit mvd3 from %s", mvd3_path)
         L.debug("Load circuit morphologies from %s", morphologies_path)
         L.debug("Load circuit atlas from %s", atlas_path)
-        circuit = load_circuit(
-            path_to_mvd3=mvd3_path,
-            path_to_morphologies=morphologies_path,
-            path_to_atlas=atlas_path,
-        )
 
         planes_path = self.input()["planes"].path
-        L.debug("Load planes from %s", planes_path)
-        planes = load_planes_centerline(planes_path)["planes"]
+        with open(planes_path, "rb") as f_planes:
+            planes = pickle.load(f_planes)["planes"]
 
         layer_annotation_path = self.input()["layers"]["annotations"].path
-        layer_mappings = yaml.safe_load(self.input()["layers"]["layer_mapping"].open())
-        L.debug("Load layer annotations from %s", layer_annotation_path)
+        with self.input()["layers"]["layer_mapping"].open() as f_map:
+            layer_mappings = yaml.safe_load(f_map)
+
         layer_annotation = VoxelData.load_nrrd(layer_annotation_path)
 
-        L.debug("Plot single collage")
-        plot_collage(
-            circuit,
+        cells_df = CellCollection.load(circuit_path).as_dataframe()
+        cells_df["path"] = morphologies_path + "/" + cells_df["morphology"] + ".asc"
+
+        plot_2d_collage(
+            cells_df,
             planes,
-            layer_annotation,
-            self.mtype,
+            {"annotation": layer_annotation, "mapping": layer_mappings},
+            {
+                "atlas": CircuitConfig().atlas_path,
+                "structure": self.input()["synthesis_input"].pathlib_path
+                / CircuitConfig().region_structure_path,
+            },
+            mtype=self.mtype,
             pdf_filename=self.output().path,
             sample=self.sample,
             nb_jobs=self.nb_jobs,
@@ -360,9 +359,6 @@ class PlotSingleCollage(WorkflowTask):
                 "linewidth": self.linewidth,
                 "diameter_scale": self.diameter_scale,
             },
-            layer_mappings=layer_mappings,
-            region_structure_path=self.input()["synthesis_input"].pathlib_path
-            / CircuitConfig().region_structure_path,
         )
 
     def output(self):
@@ -406,7 +402,7 @@ class PlotScales(WorkflowTask):
 
     def requires(self):
         """ """
-        return ConvertMvd3()
+        return ConvertCircuit()
 
     def run(self):
         """ """
@@ -528,7 +524,7 @@ class MorphologyValidationReports(WorkflowTask):
         """ """
         return {
             "ref": ApplySubstitutionRules(),
-            "test": ConvertMvd3(),
+            "test": ConvertCircuit(),
         }
 
     def run(self):
@@ -612,7 +608,7 @@ class PlotScoreMatrix(WorkflowTask):
     def requires(self):
         """ """
         if self.in_atlas:
-            test_task = ConvertMvd3()
+            test_task = ConvertCircuit()
         else:
             test_task = VacuumSynthesize()
         return {
@@ -662,170 +658,6 @@ class PlotScoreMatrix(WorkflowTask):
         return ValidationLocalTarget(self.output_path)
 
 
-class PlotRegionCollageFromCircuit(WorkflowWrapperTask):
-    """Create a collage folder for all regions in regions list."""
-
-    regions = luigi.ListParameter()
-
-    def requires(self):
-        """ """
-        return [
-            PlotCollageFromCircuit(region=region, collage_base_path=f"collages/{region}")
-            for region in self.regions  # pylint: disable=not-an-iterable
-        ]
-
-
-@copy_params(
-    mtypes=ParamRef(SynthesisConfig),
-    nb_jobs=ParamRef(RunnerConfig),
-    sample=ParamRef(ValidationConfig),
-    joblib_verbose=ParamRef(RunnerConfig),
-)
-class PlotCollageFromCircuit(WorkflowWrapperTask):
-    """Plot collage for all given mtypes from a circuit (not used in this workflow).
-
-    Attributes:
-        mtypes (list(str)): Mtypes to plot.
-        nb_jobs (int): Number of joblib workers.
-        joblib_verbose (int): Verbosity level of joblib.
-        sample (float): Number of cells to use, if None, all available.
-    """
-
-    collage_base_path = PathParameter(
-        default="collages", description=":str: Path to the output folder."
-    )
-    dpi = luigi.IntParameter(default=100, description=":int: Dpi for pdf rendering (rasterized).")
-    realistic_diameters = BoolParameter(
-        default=True,
-        description=":bool: Set or unset realistic diameter when NeuroM plot neurons.",
-    )
-    linewidth = luigi.NumericalParameter(
-        default=0.1,
-        var_type=float,
-        min_value=0,
-        max_value=float("inf"),
-        left_op=luigi.parameter.operator.lt,
-        description=":float: Linewidth used by NeuroM to plot neurons.",
-    )
-    diameter_scale = OptionalNumericalParameter(
-        default=matplotlib_impl._DIAMETER_SCALE,  # pylint: disable=protected-access
-        var_type=float,
-        min_value=0,
-        max_value=float("inf"),
-        left_op=luigi.parameter.operator.lt,
-        description=":float: Diameter scale used by NeuroM to plot neurons.",
-    )
-    circuit_config = luigi.Parameter()
-    region = luigi.Parameter(default=None)
-
-    def requires(self):
-        """ """
-        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
-        if self.mtypes is None:
-            cells = CellCollection.load_sonata(self.circuit_config + "/circuit.morphologies.h5")
-            self.mtypes = cells.as_dataframe().mtype.unique()
-        tasks = []
-        for mtype in self.mtypes:
-            tasks.append(
-                PlotSingleCollageFromCircuit(
-                    collage_base_path=self.collage_base_path,
-                    mtype=mtype,
-                    sample=self.sample,
-                    nb_jobs=self.nb_jobs,
-                    joblib_verbose=self.joblib_verbose,
-                    dpi=self.dpi,
-                    realistic_diameters=self.realistic_diameters,
-                    linewidth=self.linewidth,
-                    diameter_scale=self.diameter_scale,
-                    region=self.region,
-                )
-            )
-        return tasks
-
-
-@copy_params(
-    nb_jobs=ParamRef(RunnerConfig),
-    joblib_verbose=ParamRef(RunnerConfig),
-    collage_base_path=ParamRef(PlotCollage),
-    sample=ParamRef(ValidationConfig),
-    dpi=ParamRef(PlotCollage),
-    realistic_diameters=ParamRef(PlotCollage),
-    linewidth=ParamRef(PlotCollage),
-    diameter_scale=ParamRef(PlotCollage),
-)
-class PlotSingleCollageFromCircuit(WorkflowTask):
-    """Plot collage for a single mtype to work with standalone PlotCollageFromCircuit.
-
-    Attributes:
-        nb_jobs (int): Number of joblib workers.
-        joblib_verbose (int): Verbosity level of joblib.
-        collage_base_path (str): Path to the output folder.
-        sample (float): Number of cells to use, if None, all available.
-        dpi (int): Dpi for pdf rendering (rasterized).
-        realistic_diameters (bool): Set or unset realistic diameter when NeuroM plot neurons.
-        linewidth (float): Linewidth used by NeuroM to plot neurons.
-        diameter_scale (float): Diameter scale used by NeuroM to plot neurons.
-    """
-
-    mtype = luigi.Parameter(description=":str: The mtype to plot.")
-    with_y_field = luigi.BoolParameter(
-        default=True, description=":str: Plot vector fields of orientations"
-    )
-    with_cells = luigi.BoolParameter(default=True, description=":str: Plot morphologies")
-    hemisphere = luigi.Parameter(default="right")
-    circuit_config = luigi.Parameter()
-    region = luigi.Parameter(default=None)
-
-    def requires(self):
-        """ """
-        return {
-            "planes": CreateAtlasPlanes(region=self.region, hemisphere=self.hemisphere),
-            "layers": CreateAtlasLayerAnnotations(),
-        }
-
-    def run(self):
-        """ """
-        circuit = load_circuit(
-            path_to_mvd3=CircuitConfig().circuit_somata_path,
-            path_to_morphologies=self.circuit_config + "morphologies",
-            path_to_atlas=CircuitConfig().atlas_path,
-        )
-
-        planes_path = self.input()["planes"].path
-        L.debug("Load planes from %s", planes_path)
-        planes = load_planes_centerline(planes_path)["planes"]
-
-        layer_annotation_path = self.input()["layers"]["annotations"].path
-        L.debug("Load layer annotations from %s", layer_annotation_path)
-        layer_annotation = VoxelData.load_nrrd(layer_annotation_path)
-
-        L.debug("Plot single collage")
-        plot_collage(
-            circuit,
-            planes,
-            layer_annotation,
-            self.mtype,
-            pdf_filename=self.output().path,
-            sample=self.sample,
-            nb_jobs=self.nb_jobs,
-            joblib_verbose=self.joblib_verbose,
-            dpi=self.dpi,
-            plot_neuron_kwargs={
-                "realistic_diameters": self.realistic_diameters,
-                "linewidth": self.linewidth,
-                "diameter_scale": self.diameter_scale,
-            },
-            with_y_field=self.with_y_field,
-            with_cells=self.with_cells,
-        )
-
-    def output(self):
-        """ """
-        return ValidationLocalTarget(
-            (Path(self.collage_base_path) / self.mtype).with_suffix(".pdf")
-        )
-
-
 class TrunkValidation(WorkflowTask):
     """Trunk angle validation plots."""
 
@@ -852,7 +684,7 @@ class TrunkValidation(WorkflowTask):
     def requires(self):
         """ """
         if self.in_atlas:
-            return {"morphs": BuildMorphsDF(), "mvd3": ConvertMvd3()}
+            return {"morphs": BuildMorphsDF(), "circuit": ConvertCircuit()}
         else:
             return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
 
@@ -860,7 +692,7 @@ class TrunkValidation(WorkflowTask):
         """ """
         morphs_df = pd.read_csv(self.input()["morphs"].path)
         if self.in_atlas:
-            synth_morphs_df = pd.read_csv(self.input()["mvd3"].path)
+            synth_morphs_df = pd.read_csv(self.input()["circuit"].path)
             comp_key = self.comp_key
         else:
             synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)

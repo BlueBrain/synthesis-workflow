@@ -13,6 +13,7 @@ def test_create_parameter_diff(data_dir):
         raw_params = json.load(f)
     with open(data_dir / "complete_tmd_parameters.json", encoding="utf-8") as f:
         complete_params = json.load(f)
+
     custom_parameters = create_parameter_diff(raw_params, complete_params)
     expected_custom_parameters = pd.read_csv(data_dir / "custom_parameters.csv")
     for gid in custom_parameters.index:
@@ -28,6 +29,7 @@ def test_apply_parameter_diff(data_dir):
         raw_params = json.load(f)
     with open(data_dir / "complete_tmd_parameters.json", encoding="utf-8") as f:
         complete_params = json.load(f)
+
     custom_parameters = pd.read_csv(data_dir / "custom_parameters.csv")
     apply_parameter_diff(raw_params, custom_parameters)
     assert len(create_parameter_diff(raw_params, complete_params).index) == 0

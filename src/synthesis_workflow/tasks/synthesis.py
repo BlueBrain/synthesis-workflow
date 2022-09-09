@@ -458,8 +458,8 @@ class Synthesize(WorkflowTask):
     """
 
     out_circuit_path = PathParameter(
-        default="sliced_circuit_morphologies.mvd3",
-        description=":str: Path to circuit mvd3 with morphology data.",
+        default="circuit.h5",
+        description=":str: Path to circuit with morphology data.",
     )
     axon_morphs_base_dir = luigi.OptionalParameter(
         default=None,
@@ -526,7 +526,7 @@ class Synthesize(WorkflowTask):
 
     def run(self):
         """ """
-        out_mvd3 = self.output()["out_mvd3"]
+        circuit = self.output()["circuit"]
         out_morphologies = self.output()["out_morphologies"]
         out_apical_points = self.output()["apical_points"]
         debug_scales = self.output().get("debug_scales")
@@ -553,7 +553,7 @@ class Synthesize(WorkflowTask):
             "tmd_parameters": self.input()["tmd_parameters"].path,
             "tmd_distributions": self.input()["tmd_distributions"].path,
             "atlas": CircuitConfig().atlas_path,
-            "out_cells": out_mvd3.path,
+            "out_cells": circuit.path,
             "out_apical": out_apical_points.path,
             "out_morph_ext": [str(self.ext)],
             "out_morph_dir": out_morphologies.path,
@@ -580,7 +580,7 @@ class Synthesize(WorkflowTask):
     def output(self):
         """ """
         outputs = {
-            "out_mvd3": SynthesisLocalTarget(self.out_circuit_path),
+            "circuit": SynthesisLocalTarget(self.out_circuit_path),
             "out_morphologies": SynthesisLocalTarget(PathConfig().synth_output_path),
             "apical_points": SynthesisLocalTarget(self.apical_points_path),
         }

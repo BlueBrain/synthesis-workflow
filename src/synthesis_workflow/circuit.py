@@ -8,48 +8,14 @@ from atlas_analysis.planes.planes import _smoothing
 from atlas_analysis.planes.planes import create_centerline
 from atlas_analysis.planes.planes import create_planes as _create_planes
 from brainbuilder.app.cells import _place as place
+from neurocollage.planes import get_cells_between_planes
+from neurocollage.planes import slice_n_cells
+from neurocollage.planes import slice_per_mtype
 from region_grower.atlas_helper import AtlasHelper
-from tqdm import tqdm
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import LocalAtlas
 
 L = logging.getLogger(__name__)
-LEFT = "left"
-RIGHT = "right"
-
-
-def halve_atlas(annotated_volume, axis=2, side=LEFT):
-    """Return the half of the annotated volume along the x-axis.
-
-    The identifiers of the voxels located on the left half or the right half
-    of the annotated volume are zeroed depending on which `side` is chosen.
-
-    Args:
-        annotated_volume: integer array of shape (W, L, D) holding the annotation
-            of a brain region.
-        axis: (Optional) axis along which to halve. Either 0, 1 or 2.
-            Defaults to 2.
-        side: (Optional) Either 'left' or 'right', depending on which half is requested.
-            Defaults to LEFT.
-
-    Returns:
-        Halves `annotated_volume` where where voxels on the opposite `side` have been
-        zeroed (black).
-    """
-    assert axis in range(3)
-    assert side in [LEFT, RIGHT]
-
-    middle = annotated_volume.shape[axis] // 2
-    slices_ = [slice(0), slice(0), slice(0)]
-    for coord in range(3):
-        if axis == coord:
-            slices_[coord] = (
-                slice(0, middle) if side == RIGHT else slice(middle, annotated_volume.shape[axis])
-            )
-        else:
-            slices_[coord] = slice(0, annotated_volume.shape[coord])
-    annotated_volume[slices_[0], slices_[1], slices_[2]] = 0
-    return annotated_volume
 
 
 def create_atlas_thickness_mask(atlas_dir):
@@ -140,34 +106,6 @@ def build_circuit(
     )
 
 
-def slice_per_mtype(cells, mtypes):
-    """Selects cells of given mtype."""
-    return cells[cells["mtype"].isin(mtypes)]
-
-
-def slice_n_cells(cells, n_cells, random_state=0):
-    """Selects n_cells random cells per mtypes."""
-    if n_cells <= 0:
-        return cells
-    sampled_cells = pd.DataFrame()
-    for mtype in cells.mtype.unique():
-        samples = cells[cells.mtype == mtype].sample(
-            n=min(n_cells, len(cells[cells.mtype == mtype])), random_state=random_state
-        )
-        sampled_cells = sampled_cells.append(samples)
-    return sampled_cells
-
-
-def get_cells_between_planes(cells, plane_left, plane_right):
-    """Gets cells gids between two planes in equation representation."""
-    eq_left = plane_left.get_equation()
-    eq_right = plane_right.get_equation()
-    left = np.einsum("j,ij", eq_left[:3], cells[["x", "y", "z"]].values)
-    right = np.einsum("j,ij", eq_right[:3], cells[["x", "y", "z"]].values)
-    selected = (left > eq_left[3]) & (right < eq_right[3])
-    return cells.loc[selected]
-
-
 def circuit_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
     """Selects n_cells mtype in mtypes."""
     if mtypes is not None:
@@ -184,28 +122,28 @@ def circuit_slicer(cells, n_cells, mtypes=None, planes=None, hemisphere=None):
         # between each pair of planes, select n_cells
         return pd.concat(
             [
-                slice_n_cells(get_cells_between_planes(cells, plane_left, plane_right), n_cells)
-                for plane_left, plane_right in tqdm(
-                    zip(planes[:-1:3], planes[2::3]), total=int(len(planes) / 3)
+                slice_n_cells(
+                    get_cells_between_planes(cells, plane["left"], plane["right"]), n_cells
                 )
+                for plane in planes
             ]
         )
     return slice_n_cells(cells, n_cells)
 
 
-def slice_circuit(input_mvd3, output_mvd3, slicer):
-    """Slices an mvd3 file using a slicing function.
+def slice_circuit(input_circuit, output_circuit, slicer):
+    """Slices a circuit file using a slicing function.
 
     Args:
-        input_mvd3 (str): path to input mvd3 file
-        output_mvd3 (str): path to ouput_mvd3 file
+        input_circuit (str): path to input file
+        output_circuit (str): path to output file
         slicer (function): function to slice the cells dataframe
     """
-    cells = CellCollection.load_mvd3(input_mvd3)
+    cells = CellCollection.load(input_circuit)
     sliced_cells = slicer(cells.as_dataframe())
     sliced_cells.reset_index(inplace=True, drop=True)
     sliced_cells.index += 1  # this is to match CellCollection index from 1
-    CellCollection.from_dataframe(sliced_cells).save_mvd3(output_mvd3)
+    CellCollection.from_dataframe(sliced_cells).save(output_circuit)
     return sliced_cells
 
 
