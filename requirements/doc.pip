@@ -1,5 +1,5 @@
 graphviz
 m2r2
-sphinx
+sphinx<5.2  # Required for autoapi
 sphinx-autoapi
 sphinx-bluebrain-theme
