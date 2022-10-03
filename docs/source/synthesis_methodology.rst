@@ -11,9 +11,9 @@ Production workflow
 
 Basically, the workflow used in BBP to generate the cell morphologies is the following:
 
-    * collect biological data,
-    * calibrate the models on these data,
-    * synthetized the cells according to the calibration parameters.
+* collect biological data,
+* calibrate the models on these data,
+* synthetized the cells according to the calibration parameters.
 
 This package aims at running the calibration process, then calling each part of the
 production workflow on a small use case and computing some validation metrics. Once the
@@ -27,7 +27,7 @@ This workflow runs all the required tasks to calibrate and validate the synthesi
 It is divided in several subtasks (more details on these tasks are given in
 :doc:`autoapi/tasks/index`):
 
-    .. graphviz:: autoapi/tasks/workflows/ValidateSynthesis.dot
+.. graphviz:: autoapi/tasks/workflows/ValidateSynthesis.dot
 
 Calibration parameters
 ----------------------
@@ -35,8 +35,8 @@ Calibration parameters
 The calibration step should create the two parameter files used by
 :py:class:`placement_algorithm.app.synthesize_morphologies.Master`:
 
-    * ``tmd_parameters.json`` which contains the model parameters for each ``mtype``.
-    * ``tmd_distributions.json`` which contains the distribution properties of each ``mtype``.
+* ``tmd_parameters.json`` which contains the model parameters for each ``mtype``.
+* ``tmd_distributions.json`` which contains the distribution properties of each ``mtype``.
 
 Details on the content of these files can be found here: <URL> (does not exist yet)
 
@@ -100,6 +100,6 @@ Here is an example of such ``context_constraints`` entry:
 
 More details on the models can be found here:
 
-    * `TNS <https://bbpteam.epfl.ch/documentation/projects/TNS/latest/index.html>`_
-    * <region-grower doc URL> (does not exist yet)
-    * <placement-algorithm.app.synthesis doc URL> (does not exist yet)
+* `TNS <https://bbpteam.epfl.ch/documentation/projects/TNS/latest/index.html>`_
+* <region-grower doc URL> (does not exist yet)
+* <placement-algorithm.app.synthesis doc URL> (does not exist yet)
