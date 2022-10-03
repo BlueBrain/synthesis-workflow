@@ -9,7 +9,7 @@ from synthesis_workflow.tasks.workflows import ValidateSynthesis
 
 @pytest.mark.xdist_group("group_O1")
 def test_ValidateSynthesis(small_O1_working_directory, data_dir):
-    """Test the synthesis workflow in simple atlas"""
+    """Test the synthesis workflow in simple atlas."""
     np.random.seed(0)
 
     # Run the workflow

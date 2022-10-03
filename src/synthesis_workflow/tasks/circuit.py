@@ -38,11 +38,11 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
     )
 
     def requires(self):
+        """Required input tasks."""
         return GetSynthesisInputs()
 
     def run(self):
-        """ """
-
+        """Actual process of the task."""
         annotation = get_layer_annotation(
             {
                 "atlas": CircuitConfig().atlas_path,
@@ -59,7 +59,7 @@ class CreateAtlasLayerAnnotations(WorkflowTask):
             yaml.dump(annotation["mapping"], f)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         # pylint: disable=no-member
         annotation_base_name = self.layer_annotations_path.stem
         layer_mapping_path = self.layer_annotations_path.with_name(
@@ -113,11 +113,11 @@ class CreateAtlasPlanes(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return CreateAtlasLayerAnnotations()
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         if self.plane_count < 1:
             raise Exception("Number of planes should be larger than one")
 
@@ -138,7 +138,7 @@ class CreateAtlasPlanes(WorkflowTask):
             pickle.dump({"planes": planes, "centerline": centerline}, f_planes)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         if CircuitConfig().region is not None:
             suffix = f"_{CircuitConfig().region}"
         else:
@@ -164,11 +164,11 @@ class BuildCircuit(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {"synthesis": GetSynthesisInputs(), "composition": GetCellComposition()}
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         # pylint: disable=no-member
         mtype_taxonomy_path = self.input()["synthesis"].pathlib_path / self.mtype_taxonomy_file
 
@@ -214,7 +214,7 @@ class BuildCircuit(WorkflowTask):
         cells.save(self.output().path)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return CircuitLocalTarget(CircuitConfig().circuit_somata_path)
 
 
@@ -237,14 +237,14 @@ class SliceCircuit(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {
             "atlas_planes": CreateAtlasPlanes(),
             "circuit": BuildCircuit(),
         }
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         with open(self.input()["atlas_planes"].path, "rb") as f_planes:
             planes = pickle.load(f_planes)["planes"]
 
@@ -262,5 +262,5 @@ class SliceCircuit(WorkflowTask):
             raise Exception("No cells will be synthesized, better stop here.")
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return CircuitLocalTarget(self.sliced_circuit_path)

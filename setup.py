@@ -5,7 +5,13 @@ from pathlib import Path
 from setuptools import find_namespace_packages
 from setuptools import setup
 
-VERSION = importlib.import_module("src.version").VERSION
+spec = importlib.util.spec_from_file_location(
+    "src.version",
+    "src/version.py",
+)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+VERSION = module.VERSION
 
 # Read the requirements
 with open("requirements/base.pip", "r", encoding="utf-8") as f:
@@ -41,6 +47,13 @@ setup(
         "docs": doc_reqs,
         "test": test_reqs,
     },
+    entry_points={
+        "console_scripts": [
+            "synthesis_workflow=synthesis_workflow.tasks.cli:main",
+            "morph_validation=morphval.cli:main",
+        ],
+    },
+    include_package_data=True,
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Education",
@@ -51,11 +64,4 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    entry_points={
-        "console_scripts": [
-            "synthesis_workflow=synthesis_workflow.tasks.cli:main",
-            "morph_validation=morphval.cli:main",
-        ]
-    },
-    include_package_data=True,
 )

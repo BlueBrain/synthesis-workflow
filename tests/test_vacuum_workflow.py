@@ -9,7 +9,7 @@ from synthesis_workflow.tasks.workflows import ValidateVacuumSynthesis
 
 @pytest.mark.xdist_group("group_vacuum")
 def test_ValidateVacuumSynthesis(vacuum_working_directory, data_dir):
-    """Test the synthesis workflow in vacuum"""
+    """Test the synthesis workflow in vacuum."""
     np.random.seed(0)
 
     # Run the workflow

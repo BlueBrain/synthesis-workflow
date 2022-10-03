@@ -13,7 +13,6 @@ target-version = [
     "py38",
     "py39",
 ]
-include = 'synthesis_workflow\/.*\.py$|tests\/.*\.py$|docs\/source\/conf\.py$|setup\.py$|examples\.py$'
 
 # PYDOCSTYLE
 [tool.pydocstyle]
@@ -23,7 +22,6 @@ add-ignore = [
     "D107",
 ]
 convention = "google"
-match = "[synthesis_workflow, tests, docs/source/conf.py, setup.py]"
 
 # ISORT
 [tool.isort]

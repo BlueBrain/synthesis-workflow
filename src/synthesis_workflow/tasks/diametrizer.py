@@ -82,7 +82,7 @@ class BuildDiameterModels(WorkflowTask):
     plot_models = BoolParameter()
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         raise DeprecationWarning("This task must be updated to be used")
         # pylint: disable=unreachable
 
@@ -118,7 +118,7 @@ class BuildDiameterModels(WorkflowTask):
             _plot_models(models_params, models_data, fig_folder="figures", ext=".png")
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return OutputLocalTarget(self.diameter_models_path)
 
 
@@ -161,11 +161,11 @@ class Diametrize(WorkflowTask):
     new_morphs_df_path = luigi.Parameter(default="diametrized_morphs_df.csv")
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return BuildDiameterModels()
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         raise DeprecationWarning("This task must be updated to be used")
         # pylint: disable=unreachable
 
@@ -198,5 +198,5 @@ class Diametrize(WorkflowTask):
         update_morphs_df(self.morphs_df_path, morphs_df).to_csv(self.output().path, index=False)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return OutputLocalTarget(self.new_morphs_df_path)

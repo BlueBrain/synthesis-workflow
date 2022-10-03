@@ -64,12 +64,11 @@ class BuildMorphsDF(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return GetSynthesisInputs()
 
     def run(self):
-        """ """
-
+        """Actual process of the task."""
         neurondb_path = find_case_insensitive_file(self.neurondb_path)
 
         L.debug("Build morphology dataframe from %s", neurondb_path)
@@ -84,7 +83,7 @@ class BuildMorphsDF(WorkflowTask):
         morphs_df.to_csv(self.output().path)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return MorphsDfLocalTarget(PathConfig().morphs_df_path)
 
 
@@ -100,14 +99,14 @@ class ApplySubstitutionRules(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {
             "synthesis_input": GetSynthesisInputs(),
             "morphs_df": BuildMorphsDF(),
         }
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         substitution_rules_path = (
             self.input()["synthesis_input"].pathlib_path / self.substitution_rules_path
         )
@@ -124,7 +123,7 @@ class ApplySubstitutionRules(WorkflowTask):
         df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return MorphsDfLocalTarget(PathConfig().substituted_morphs_df_path)
 
 
@@ -142,14 +141,14 @@ class GetDefaultParameters(WorkflowTask):
     trunk_method = luigi.ChoiceParameter(default="simple", choices=["simple", "3d_angle"])
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {
             "synthesis_input": GetSynthesisInputs(),
             "morphologies": ApplySubstitutionRules(),
         }
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         morphs_df = pd.read_csv(self.input()["morphologies"].path)
         mtypes = sorted(morphs_df.mtype.unique())
         neurite_types = get_neurite_types(morphs_df)
@@ -178,7 +177,7 @@ class GetDefaultParameters(WorkflowTask):
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return SynthesisLocalTarget(self.default_tmd_parameters_path)
 
 
@@ -187,11 +186,11 @@ class BuildSynthesisParameters(WorkflowTask):
     """Build the tmd_parameters.json for synthesis."""
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {"tmd_parameters": OverwriteCustomParameters()}
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         # possibly other fine tuning here or validate intermediate steps
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
         for mtype in tmd_parameters:
@@ -201,7 +200,7 @@ class BuildSynthesisParameters(WorkflowTask):
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return SynthesisLocalTarget(self.tmd_parameters_path)
 
 
@@ -220,11 +219,11 @@ class BuildSynthesisDistributions(WorkflowTask):
     trunk_method = luigi.ChoiceParameter(default="simple", choices=["simple", "3d_angle"])
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {"rules": ApplySubstitutionRules(), "synthesis": GetSynthesisInputs()}
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         morphs_df = pd.read_csv(self.input()["rules"].path)
 
         mtypes = sorted(morphs_df.mtype.unique())
@@ -252,7 +251,7 @@ class BuildSynthesisDistributions(WorkflowTask):
             json.dump(tmd_distributions, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return SynthesisLocalTarget(SynthesisConfig().tmd_distributions_path)
 
 
@@ -265,7 +264,7 @@ class BuildAxonMorphsDF(BuildMorphsDF):
     )
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return MorphsDfLocalTarget(self.axon_morphs_df_path)
 
 
@@ -277,7 +276,7 @@ class CreateAnnotationsFile(WorkflowTask):
     destination = luigi.Parameter(description=":str: Path to output JSON file.")
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         # pylint: disable=protected-access
         annotations = _collect_annotations(self.annotation_dir, self.morph_db)
 
@@ -285,7 +284,7 @@ class CreateAnnotationsFile(WorkflowTask):
             json.dump(annotations, f, indent=4, sort_keys=True)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return OutputLocalTarget(self.destination)
 
 
@@ -355,7 +354,7 @@ class BuildAxonMorphologies(WorkflowTask):
         return (Path(self.axon_cells_path) / self.neurondb_basename).with_suffix("." + ext)
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         tasks = {"circuit": SliceCircuit()}
 
         neurondb_path = self.get_neuron_db_path("xml")
@@ -367,7 +366,7 @@ class BuildAxonMorphologies(WorkflowTask):
         return tasks
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         if self.annotations_path is None:
             annotations_file = None
             neurondb_path = None
@@ -430,7 +429,7 @@ class BuildAxonMorphologies(WorkflowTask):
         )
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         targets = {
             "morphs": MorphsDfLocalTarget(self.axon_morphs_path),
         }
@@ -505,8 +504,7 @@ class Synthesize(WorkflowTask):
     )
 
     def requires(self):
-        """ """
-
+        """Required input tasks."""
         tasks = {
             "synthesis_input": GetSynthesisInputs(),
             "substituted_cells": ApplySubstitutionRules(),
@@ -525,7 +523,7 @@ class Synthesize(WorkflowTask):
         return tasks
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         circuit = self.output()["circuit"]
         out_morphologies = self.output()["out_morphologies"]
         out_apical_points = self.output()["apical_points"]
@@ -578,7 +576,7 @@ class Synthesize(WorkflowTask):
         synthesizer.synthesize()
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         outputs = {
             "circuit": SynthesisLocalTarget(self.out_circuit_path),
             "out_morphologies": SynthesisLocalTarget(PathConfig().synth_output_path),
@@ -616,7 +614,7 @@ class AddScalingRulesToParameters(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {
             "synthesis_input": GetSynthesisInputs(),
             "morphologies": ApplySubstitutionRules(),
@@ -624,7 +622,7 @@ class AddScalingRulesToParameters(WorkflowTask):
         }
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
 
         scaling_rules = {}
@@ -649,7 +647,7 @@ class AddScalingRulesToParameters(WorkflowTask):
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return SynthesisLocalTarget(self.scaling_tmd_parameters_path)
 
 
@@ -670,13 +668,14 @@ class OverwriteCustomParameters(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {
             "synthesis_input": GetSynthesisInputs(),
             "tmd_parameters": AddScalingRulesToParameters(),
         }
 
     def run(self):
+        """Actual process of the task."""
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
         custom_path = self.input()["synthesis_input"].pathlib_path / self.custom_parameters_path
         if custom_path.exists():
@@ -687,7 +686,7 @@ class OverwriteCustomParameters(WorkflowTask):
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return SynthesisLocalTarget(self.custom_tmd_parameters_path)
 
 
@@ -734,11 +733,11 @@ class RescaleMorphologies(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return ApplySubstitutionRules()
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         morphs_df = pd.read_csv(self.input().path)
         with open(self.scaling_rules_path, "r", encoding="utf-8") as f:
             scaling_rules = yaml.full_load(f)
@@ -756,5 +755,5 @@ class RescaleMorphologies(WorkflowTask):
         rescaled_morphs_df.to_csv(self.output().path, index=False)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return MorphsDfLocalTarget(self.rescaled_morphs_df_path)

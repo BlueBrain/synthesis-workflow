@@ -47,5 +47,6 @@ The :doc:`./api_ref` page contains detailed documentation of:
    Home <self>
    synthesis_methodology
    config_files
+   cli
    api_ref
    changelog

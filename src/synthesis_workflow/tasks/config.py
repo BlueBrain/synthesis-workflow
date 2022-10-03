@@ -40,11 +40,11 @@ class GitClone(WorkflowTask):
     branch = luigi.Parameter(default="main")
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         Repo.clone_from(self.url, self.output().path, branch=self.branch)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return OutputLocalTarget(self.dest)
 
 
@@ -74,7 +74,7 @@ class GetSynthesisInputs(WorkflowTask):
     branch = luigi.Parameter(default="main")
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         if self.url is None:
             shutil.copytree(self.git_synthesis_input_path, self.output().path)
         else:
@@ -88,7 +88,7 @@ class GetSynthesisInputs(WorkflowTask):
                 shutil.copytree(dest / self.git_synthesis_input_path, self.output().path)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         # TODO: it would probably be better to have a specific target for each file
         return OutputLocalTarget(PathConfig().local_synthesis_input_path)
 
@@ -206,11 +206,11 @@ class GetCellComposition(luigi.Task):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return GetSynthesisInputs()
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         if not Path(CircuitConfig().cell_composition_path).exists():
             cell_composition_path = str(
                 self.input().pathlib_path / CircuitConfig().cell_composition_path
@@ -231,7 +231,7 @@ class GetCellComposition(luigi.Task):
             yaml.safe_dump(new_cell_comp, comp_p)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return OutputLocalTarget(self.new_cell_composition)
 
 

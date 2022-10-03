@@ -37,7 +37,6 @@ def _get_morph_class(path):
 
 def get_neurite_types(morphs_df):
     """Get the neurite types to consider for PC or IN cells by checking if apical exists."""
-
     morphs_df["morph_class"] = morphs_df["path"].apply(_get_morph_class)
     neurite_types = {}
     for mtype, _df in morphs_df.groupby("mtype"):

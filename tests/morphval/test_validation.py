@@ -1,3 +1,4 @@
+"""Test the `morphval.validation` module."""
 from copy import deepcopy
 
 import pytest
@@ -8,6 +9,7 @@ from morphval import validation
 
 @pytest.fixture
 def CONFIG():
+    """The configuration used in tests."""
     return {
         "mtype_test": {
             "neurite_test": {
@@ -24,6 +26,7 @@ def CONFIG():
 
 @pytest.fixture
 def test_single():
+    """A single result entry."""
     return {
         "data": {"bin_center": [1.38, 2.12, 2.88, 3.62], "entries": [1 / 3] * 4},
         "data_type": "Histogram1D",
@@ -34,6 +37,7 @@ def test_single():
 
 @pytest.fixture
 def test_dict(test_single):
+    """A validation result."""
     return {
         "charts": {"Data - Model Comparison": ["validation", "reference"]},
         "datasets": {
@@ -55,12 +59,14 @@ def test_dict(test_single):
 
 
 def test_extract_hist():
+    """Test the `extract_hist()` function."""
     data, bins = validation.extract_hist([1, 2, 3, 4], bins=4)
     assert data == [1 / 3] * 4
     assert bins == [1.38, 2.12, 2.88, 3.62]
 
 
 def test_stat_test():
+    """Test the `stat_test()` function."""
     results, res = validation.stat_test([1, 2, 3, 4], [1, 2, 3, 4], stats.StatTests.ks, fargs=0.1)
     assert results.dist == 0.0
     assert results.pvalue == 1.0
@@ -68,6 +74,7 @@ def test_stat_test():
 
 
 def test_write_hist(test_single):
+    """Test the `write_hist()` function."""
     results = validation.write_hist([1, 2, 3, 4], feature="feature_test", name="mtype_test", bins=4)
     assert results.keys() == test_single.keys()
     for i in results.keys():
@@ -75,6 +82,7 @@ def test_write_hist(test_single):
 
 
 def test_unpack_config_data(CONFIG):
+    """Test the `unpack_config_data()` function."""
     bins, stat_test, thresh, criterion = validation.unpack_config_data(
         CONFIG, component="neurite_test", name="mtype_test", feature="feature_test"
     )
@@ -85,6 +93,7 @@ def test_unpack_config_data(CONFIG):
 
 
 def test_write_all(CONFIG, test_dict):
+    """Test the `write_all()` function."""
     results = validation.write_all(
         [1, 2, 3, 4],
         [1, 2, 3, 4],

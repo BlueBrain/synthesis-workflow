@@ -12,7 +12,9 @@
 
 import importlib
 import re
+import subprocess
 from importlib import metadata
+from pathlib import Path
 
 import luigi
 
@@ -43,6 +45,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
+    "sphinxarg.ext",
     "m2r2",
 ]
 
@@ -55,7 +58,7 @@ autoapi_ignore = [
     "*version.py",
 ]
 autoapi_python_use_implicit_namespaces = True
-autoapi_keep_files = False
+autoapi_keep_files = True
 autoapi_add_toctree_entry = False
 autoapi_options = [
     "imported-members",
@@ -113,8 +116,18 @@ autoclass_content = "both"
 add_module_names = False
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
+    "data-validation-framework": (
+        "https://data-validation-framework.readthedocs.io/en/stable",
+        None,
+    ),
+    "diameter-synthesis": ("https://diameter-synthesis.readthedocs.io/en/stable", None),
     "luigi": ("https://luigi.readthedocs.io/en/stable", None),
+    "luigi-tools": ("https://luigi-tools.readthedocs.io/en/stable", None),
+    "neurom": ("https://neurom.readthedocs.io/en/stable", None),
+    "neuror": ("https://neuror.readthedocs.io/en/stable", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs", None),
+    "python": ("https://docs.python.org/3", None),
 }
 
 # Auto-API customization
@@ -169,6 +182,107 @@ def maybe_skip_member(app, what, name, obj, skip, options):
     return skip
 
 
+def generate_images(*args, **kwargs):
+    """Generate images of the workflows."""
+    cur_cwd = Path(__file__).parent
+
+    # Create the required directories
+    (Path(__file__).parent / "autoapi/tasks/validation").mkdir(parents=True, exist_ok=True)
+    (Path(__file__).parent / "autoapi/tasks/vacuum_synthesis").mkdir(parents=True, exist_ok=True)
+
+    TEST_DIR = Path(*Path(__file__).parts[:-3]) / "tests"
+
+    # Convert images
+    subprocess.run(
+        [
+            "pdftocairo",
+            "-png",
+            "-r",
+            "300",
+            "-f",
+            "5",
+            "-l",
+            "5",
+            TEST_DIR / "data/in_small_O1/out/validation/scales/statistics.pdf",
+            str(cur_cwd / "autoapi/tasks/validation/scale_statistics"),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "pdftocairo",
+            "-png",
+            "-r",
+            "300",
+            "-f",
+            "1",
+            "-l",
+            "1",
+            TEST_DIR / "data/in_small_O1/out/validation/path_distance_fit.pdf",
+            str(cur_cwd / "autoapi/tasks/validation/path_distance_fit"),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "pdftocairo",
+            "-png",
+            "-r",
+            "300",
+            "-f",
+            "1",
+            "-l",
+            "1",
+            TEST_DIR
+            / "data/in_vacuum/out/validation/morphometrics/morphometrics_basal_dendrite.pdf",
+            str(cur_cwd / "autoapi/tasks/validation/morphometrics"),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "pdftocairo",
+            "-png",
+            "-r",
+            "300",
+            "-f",
+            "1",
+            "-l",
+            "1",
+            TEST_DIR / "data/in_small_O1/out/validation/score_matrix_reports.pdf",
+            str(cur_cwd / "autoapi/tasks/validation/score_matrix_reports"),
+        ],
+        check=True,
+    )
+
+    # Generate dependency graphs
+    luigi_config = luigi.configuration.get_config()
+    luigi_config.read(str(TEST_DIR / "data/in_small_O1/luigi.cfg"))
+    cli.main(
+        [
+            "-dg",
+            str(cur_cwd / "autoapi/tasks/workflows/ValidateSynthesis.dot"),
+            "ValidateSynthesis",
+        ]
+    )
+    cli.main(
+        [
+            "-dg",
+            str(cur_cwd / "autoapi/tasks/workflows/ValidateRescaling.dot"),
+            "ValidateRescaling",
+        ]
+    )
+    luigi_config.read(str(TEST_DIR / "data/in_vacuum/luigi.cfg"))
+    cli.main(
+        [
+            "-dg",
+            str(cur_cwd / "autoapi/tasks/workflows/ValidateVacuumSynthesis.dot"),
+            "ValidateVacuumSynthesis",
+        ]
+    )
+
+
 def setup(app):
     """Setup Sphinx by connecting functions to events."""
+    app.connect("builder-inited", generate_images)
     app.connect("autoapi-skip-member", maybe_skip_member)

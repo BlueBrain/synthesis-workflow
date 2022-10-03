@@ -40,7 +40,7 @@ class CreateCircuitConfig(WorkflowTask):
     collageconfig_path = PathParameter(default="collage_config.ini")
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {
             "synthesis": Synthesize(),
             "planes": CreateAtlasPlanes(),
@@ -48,8 +48,8 @@ class CreateCircuitConfig(WorkflowTask):
         }
 
     def run(self):
-        """ """
-        # convert plane data for collage
+        """Actual process of the task."""
+        # Convert plane data for collage
         with open(self.input()["planes"].path, "rb") as f_planes:
             planes = pickle.load(f_planes)
         save_planes(planes, self.input()["planes"].pathlib_path.parent)
@@ -94,14 +94,14 @@ class CreateCircuitConfig(WorkflowTask):
             json.dump(config_dict, config_file, indent=2)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return OutputLocalTarget(self.circuitconfig_path)
 
 
 class ValidateSynthesis(WorkflowWrapperTask):
     """Workflow to validate synthesis.
 
-    The complete workflow is described here:
+    The complete workflow has the following dependency graph:
 
     .. graphviz:: ValidateSynthesis.dot
     """
@@ -128,7 +128,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         tasks = [GetSynthesisInputs()]
         if self.with_collage:
             tasks.append(PlotCollage())
@@ -153,7 +153,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
 class ValidateVacuumSynthesis(WorkflowWrapperTask):
     """Workflow to validate vacuum synthesis.
 
-    The complete workflow is described here:
+    The complete workflow has the following dependency graph:
 
     .. graphviz:: ValidateVacuumSynthesis.dot
     """
@@ -173,7 +173,7 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         tasks = [GetSynthesisInputs()]
         if self.with_morphometrics:
             tasks.append(PlotMorphometrics(in_atlas=False))
@@ -191,7 +191,7 @@ class ValidateVacuumSynthesis(WorkflowWrapperTask):
 class ValidateRescaling(WorkflowTask):
     """Workflow to validate rescaling.
 
-    The complete workflow is described here:
+    The complete workflow has the following dependency graph:
 
     .. graphviz:: ValidateRescaling.dot
     """
@@ -215,11 +215,11 @@ class ValidateRescaling(WorkflowTask):
     normalize = BoolParameter(description=":bool: Normalize data if set to True.")
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return ApplySubstitutionRules()
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         # TODO: just call the PlotMorphometrics task with correct arguments?
         base_morphs_df = pd.read_csv(self.requires().input().path)
         comp_morphs_df = pd.read_csv(self.input().path)
@@ -237,5 +237,5 @@ class ValidateRescaling(WorkflowTask):
         )
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return ValidationLocalTarget(self.morphometrics_path)

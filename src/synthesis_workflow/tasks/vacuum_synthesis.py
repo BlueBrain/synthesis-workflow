@@ -61,14 +61,14 @@ class VacuumSynthesize(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return {
             "tmd_parameters": BuildSynthesisParameters(),
             "tmd_distributions": BuildSynthesisDistributions(),
         }
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         tmd_parameters = json.load(self.input()["tmd_parameters"].open())
         tmd_distributions = json.load(self.input()["tmd_distributions"].open())
 
@@ -93,7 +93,7 @@ class VacuumSynthesize(WorkflowTask):
         vacuum_synth_morphs_df.to_csv(self.output()["out_morphs_df"].path, index=False)
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return {
             "out_morphs_df": MorphsDfLocalTarget(self.vacuum_synth_morphs_df_path),
             "out_morphologies": SynthesisLocalTarget(self.vacuum_synth_morphology_path),
@@ -115,11 +115,11 @@ class PlotVacuumMorphologies(WorkflowTask):
     )
 
     def requires(self):
-        """ """
+        """Required input tasks."""
         return VacuumSynthesize()
 
     def run(self):
-        """ """
+        """Actual process of the task."""
         vacuum_synth_morphs_df = pd.read_csv(self.input()["out_morphs_df"].path)
         plot_vacuum_morphologies(
             vacuum_synth_morphs_df,
@@ -128,5 +128,5 @@ class PlotVacuumMorphologies(WorkflowTask):
         )
 
     def output(self):
-        """ """
+        """Outputs of the task."""
         return ValidationLocalTarget(self.pdf_filename)

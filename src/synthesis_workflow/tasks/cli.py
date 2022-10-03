@@ -164,7 +164,7 @@ class ArgParser:
                 if ".. graphviz::" in doc:
                     doc = re.sub(
                         (
-                            "The complete phase has the following dependency graph:"
+                            "The complete workflow has the following dependency graph:"
                             r"\n\n    .. graphviz:: .*\.dot"
                         ),
                         "",

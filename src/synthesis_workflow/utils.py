@@ -20,9 +20,11 @@ class DisableLogger:
             self.logger = logging
 
     def __enter__(self):
+        """Disabling the logger when entering the context manager."""
         self.logger.disable(self.log_level)
 
     def __exit__(self, *args):
+        """Enabling the logger when exiting the context manager."""
         self.logger.disable(0)
 
 

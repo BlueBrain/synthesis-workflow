@@ -1,9 +1,8 @@
-"""
-Tests for the morphval package.
-"""
+"""Tests for the morphval package."""
 from pathlib import Path
 
 import pkg_resources
+import pytest
 
 import morphval
 import morphval.config
@@ -18,83 +17,80 @@ CONFIGS = Path(__file__).parent.parent.parent / "examples/morphval_config"
 
 
 def test_import_config():
+    """Test that a config is properly loaded."""
     config = morphval.config.load_config(CONFIGS / "config_bio.yaml")
     assert isinstance(config, dict)
 
 
 def test_import_morphval():
-    """Check if morphval loads the TEMPLATE correctly"""
+    """Check that morphval loads the TEMPLATE correctly."""
     assert morphval.validation_main.TEMPLATE_FILE.endswith(
         "morphval/templates/report_template.jinja2"
     )
     assert Path(morphval.validation_main.TEMPLATE_FILE).exists()
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_validation_conf():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_init_results():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_validate_features():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_validate_feature():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_compose_validation_criterion():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_compute_validation_scores():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_generate_report_data():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_write_report():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_compute_summary_statistics():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_compute_statistical_tests():
+    """TODO: Write this test."""
     pass
 
 
+@pytest.mark.skip(reason="TODO: Write this test")
 def test_plot_save_feature():
+    """TODO: Write this test."""
     pass
-
-
-"""
-def test_stat_test():
-    results, res = validation.stat_test([1,2,3,4], [1,2,3,4], stats.StatTests.ks, fargs=0.1)
-    nt.assert_true(results.dist==0.0)
-    nt.assert_true(results.pvalue==1.0)
-    nt.assert_true(res=="PASS")
-
-def test_write_hist():
-    results = validation.write_hist([1,2,3,4], feature='test', name='T', bins=4)
-    nt.assert_true(results.keys() == test_single.keys())
-    for i in results.keys():
-        nt.assert_true(results[i] == test_single[i])
-
-def test_unpack_config_data():
-    bins, stat_test, thresh = validation.unpack_config_data(CONFIG, name='T', feature='test')
-    nt.assert_true(bins==4)
-    nt.assert_true(stat_test==stats.StatTests.ks)
-    nt.assert_true(thresh==0.1)
-
-def test_write_all():
-    results = validation.write_all([1,2,3,4], [1,2,3,4], feature='test', name='T', config=CONFIG)
-    nt.assert_true(results.keys() == test_dict.keys())
-    for i in results.keys():
-        nt.assert_true(results[i] == test_dict[i]) """
