@@ -3,7 +3,7 @@ bluepy>=2.3,<3
 bluepy-configfile
 bluepymm
 bluepyparallel>=0.0.7
-brainbuilder>=0.14,<0.18.1
+brainbuilder>=0.18.2
 diameter_synthesis>=0.5.2
 dictdiffer
 gitpython
