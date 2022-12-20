@@ -209,7 +209,7 @@ class ValidateRescaling(WorkflowTask):
     comp_label = luigi.Parameter(
         default="substituted", description=":str: Label for the compared morphologies."
     )
-    config_features = luigi.DictParameter(
+    config_features = luigi.OptionalDictParameter(
         default=None, description=":dict: Mapping of features to plot."
     )
     normalize = BoolParameter(description=":bool: Normalize data if set to True.")

@@ -55,7 +55,7 @@ class BuildMorphsDF(WorkflowTask):
     """Generate the list of morphologies with their mtypes and paths."""
 
     neurondb_path = luigi.Parameter(description=":str: Path to the neuronDB file (XML).")
-    morphology_dirs = luigi.DictParameter(
+    morphology_dirs = luigi.OptionalDictParameter(
         default=None,
         description=(":dict: mapping between column names and paths to each morphology file."),
     )
@@ -314,7 +314,7 @@ class BuildAxonMorphologies(WorkflowTask):
     axon_cells_path = luigi.Parameter(
         description=":str: Path to the directory where cells with axons are located."
     )
-    placement_rules_path = luigi.Parameter(
+    placement_rules_path = luigi.OptionalParameter(
         default=None,
         description=":str: See ``placementAlgorithm.app.choose_morphologies``.",
     )
@@ -322,7 +322,7 @@ class BuildAxonMorphologies(WorkflowTask):
         default=1.0,
         description=":float: See ``placementAlgorithm.app.choose_morphologies``.",
     )
-    placement_scales = luigi.ListParameter(
+    placement_scales = luigi.OptionalListParameter(
         default=None,
         description=":list: See ``placementAlgorithm.app.choose_morphologies``.",
     )

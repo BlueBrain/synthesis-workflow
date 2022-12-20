@@ -17,6 +17,7 @@ morphio>=3,<4
 neuroc>=0.2.8,<1
 neurocollage>=0.2.0
 neurom>=3,<4
+numpy
 pandas
 placement_algorithm>=2.2.0
 PyYAML

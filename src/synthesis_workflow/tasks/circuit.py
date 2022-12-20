@@ -90,14 +90,14 @@ class CreateAtlasPlanes(WorkflowTask):
     slice_thickness = luigi.FloatParameter(
         default=100, description=":float: Thickness of slices (in micrometer)."
     )
-    centerline_first_bound = luigi.ListParameter(
+    centerline_first_bound = luigi.OptionalListParameter(
         default=None,
         description=(
             ":list(int): (only for plane_type == centerline) Location of first bound for "
             "centerline (in voxcell index)."
         ),
     )
-    centerline_last_bound = luigi.ListParameter(
+    centerline_last_bound = luigi.OptionalListParameter(
         default=None,
         description=(
             ":list(int): (only for plane_type == centerline) Location of last bound for "
@@ -157,7 +157,9 @@ class BuildCircuit(WorkflowTask):
     mask_path = OptionalPathParameter(
         default=None, description=":str: Path to save thickness mask (NCx only)."
     )
-    seed = luigi.IntParameter(default=None, description=":int: Pseudo-random generator seed.")
+    seed = luigi.OptionalIntParameter(
+        default=None, description=":int: Pseudo-random generator seed."
+    )
     mtype_taxonomy_file = luigi.Parameter(
         default="mtype_taxonomy.tsv",
         description=":str: Filename of taxonomy file to provide to BrainBuilder",

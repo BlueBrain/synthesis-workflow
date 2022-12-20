@@ -163,7 +163,7 @@ class SynthesisConfig(luigi.Config):
         default="neurots_input/tmd_distributions.json",
         description=":str: The path to the TMD distributions.",
     )
-    mtypes = luigi.ListParameter(
+    mtypes = luigi.OptionalListParameter(
         default=None,
         description=(
             ":list(str): The list of mtypes to process (default is None, which means that all "
@@ -181,7 +181,9 @@ class CircuitConfig(luigi.Config):
     circuit_somata_path = luigi.Parameter(
         default="circuit_somata.mvd3", description=":str: Path to the circuit somata."
     )
-    atlas_path = luigi.Parameter(default=None, description=":str: Path to the atlas directory.")
+    atlas_path = luigi.OptionalParameter(
+        default=None, description=":str: Path to the atlas directory."
+    )
     cell_composition_path = luigi.Parameter(
         default="cell_composition.yaml", description=":str: Path to cell_compoistion.yaml file."
     )

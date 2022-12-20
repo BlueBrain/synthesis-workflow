@@ -34,7 +34,7 @@ def extract_hist(data, bins=20):
         data: the data from which the histogram is computed
         bins: select the bins, according to numpy.histogram guidelines.
     """
-    bin_data, edges = np.histogram(data, bins, normed=True)
+    bin_data, edges = np.histogram(data, bins, density=True)
 
     edges_centers = [float(Decimal(f"{e:.2f}")) for e in list((edges[1:] + edges[:-1]) / 2)]
 

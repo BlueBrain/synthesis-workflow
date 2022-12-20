@@ -5,7 +5,7 @@ import os
 import shutil
 from configparser import ConfigParser
 from pathlib import Path
-from subprocess import call
+from subprocess import check_call
 
 import dir_content_diff.pandas
 import dir_content_diff_plugins.voxcell
@@ -48,14 +48,14 @@ def small_O1(tmp_path):
     atlas_dir = tmp_path / "small_O1"
     # fmt: off
     with open(os.devnull, "w", encoding="utf-8") as f:
-        call(["brainbuilder", "atlases",
-              "-n", "6,5,4,3,2,1",
-              "-t", "200,100,100,100,100,200",
-              "-d", "100",
-              "-o", str(atlas_dir),
-              "column",
-              "-a", "1000",
-              ], stdout=f, stderr=f)
+        check_call(["brainbuilder", "atlases",
+                    "-n", "6,5,4,3,2,1",
+                    "-t", "200,100,100,100,100,200",
+                    "-d", "100",
+                    "-o", str(atlas_dir),
+                    "column",
+                    "-a", "1000",
+                    ], stdout=f, stderr=f)
     # fmt: on
 
     # Add metadata
@@ -70,10 +70,10 @@ def small_O1(tmp_path):
     )["annotation"]
 
     layer_tags = br.raw.copy()
-    br.raw[np.where(layer_tags == 1)] = 1000
+    br.raw[np.where(layer_tags == 1)] = 100
     br.raw[np.where(layer_tags != 1)] = 0
     br.save_nrrd((atlas_dir / "[cell_density]L1_DAC.nrrd").as_posix())
-    br.raw[np.where(layer_tags == 3)] = 1000
+    br.raw[np.where(layer_tags == 3)] = 100
     br.raw[np.where(layer_tags != 3)] = 0
     br.save_nrrd((atlas_dir / "[cell_density]L3_TPC:A.nrrd").as_posix())
 

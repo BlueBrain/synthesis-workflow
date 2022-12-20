@@ -94,7 +94,7 @@ class PlotMorphometrics(WorkflowTask):
     in_atlas = BoolParameter(
         default=False, description=":bool: Set to True to consider cells in an atlas."
     )
-    config_features = luigi.DictParameter(
+    config_features = luigi.OptionalDictParameter(
         default=None,
         description=":dict: The features to plot.",
     )
