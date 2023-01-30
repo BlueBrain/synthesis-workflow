@@ -698,7 +698,7 @@ def plot_path_distance_fits(
             # Plot points
             plt.scatter(x, y, c="red", label="Outliers")
             plt.scatter(x_clean, y_clean, c="blue", label="Clean points")
-            plt.scatter(x_synth, y_synth, c="green", label="Synthetized points")
+            plt.scatter(x_synth, y_synth, c="green", label="Synthesized points")
 
             try:
                 # Plot fit function

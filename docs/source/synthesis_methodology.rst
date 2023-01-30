@@ -13,7 +13,7 @@ Basically, the workflow used in BBP to generate the cell morphologies is the fol
 
 * collect biological data,
 * calibrate the models on these data,
-* synthetized the cells according to the calibration parameters.
+* synthesized the cells according to the calibration parameters.
 
 This package aims at running the calibration process, then calling each part of the
 production workflow on a small use case and computing some validation metrics. Once the
