@@ -398,6 +398,7 @@ class PlotScales(WorkflowTask):
             ":str: The extra columns that should be plotted (these columns must exist in the debug "
             "data)."
         ),
+        schema={"type": "array", "items": {"type": "string"}},
     )
 
     def requires(self):

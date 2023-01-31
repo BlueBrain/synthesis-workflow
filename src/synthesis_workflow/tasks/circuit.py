@@ -96,6 +96,7 @@ class CreateAtlasPlanes(WorkflowTask):
             ":list(int): (only for plane_type == centerline) Location of first bound for "
             "centerline (in voxcell index)."
         ),
+        schema={"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
     )
     centerline_last_bound = luigi.OptionalListParameter(
         default=None,
@@ -103,6 +104,7 @@ class CreateAtlasPlanes(WorkflowTask):
             ":list(int): (only for plane_type == centerline) Location of last bound for "
             "centerline (in voxcell index)."
         ),
+        schema={"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
     )
     centerline_axis = luigi.IntParameter(
         default=0,

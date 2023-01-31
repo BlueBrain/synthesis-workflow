@@ -58,6 +58,7 @@ class BuildMorphsDF(WorkflowTask):
     morphology_dirs = luigi.OptionalDictParameter(
         default=None,
         description=(":dict: mapping between column names and paths to each morphology file."),
+        schema={"type": "object", "patternProperties": {".*": {"type": "string"}}},
     )
     apical_points_path = luigi.OptionalParameter(
         default=None, description=":str: Path to the apical points file (JSON)."
@@ -325,6 +326,7 @@ class BuildAxonMorphologies(WorkflowTask):
     placement_scales = luigi.OptionalListParameter(
         default=None,
         description=":list: See ``placementAlgorithm.app.choose_morphologies``.",
+        schema={"type": "array", "items": {"type": "number", "exclusiveMinimum": 0}},
     )
     placement_seed = luigi.IntParameter(
         default=0,

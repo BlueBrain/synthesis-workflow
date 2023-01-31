@@ -102,7 +102,10 @@ class DiametrizerConfig(luigi.Config):
     taper_max = luigi.FloatParameter(default=1e-6)
     asymmetry_threshold_basal = luigi.FloatParameter(default=1.0)
     asymmetry_threshold_apical = luigi.FloatParameter(default=0.2)
-    neurite_types = luigi.ListParameter(default=["basal_dendrite", "apical_dendrite"])
+    neurite_types = luigi.ListParameter(
+        default=["basal_dendrite", "apical_dendrite"],
+        schema={"type": "array", "items": {"type": "string"}},
+    )
 
     trunk_max_tries = luigi.IntParameter(default=100)
     n_samples = luigi.IntParameter(default=2)
@@ -169,6 +172,7 @@ class SynthesisConfig(luigi.Config):
             ":list(str): The list of mtypes to process (default is None, which means that all "
             "found mtypes are taken)."
         ),
+        schema={"type": "array", "items": {"type": "string"}},
     )
     with_axons = luigi.BoolParameter(
         default=False, description=":bool: Set to True to synthesize local axons"
