@@ -1,10 +1,10 @@
-dir-content-diff>=0.2
-dir-content-diff-plugins
+dir-content-diff>=1
+dir-content-diff-plugins>=0.0.3
 pandas>=1.5
-pytest
-pytest-cov
-pytest-html
-pytest-xdist
+pytest>=6.2
+pytest-cov>=3
+pytest-html>=3
+pytest-xdist>=3.0.2
 
 # Pin versions for tests
 numpy==1.24.*
