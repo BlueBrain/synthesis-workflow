@@ -272,7 +272,7 @@ class BuildAxonMorphsDF(BuildMorphsDF):
 class CreateAnnotationsFile(WorkflowTask):
     """Task to compact annotations into a single JSON file."""
 
-    annotation_dir = luigi.Parameter(description=(":str: Path to annotations folder."))
+    annotation_dir = luigi.Parameter(description=":str: Path to annotations folder.")
     morph_db = luigi.OptionalParameter(default=None, description=":str: Path to MorphDB file.")
     destination = luigi.Parameter(description=":str: Path to output JSON file.")
 

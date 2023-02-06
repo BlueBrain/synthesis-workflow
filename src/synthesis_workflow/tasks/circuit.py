@@ -84,8 +84,12 @@ class CreateAtlasPlanes(WorkflowTask):
             "experimental) so center line is a straight line, along the centerline_axis."
         ),
     )
-    plane_count = luigi.IntParameter(
-        default=10, description=":int: Number of planes to create slices of atlas."
+    plane_count = luigi.NumericalParameter(
+        description=":int: Number of planes to create slices of atlas.",
+        var_type=int,
+        min_value=1,
+        max_value=1e9,
+        default=10,
     )
     slice_thickness = luigi.FloatParameter(
         default=100, description=":float: Thickness of slices (in micrometer)."
@@ -121,7 +125,7 @@ class CreateAtlasPlanes(WorkflowTask):
     def run(self):
         """Actual process of the task."""
         if self.plane_count < 1:
-            raise Exception("Number of planes should be larger than one")
+            raise ValueError("Number of planes should be larger than one")
 
         layer_annotation = VoxelData.load_nrrd(self.input()["annotations"].path)
         layer_mappings = yaml.safe_load(self.input()["layer_mapping"].open())
@@ -263,7 +267,7 @@ class SliceCircuit(WorkflowTask):
         cells = slice_circuit(self.input()["circuit"].path, self.output().path, _slicer)
 
         if len(cells.index) == 0:
-            raise Exception("No cells will be synthesized, better stop here.")
+            raise ValueError("No cells will be synthesized, better stop here.")
 
     def output(self):
         """Outputs of the task."""

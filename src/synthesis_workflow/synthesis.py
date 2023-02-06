@@ -43,7 +43,7 @@ def get_neurite_types(morphs_df):
         morph_class = list(set(_df["morph_class"]))
 
         if len(morph_class) > 1:
-            raise Exception("f{mtype} has not consistent morph_class, we stop here")
+            raise ValueError("f{mtype} has not consistent morph_class, we stop here")
 
         if morph_class[0] == "IN":
             neurite_types[mtype] = ["basal_dendrite"]
@@ -171,7 +171,7 @@ def get_axon_base_dir(morphs_df, col_name="morphology_path"):
 
     # Check they are all equal
     if len(parents) != 1:
-        raise Exception("Base dirs are different for axon grafting.")
+        raise ValueError("Base dirs are different for axon grafting.")
 
     # Pick the first one
     axon_morphs_base_dir = parents[0]
@@ -450,7 +450,7 @@ def add_scaling_rules_to_parameters(
         if res is not None:
             return int(res.group(1))
         else:
-            raise Exception("Scaling rule not understood: " + str(target_layer_str))
+            raise ValueError("Scaling rule not understood: " + str(target_layer_str))
 
     def _process_scaling_rule(
         params, mtype, neurite_type, limits, default_limits, lim_type, default_fraction

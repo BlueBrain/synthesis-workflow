@@ -82,7 +82,7 @@ def find_cells(dir_name):
     files = [os.path.join(dir_name, f) for f in os.listdir(dir_name) if f[0] != "."]
 
     if not files:
-        raise Exception("There are no cells in '" + dir_name + "'")
+        raise ValueError("There are no cells in '" + dir_name + "'")
 
     return files
 

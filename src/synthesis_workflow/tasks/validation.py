@@ -567,7 +567,7 @@ class MorphologyValidationReports(WorkflowTask):
             notebook=False,
         )
         validator.validate_features(cell_figure_count=self.cell_figure_count, nb_jobs=self.nb_jobs)
-        validator.write_report(validation_report=(not self.bio_compare))
+        validator.write_report(validation_report=not self.bio_compare)
 
     def output(self):
         """Outputs of the task."""

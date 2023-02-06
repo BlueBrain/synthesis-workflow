@@ -64,7 +64,7 @@ def _base_emodel(emodel):
 def add_for_optimisation_flag(config_path, morphs_combos_df=None, morphs_df=None, emodels=None):
     """Add for_optimisation flag for combos used for optimisation."""
     if morphs_df is None and morphs_combos_df is None:
-        raise Exception("Please provide at least one dataframe.")
+        raise ValueError("Please provide at least one dataframe.")
 
     if morphs_combos_df is not None:
         emodels = list(set(morphs_combos_df.emodel))
@@ -97,7 +97,7 @@ def add_for_optimisation_flag(config_path, morphs_combos_df=None, morphs_df=None
     if morphs_df is not None:
         morphs_df["for_optimisation"] = False
         if emodels is None and morphs_combos_df is None:
-            raise Exception("Please provide a list of emodels for your cells")
+            raise ValueError("Please provide a list of emodels for your cells")
         for emodel in emodels:
             with open(
                 config_path / _base_emodel(emodel) / "config/recipes/recipes.json", "rb"
@@ -113,7 +113,7 @@ def add_for_optimisation_flag(config_path, morphs_combos_df=None, morphs_df=None
 def add_for_optimisation_flag_old(config_path, morphs_combos_df=None, morphs_df=None, emodels=None):
     """Add for_optimisation flag for combos used for optimisation."""
     if morphs_df is None and morphs_combos_df is None:
-        raise Exception("Please provide at least one dataframe.")
+        raise ValueError("Please provide at least one dataframe.")
 
     if morphs_combos_df is not None:
         emodels = list(set(morphs_combos_df.emodel))
@@ -140,7 +140,7 @@ def add_for_optimisation_flag_old(config_path, morphs_combos_df=None, morphs_df=
     if morphs_df is not None:
         morphs_df["for_optimisation"] = False
         if emodels is None and morphs_combos_df is None:
-            raise Exception("Please provide a list of emodels for your cells")
+            raise ValueError("Please provide a list of emodels for your cells")
         for emodel in emodels:
             with open(config_path / emodel / "recipes/recipes.json", "rb") as f:
                 recipe = json.load(f)[emodel]

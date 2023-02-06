@@ -238,7 +238,7 @@ def create_planes(
             bbox[0, centerline_axis], bbox[1, centerline_axis], 2
         )
     else:
-        raise Exception(f"Please set plane_type to 'aligned' or 'centerline', not {plane_type}.")
+        raise ValueError(f"Please set plane_type to 'aligned' or 'centerline', not {plane_type}.")
 
     # create all planes to match slice_thickness between every two planes
     centerline_len = np.linalg.norm(np.diff(centerline, axis=0), axis=1).sum()

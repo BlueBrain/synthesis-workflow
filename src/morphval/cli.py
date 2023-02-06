@@ -65,7 +65,7 @@ def main():
     my_config = config.load_config(args.config)
     validation = Validation(my_config, args.test_dir, args.ref_dir, args.output_dir)
     validation.validate_features(cell_figure_count=args.cell_figure_count)
-    validation.write_report(validation_report=(not args.bio_compare))
+    validation.write_report(validation_report=not args.bio_compare)
 
 
 if __name__ == "__main__":
