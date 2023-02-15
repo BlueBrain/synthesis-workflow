@@ -156,7 +156,6 @@ def plot_layer_morph_counts(counts_df, pdf_name="layer_count_comparison.pdf"):
         for mtype in counts_df.mtype.unique():
             df = counts_df[counts_df.mtype == mtype]
             if len(df[df["count"] > 0]) > 0:
-
                 plt.figure(figsize=(5, 4))
                 if "label" in df.columns:
                     sns.barplot(x="layer", hue="label", y="count", data=df)

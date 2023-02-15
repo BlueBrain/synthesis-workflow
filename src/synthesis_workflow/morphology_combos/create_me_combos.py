@@ -79,7 +79,6 @@ def add_for_optimisation_flag(config_path, morphs_combos_df=None, morphs_df=None
             )
             morphs_combos_df.loc[opt_mask, "for_optimisation"] = True
             if len(morphs_combos_df[opt_mask]) == 0:
-
                 new_combo = morphs_combos_df[
                     (morphs_combos_df.name == Path(recipe["morphology"][0][1]).stem)
                     & (morphs_combos_df.for_optimisation == 1)

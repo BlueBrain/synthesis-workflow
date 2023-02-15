@@ -145,7 +145,6 @@ def get_feature_configs(config_types="default"):
         config_types = [config_types]
     features_config = {}
     for config_type in config_types:
-
         if config_type == "default":
             features_config.update(CONFIG_DEFAULT)
 
@@ -967,7 +966,6 @@ def plot_score_matrix(
 
     # Plot statistics
     with PdfPages(output_path) as pdf:
-
         # Compute subplot ratios and figure size
         height_ratios = [7, (1 + n_scores)]
         fig_width = len(mtypes)
@@ -1084,7 +1082,6 @@ def extract_angle_data(df, morph_key, pia=None):
         ]
 
         if len(_vec_axon) > 0:
-
             if morph_class == "PC":
                 data["axon_apical"] += [
                     neurom.morphmath.angle_between_vectors(_vec_axon[0], _vec_apical[0])

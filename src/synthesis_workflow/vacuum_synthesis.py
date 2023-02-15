@@ -105,7 +105,6 @@ def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_filename, morphology_pa
     # pylint: disable=cell-var-from-loop
     with PdfPages(pdf_filename) as pdf:
         for mtype in tqdm(sorted(vacuum_synth_morphs_df.mtype.unique())):
-
             ids = vacuum_synth_morphs_df[vacuum_synth_morphs_df.mtype == mtype].index
             if len(ids) <= 5:
                 sqrt_n = len(ids)

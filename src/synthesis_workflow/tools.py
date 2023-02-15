@@ -219,7 +219,6 @@ def _wrap_worker(_id, worker, logger_kwargs=None):
 
         return res
     except Exception:  # pylint: disable=broad-except
-
         exception = "".join(traceback.format_exception(*sys.exc_info()))
         L.error("Task #%d failed with exception: %s", _id, exception)
         raise
