@@ -67,9 +67,10 @@ def apply_substitutions(original_morphs_df, substitution_rules=None):
 
     new_morphs_df = original_morphs_df.copy()
     for mtype_orig, mtypes in substitution_rules.items():
-        df = original_morphs_df[original_morphs_df.mtype.isin(mtypes)].copy()
-        df["mtype"] = mtype_orig
-        new_morphs_df = pd.concat([new_morphs_df, df])
+        for mtype in mtypes:
+            df = original_morphs_df[original_morphs_df.mtype == mtype_orig].copy()
+            df["mtype"] = mtype
+            new_morphs_df = pd.concat([new_morphs_df, df])
     return new_morphs_df
 
 
