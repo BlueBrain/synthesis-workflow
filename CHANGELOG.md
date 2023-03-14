@@ -1,10 +1,51 @@
 # Changelog
 
+## [synthesis-workflow-v0.1.2](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.1.1...synthesis-workflow-v0.1.2)
+
+> 14 March 2023
+
+### New Features
+
+- Use 3d_angles and simpler diametrizer by default (Alexis Arnaudon - [14d6a2d](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/14d6a2d1b5c9e870d98abf52c68bda7ff30575ed))
+
+### Chores And Housekeeping
+
+- Fix for numpy&gt;=1.24 and use more optional parameters (Adrien Berchet - [3b53020](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/3b53020463bb63feb5a47a5e1ed1cdcdd79743b6))
+- Update from copier template (Adrien Berchet - [50873ab](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/50873abcf36803458dbca0401d561c0c868e7479))
+- Bump brainbuilder (Adrien Berchet - [9c3849f](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/9c3849fd4db83d8df89a3d4a363dadab87b47c72))
+- Fix lint (Adrien Berchet - [f19a3a3](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/f19a3a3d1de47432605837358df4a07523663b25))
+- Apply Copier template (Adrien Berchet - [d6dcc09](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/d6dcc09226a581c7b5835a812d7c08ef19a2c59f))
+- Add JSON schemas to ListParameter objects (Adrien Berchet - [03a48db](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/03a48db30e02f95b9e0eb50b48146a2773767456))
+- Restrict brainbuilder to !=0.18.1 because of an issue with 56f304fe46a4d1c3ea14460eab735a20fc3ae056 (Adrien Berchet - [1433620](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/143362021ae07240d19ebabcfd72dc48183c9a07))
+
+### Documentation Changes
+
+- Fix indent in lists (Adrien Berchet - [9815ee8](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/9815ee8068bae75afc6af22bfe1b1af92894500a))
+
+### Refactoring and Updates
+
+- Apply Copier template (Adrien Berchet - [61ee764](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/61ee7645f924218eb5a5ffb7592f951cacece8b5))
+- Update from template (Adrien Berchet - [1cc8e4d](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/1cc8e4d64c275873206818a70d6d9e0b6852b14a))
+
+### CI Improvements
+
+- Bump pre-commit hooks and fix isort installation failure (Adrien Berchet - [c9996c2](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/c9996c2902211963cddb02998bfff691dcf70f36))
+- Fix coverage for pytest-cov&gt;=4 (Adrien Berchet - [cf305d3](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/cf305d3124da0d756a44503d038eb4a5885e5147))
+- Fix tests for new versions of Pandas and Sphinx (Adrien Berchet - [ecd8dba](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/ecd8dbad84484832cf325d5960bfa9f7463804cf))
+
+### General Changes
+
+- Use external file for custom parameters (Alexis Arnaudon - [4bcebcc](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/4bcebcc63cf90f952b26894bb1a3425035a80130))
+- Use NeuroCollage (Alexis Arnaudon - [5799ac7](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/5799ac7a8453dcff836cf53baf2064063b7f8e1b))
+- Use latest diameter-synthesis (Alexis Arnaudon - [d0eaafd](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/d0eaafda25b4a2fe7be8b7fbe3b1ff0e1a23daff))
+- Export circuitconfig (Alexis Arnaudon - [44db085](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/44db085867fc6b46b7694f9e30b52bcca10bfcb9))
+- Fix substitution rule (Alexis Arnaudon - [5488996](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/548899663b26c989c53ebad5e18ab2662933a763))
+
 ## [synthesis-workflow-v0.1.1](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.1.0...synthesis-workflow-v0.1.1)
 
 > 5 July 2022
 
-### Uncategorized Changes
+### General Changes
 
 - Any region handling (v2) (Alexis Arnaudon - [3fd475a](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/3fd475a6f7711b21d04e989959cf6bd05528b4fa))
 - Trunk validation (Alexis Arnaudon - [b0b407e](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/b0b407e2ead89803053ccdf264d9993c145f8125))
