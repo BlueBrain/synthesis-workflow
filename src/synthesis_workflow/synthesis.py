@@ -81,7 +81,6 @@ def _build_distributions_single_mtype(
     diameter_model_function=None,
     config=None,
     morphology_path=None,
-    trunk_method="simple",
 ):
     """Internal function for multiprocessing of tmd_distribution building."""
     data = {}
@@ -98,9 +97,6 @@ def _build_distributions_single_mtype(
             "diameter_input_morph": morphology_paths,
             "diameter_model": partial(diameter_model_function, config=config),
         }
-        if trunk_method != "simple":
-            kwargs["trunk_method"] = trunk_method
-
         _data = extract_input.distributions(morphology_paths, **kwargs)
         data[neurite_type] = _data[neurite_type]
         data["diameter"] = _data["diameter"]
@@ -118,7 +114,6 @@ def build_distributions(
     region_structure_path,
     nb_jobs=-1,
     joblib_verbose=10,
-    trunk_method="simple",
 ):
     """Build tmd_distribution dictionary for synthesis.
 
@@ -130,7 +125,6 @@ def build_distributions(
         region_structure_path (str): path to region_structure yaml file with thicknesses
         nb_jobs (int): number of jobs to run in parallal with joblib
         joblib_verbose (int): verbose level of joblib
-        trunk_method (str): method to set trunk on soma for synthesis (simple|3d_angle)
 
     Returns:
         dict: dict to save to tmd_distribution.json
@@ -142,7 +136,6 @@ def build_distributions(
         diameter_model_function=diameter_model_function,
         config=config,
         morphology_path=morphology_path,
-        trunk_method=trunk_method,
     )
     thicknesses = []
     if Path(region_structure_path).exists():

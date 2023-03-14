@@ -19,6 +19,8 @@ from luigi_tools.task import copy_params
 from neurom import load_morphology
 from neurom.check.morphology_checks import has_apical_dendrite
 from neurots import extract_input
+from neurots.generate.orientations import fit_3d_angles
+from neurots.validator import validate_neuron_distribs
 from neurots.validator import validate_neuron_params
 from placement_algorithm.app.compact_annotations import _collect_annotations
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
@@ -139,7 +141,6 @@ class GetDefaultParameters(WorkflowTask):
         default="neurots_input/tmd_parameters_default.json",
         description=":str: Path to default tmd_parameters.json.",
     )
-    trunk_method = luigi.ChoiceParameter(default="simple", choices=["simple", "3d_angle"])
 
     def requires(self):
         """Required input tasks."""
@@ -170,8 +171,6 @@ class GetDefaultParameters(WorkflowTask):
             config = DiametrizerConfig().config_diametrizer
             config["neurite_types"] = neurite_types
             kwargs = {"neurite_types": neurite_types, "diameter_parameters": config}
-            if self.trunk_method != "simple":
-                kwargs["trunk_method"] = self.trunk_method
             tmd_parameters[mtype] = extract_input.parameters(**kwargs)
 
         with self.output().open("w") as f:
@@ -188,7 +187,7 @@ class BuildSynthesisParameters(WorkflowTask):
 
     def requires(self):
         """Required input tasks."""
-        return {"tmd_parameters": OverwriteCustomParameters()}
+        return {"tmd_parameters": AddTrunkFitToParameters()}
 
     def run(self):
         """Actual process of the task."""
@@ -217,8 +216,6 @@ class BuildSynthesisDistributions(WorkflowTask):
         nb_jobs (int): Number of workers.
     """
 
-    trunk_method = luigi.ChoiceParameter(default="simple", choices=["simple", "3d_angle"])
-
     def requires(self):
         """Required input tasks."""
         return {"rules": ApplySubstitutionRules(), "synthesis": GetSynthesisInputs()}
@@ -245,8 +242,10 @@ class BuildSynthesisDistributions(WorkflowTask):
             self.morphology_path,
             self.input()["synthesis"].pathlib_path / CircuitConfig().region_structure_path,
             nb_jobs=self.nb_jobs,
-            trunk_method=self.trunk_method,
         )
+
+        for distr in tmd_distributions["mtypes"].values():
+            validate_neuron_distribs(distr)
 
         with self.output().open("w") as f:
             json.dump(tmd_distributions, f, cls=NumpyEncoder, indent=4, sort_keys=True)
@@ -601,7 +600,6 @@ class AddScalingRulesToParameters(WorkflowTask):
     Attributes:
         morphology_path (str): Column name to use in the DF to compute
             axon_morphs_base_dir if it is not provided.
-        tmd_parameters_path (str): The path to the TMD parameters.
         nb_jobs (int): Number of threads used for synthesis.
     """
 
@@ -651,6 +649,56 @@ class AddScalingRulesToParameters(WorkflowTask):
     def output(self):
         """Outputs of the task."""
         return SynthesisLocalTarget(self.scaling_tmd_parameters_path)
+
+
+@copy_params(
+    morphology_path=ParamRef(PathConfig),
+    nb_jobs=ParamRef(RunnerConfig),
+)
+class AddTrunkFitToParameters(WorkflowTask):
+    """Add fits to trunk angles to tmd_parameter.json.
+
+    Attributes:
+        morphology_path (str): Column name to use in the DF to compute
+            axon_morphs_base_dir if it is not provided.
+        nb_jobs (int): Number of threads used for synthesis.
+    """
+
+    trunk_tmd_parameters_path = luigi.PathParameter(
+        default="neurots_input/tmd_parameters_trunk.json",
+        description=":str: Path to tmd_parameters.json with trunk fit added.",
+    )
+
+    scaling_rules_path = luigi.Parameter(
+        default="scaling_rules.yaml",
+        description=":str: Path to the file containing the scaling rules.",
+    )
+
+    def requires(self):
+        """Required input tasks."""
+        return {
+            "tmd_parameters": OverwriteCustomParameters(),
+            "tmd_distributions": BuildSynthesisDistributions(),
+        }
+
+    def run(self):
+        """Actual process of the task."""
+        with self.input()["tmd_parameters"].open("r") as f:
+            tmd_parameters = json.load(f)
+        with self.input()["tmd_distributions"].open("r") as f:
+            tmd_distributions = json.load(f)
+
+        for mtype in tmd_parameters:
+            tmd_parameters[mtype] = fit_3d_angles(
+                tmd_parameters[mtype], tmd_distributions["mtypes"][mtype]
+            )
+
+        with self.output().open("w") as f:
+            json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
+
+    def output(self):
+        """Outputs of the task."""
+        return SynthesisLocalTarget(self.trunk_tmd_parameters_path)
 
 
 class OverwriteCustomParameters(WorkflowTask):

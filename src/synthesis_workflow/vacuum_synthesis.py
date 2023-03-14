@@ -38,6 +38,7 @@ def _grow_morphology(
         input_parameters=tmd_parameters,
         input_distributions=tmd_distributions,
         external_diametrizer=external_diametrizer,
+        skip_preprocessing=True,
     )
     grower.grow()
     grower.neuron.write(morphology_path)

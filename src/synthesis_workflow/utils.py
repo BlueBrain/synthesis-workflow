@@ -105,10 +105,23 @@ def create_parameter_diff(param, param_spec):
 def _create_entry(param, entry):
     """Create a dict entry if it does not exist."""
     if entry[0].endswith("]"):
-        param[entry[0].split("[")[0]].append([None])
+        # add list for specific orientations
+        if entry[0].split("[")[0] not in param:
+            param[entry[0].split("[")[0]] = [None]
+        else:
+            param[entry[0].split("[")[0]].append([None])
+    elif entry[0] in param and not isinstance(param[entry[0]], dict):
+        # erase anything that is not a dict to be able to go deeper
+        param[entry[0]] = {}
     elif entry[0] not in param:
-        param[entry[0]] = None
+        # add empty entries depending on depths
+        if len(entry) > 1:
+            param[entry[0]] = {}
+        else:
+            param[entry[0]] = None
+
     if len(entry) > 1:
+        # go deeper if needed
         _create_entry(param[entry[0]], entry[1:])
 
 

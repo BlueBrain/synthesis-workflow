@@ -32,10 +32,10 @@ from synthesis_workflow.tasks.config import PathConfig
 from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import ValidationLocalTarget
-from synthesis_workflow.tasks.synthesis import AddScalingRulesToParameters
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
 from synthesis_workflow.tasks.synthesis import BuildMorphsDF
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
+from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
 from synthesis_workflow.tasks.synthesis import Synthesize
 from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
@@ -467,7 +467,7 @@ class PlotPathDistanceFits(WorkflowTask):
     def requires(self):
         """Required input tasks."""
         return {
-            "scaling_rules": AddScalingRulesToParameters(),
+            "parameters": BuildSynthesisParameters(),
             "rescaled": ApplySubstitutionRules(),
             "distributions": BuildSynthesisDistributions(),
         }
@@ -476,7 +476,7 @@ class PlotPathDistanceFits(WorkflowTask):
         """Actual process of the task."""
         L.debug("output_path = %s", self.output().path)
         plot_path_distance_fits(
-            self.input()["scaling_rules"].path,
+            self.input()["parameters"].path,
             self.input()["distributions"].path,
             self.input()["rescaled"].path,
             self.morphology_path,
@@ -669,7 +669,7 @@ class TrunkValidation(WorkflowTask):
         description=":str: Path to output directory (relative from ``PathConfig.result_path``).",
     )
     base_key = luigi.Parameter(
-        default="repaired_morphology_path",
+        default="morphology_path",
         description=":str: Base key to use in the morphology DataFrame.",
     )
     comp_key = luigi.Parameter(
@@ -683,10 +683,15 @@ class TrunkValidation(WorkflowTask):
 
     def requires(self):
         """Required input tasks."""
+        tasks = {
+            "distributions": BuildSynthesisDistributions(),
+            "parameters": BuildSynthesisParameters(),
+        }
         if self.in_atlas:
-            return {"morphs": BuildMorphsDF(), "circuit": ConvertCircuit()}
+            tasks.update({"morphs": BuildMorphsDF(), "circuit": ConvertCircuit()})
         else:
-            return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
+            tasks.update({"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()})
+        return tasks
 
     def run(self):
         """Actual process of the task."""
@@ -702,10 +707,12 @@ class TrunkValidation(WorkflowTask):
             morphs_df,
             synth_morphs_df,
             self.output().pathlib_path,
-            base_key=self.base_key,
-            comp_key=comp_key,
-            base_label=self.base_label,
-            comp_label=self.comp_label,
+            self.base_key,
+            comp_key,
+            self.base_label,
+            self.comp_label,
+            self.input()["parameters"].path,
+            self.input()["distributions"].path,
         )
 
     def output(self):
