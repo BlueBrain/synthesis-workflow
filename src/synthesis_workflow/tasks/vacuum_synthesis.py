@@ -54,11 +54,6 @@ class VacuumSynthesize(WorkflowTask):
         description=":str: Diametrizer model to use.",
     )
     n_cells = luigi.IntParameter(default=10, description=":int: Number of cells to synthesize.")
-    axon_method = luigi.ChoiceParameter(
-        default="no_axon",
-        description=":str: The method used to handle axons.",
-        choices=["no_axon", "synthesis"],
-    )
 
     def requires(self):
         """Required input tasks."""

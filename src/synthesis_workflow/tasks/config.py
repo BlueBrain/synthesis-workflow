@@ -174,8 +174,10 @@ class SynthesisConfig(luigi.Config):
         ),
         schema={"type": "array", "items": {"type": "string"}},
     )
-    with_axons = luigi.BoolParameter(
-        default=False, description=":bool: Set to True to synthesize local axons"
+    axon_method = luigi.ChoiceParameter(
+        default="no_axon",
+        description=":str: The method used to handle axons.",
+        choices=["no_axon", "reconstructed", "synthesis"],
     )
 
 
@@ -272,7 +274,7 @@ class PathConfig(luigi.Config):
     # Default internal values
     ext = ExtParameter(default="asc", description=":str: Default extension used.")
     morphology_path = luigi.Parameter(
-        default="morphology_path",
+        default="path",
         description="Column name in the morphology dataframe to access morphology paths",
     )
     morphs_df_path = luigi.Parameter(

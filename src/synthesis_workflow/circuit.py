@@ -4,9 +4,6 @@ import logging
 import numpy as np
 import pandas as pd
 import yaml
-from atlas_analysis.planes.planes import _smoothing
-from atlas_analysis.planes.planes import create_centerline
-from atlas_analysis.planes.planes import create_planes as _create_planes
 from brainbuilder.app.cells import _place as place
 from neurocollage.planes import get_cells_between_planes
 from neurocollage.planes import slice_n_cells
@@ -182,76 +179,6 @@ def get_local_bbox(annotation):
     return annotation.offset + np.array(
         [np.min(ids, axis=1) * dim, (np.max(ids, axis=1) + 1) * dim]
     )
-
-
-def create_planes(
-    layer_annotation,
-    plane_type="aligned",
-    plane_count=10,
-    slice_thickness=100,
-    centerline_first_bound=None,
-    centerline_last_bound=None,
-    centerline_axis=0,
-):
-    """Create planes in an atlas.
-
-    We create 3 * plane_count such each triplet of planes define the left, center
-    and right plane of each slice.
-
-    Args:
-        layer_annotation (VoxelData): annotations with layers
-        plane_type (str): type of planes creation algorithm, two choices:
-
-            * centerline: centerline is computed between _first_bound and _last_bound with
-              internal algorithm (from atlas-analysis package)
-            * aligned: centerline is a straight line, along the centerline_axis
-
-        plane_count (int): number of planes to create slices of atlas,
-        slice_thickness (float): thickness of slices (in micrometer)
-        centerline_first_bound (list): (for plane_type == centerline) location of first bound
-            for centerline (in voxcell index)
-        centerline_last_bound (list): (for plane_type == centerline) location of last bound
-            for centerline (in voxcell index)
-        centerline_axis (str): (for plane_type = aligned) axis along which to create planes
-    """
-    if plane_type == "centerline_straight":
-        if centerline_first_bound is None and centerline_last_bound is None:
-            centerline_first_bound, centerline_last_bound = get_centerline_bounds(layer_annotation)
-        centerline = np.array(
-            [
-                layer_annotation.indices_to_positions(centerline_first_bound),
-                layer_annotation.indices_to_positions(centerline_last_bound),
-            ]
-        )
-    elif plane_type == "centerline_curved":
-        if centerline_first_bound is None and centerline_last_bound is None:
-            centerline_first_bound, centerline_last_bound = get_centerline_bounds(layer_annotation)
-        centerline = create_centerline(
-            layer_annotation, [centerline_first_bound, centerline_last_bound]
-        )
-        centerline = _smoothing(centerline)
-
-    elif plane_type == "aligned":
-        centerline = np.zeros([2, 3])
-        bbox = get_local_bbox(layer_annotation)
-        centerline[:, centerline_axis] = np.linspace(
-            bbox[0, centerline_axis], bbox[1, centerline_axis], 2
-        )
-    else:
-        raise ValueError(f"Please set plane_type to 'aligned' or 'centerline', not {plane_type}.")
-
-    # create all planes to match slice_thickness between every two planes
-    centerline_len = np.linalg.norm(np.diff(centerline, axis=0), axis=1).sum()
-    total_plane_count = int(centerline_len / slice_thickness) * 2 + 1
-    planes = _create_planes(centerline, plane_count=total_plane_count)
-
-    # select plane_count planes + direct left/right neighbors
-    planes_all_ids = np.arange(total_plane_count)
-    id_shift = int(total_plane_count / plane_count)
-    planes_select_ids = list(planes_all_ids[int(id_shift / 2) :: id_shift])
-    planes_select_ids += list(planes_all_ids[int(id_shift / 2) - 1 :: id_shift])
-    planes_select_ids += list(planes_all_ids[int(id_shift / 2) + 1 :: id_shift])
-    return [planes[i] for i in sorted(planes_select_ids)], centerline
 
 
 def get_layer_tags(atlas_dir, region_structure_path, region=None):

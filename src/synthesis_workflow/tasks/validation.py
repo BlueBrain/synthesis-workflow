@@ -103,7 +103,7 @@ class PlotMorphometrics(WorkflowTask):
         description=":str: Path to output directory (relative from ``PathConfig.result_path``).",
     )
     base_key = luigi.Parameter(
-        default="morphology_path",
+        default="path",
         description=":str: Base key to use in the morphology DataFrame.",
     )
     comp_key = luigi.Parameter(
@@ -669,7 +669,7 @@ class TrunkValidation(WorkflowTask):
         description=":str: Path to output directory (relative from ``PathConfig.result_path``).",
     )
     base_key = luigi.Parameter(
-        default="morphology_path",
+        default="path",
         description=":str: Base key to use in the morphology DataFrame.",
     )
     comp_key = luigi.Parameter(

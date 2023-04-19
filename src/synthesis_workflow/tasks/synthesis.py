@@ -16,8 +16,6 @@ from luigi_tools.target import OutputLocalTarget
 from luigi_tools.task import ParamRef
 from luigi_tools.task import WorkflowTask
 from luigi_tools.task import copy_params
-from neurom import load_morphology
-from neurom.check.morphology_checks import has_apical_dendrite
 from neurots import extract_input
 from neurots.generate.orientations import fit_3d_angles
 from neurots.validator import validate_neuron_distribs
@@ -154,23 +152,15 @@ class GetDefaultParameters(WorkflowTask):
         morphs_df = pd.read_csv(self.input()["morphologies"].path)
         mtypes = sorted(morphs_df.mtype.unique())
         neurite_types = get_neurite_types(morphs_df)
-        if SynthesisConfig().with_axons:
-            for neurite_type in neurite_types.items():
+        if SynthesisConfig().axon_method != "no_axon":
+            for neurite_type in neurite_types.values():
                 neurite_type.append("axon")
 
         tmd_parameters = {}
         for mtype in tqdm(mtypes):
-            neurite_types = ["basal_dendrite"]
-            if has_apical_dendrite(
-                load_morphology(morphs_df.loc[morphs_df.mtype == mtype, "path"].to_list()[0])
-            ):
-                neurite_types.append("apical_dendrite")
-            if SynthesisConfig().with_axons:
-                neurite_types.append("axon")
-
             config = DiametrizerConfig().config_diametrizer
-            config["neurite_types"] = neurite_types
-            kwargs = {"neurite_types": neurite_types, "diameter_parameters": config}
+            config["neurite_types"] = neurite_types[mtype]
+            kwargs = {"neurite_types": neurite_types[mtype], "diameter_parameters": config}
             tmd_parameters[mtype] = extract_input.parameters(**kwargs)
 
         with self.output().open("w") as f:
@@ -228,8 +218,8 @@ class BuildSynthesisDistributions(WorkflowTask):
         L.debug("mtypes found: %s", mtypes)
 
         neurite_types = get_neurite_types(morphs_df)
-        if SynthesisConfig().with_axons:
-            for neurite_type in neurite_types.items():
+        if SynthesisConfig().axon_method != "no_axon":
+            for neurite_type in neurite_types.values():
                 neurite_type.append("axon")
         L.debug("neurite_types found: %s", neurite_types)
 
@@ -498,11 +488,6 @@ class Synthesize(WorkflowTask):
         description=":float: The std value of the scaling jitter to apply (in degrees).",
     )
     seed = luigi.IntParameter(default=0, description=":int: Pseudo-random generator seed.")
-    axon_method = luigi.ChoiceParameter(
-        default="reconstructed",
-        description=":str: The method used to handle axons.",
-        choices=["no_axon", "reconstructed", "synthesis"],
-    )
 
     def requires(self):
         """Required input tasks."""
@@ -514,7 +499,7 @@ class Synthesize(WorkflowTask):
             "circuit": SliceCircuit(),
             "composition": GetCellComposition(),
         }
-        if self.axon_method == "reconstructed":
+        if SynthesisConfig().axon_method == "reconstructed":
             tasks["axons"] = BuildAxonMorphologies()
             tasks["axon_cells"] = BuildAxonMorphsDF(
                 neurondb_path=BuildAxonMorphologies().get_neuron_db_path("xml"),
@@ -537,7 +522,7 @@ class Synthesize(WorkflowTask):
 
         axon_morphs_path = None
         axon_morphs_base_dir = None
-        if self.axon_method == "reconstructed":
+        if SynthesisConfig().axon_method == "reconstructed":
             axon_morphs_path = self.input()["axons"]["morphs"].path
             if self.axon_morphs_base_dir is None:
                 axon_morphs_base_dir = get_axon_base_dir(
@@ -566,7 +551,7 @@ class Synthesize(WorkflowTask):
             "region_structure": self.input()["synthesis_input"].pathlib_path
             / CircuitConfig().region_structure_path,
         }
-        if self.axon_method == "reconstructed" and self.apply_jitter:
+        if SynthesisConfig().axon_method == "reconstructed" and self.apply_jitter:
             kwargs["scaling_jitter_std"] = self.scaling_jitter_std
             kwargs["rotational_jitter_std"] = self.rotational_jitter_std
 
@@ -731,6 +716,11 @@ class OverwriteCustomParameters(WorkflowTask):
         if custom_path.exists():
             custom_parameters = pd.read_csv(custom_path)
             apply_parameter_diff(tmd_parameters, custom_parameters)
+
+        # if we are no_axon, ensure tmd_parameters has no axon data, or json schema may crash
+        if SynthesisConfig().axon_method == "no_axon":
+            for mtype in tmd_parameters:
+                tmd_parameters[mtype]["axon"] = {}
 
         with self.output().open("w") as f:
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
