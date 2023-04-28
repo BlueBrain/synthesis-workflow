@@ -163,9 +163,7 @@ class BuildCircuit(WorkflowTask):
     mask_path = OptionalPathParameter(
         default=None, description=":str: Path to save thickness mask (NCx only)."
     )
-    seed = luigi.OptionalIntParameter(
-        default=None, description=":int: Pseudo-random generator seed."
-    )
+    seed = luigi.OptionalIntParameter(default=42, description=":int: Pseudo-random generator seed.")
     mtype_taxonomy_file = luigi.Parameter(
         default="mtype_taxonomy.tsv",
         description=":str: Filename of taxonomy file to provide to BrainBuilder",
