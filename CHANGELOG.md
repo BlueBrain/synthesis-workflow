@@ -1,5 +1,13 @@
 # Changelog
 
+## [synthesis-workflow-v1.0.0](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.1.3...synthesis-workflow-v1.0.0)
+
+> 15 May 2023
+
+### New Features
+
+- Add region support (Alexis Arnaudon - [506be99](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/506be99164d017cd9a1060dcb443e2d6c910ae6f))
+
 ## [synthesis-workflow-v0.1.3](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.1.2...synthesis-workflow-v0.1.3)
 
 > 15 May 2023
