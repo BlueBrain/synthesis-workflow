@@ -257,7 +257,7 @@ def plot_layer_collage(
                 _points = points + pos[np.newaxis]
                 layers = layer_annotation.lookup(_points, outer_value=0)
 
-                depth = atlas.depths.lookup(pos)
+                depth = atlas.depths[region].lookup(pos)
 
                 rotation = atlas.orientations.lookup(pos)[0]
 

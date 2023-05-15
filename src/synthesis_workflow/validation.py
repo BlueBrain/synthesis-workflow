@@ -642,6 +642,7 @@ def plot_path_distance_fits(
     morphology_path,
     output_path,
     mtypes=None,
+    region=None,
     outlier_percentage=90,
     nb_jobs=-1,
 ):
@@ -662,7 +663,8 @@ def plot_path_distance_fits(
             [
                 mtype
                 for mtype in morphs_df.mtype.unique().tolist()
-                if tmd_parameters.get(mtype, {})
+                if tmd_parameters[region]
+                .get(mtype, {})
                 .get("context_constraints", {})
                 .get("apical_dendrite", {})
                 .get("extent_to_target")
@@ -677,7 +679,6 @@ def plot_path_distance_fits(
     ]
 
     L.debug("Number of files: %s", [(t, len(f)) for t, f in file_lists])
-
     ensure_dir(output_path)
     with PdfPages(output_path) as pdf:
         for mtype, x, y, x_clean, y_clean, x_synth, y_synth, msg in Parallel(nb_jobs)(
@@ -685,8 +686,8 @@ def plot_path_distance_fits(
                 mtype,
                 files,
                 outlier_percentage,
-                tmd_parameters[mtype],
-                tmd_distributions["mtypes"][mtype],
+                tmd_parameters[region][mtype],
+                tmd_distributions[region][mtype],
             )
             for mtype, files in file_lists
         ):
@@ -705,10 +706,10 @@ def plot_path_distance_fits(
                 plt.plot(
                     [
                         get_path_distance_from_extent(
-                            tmd_parameters[mtype]["context_constraints"]["apical_dendrite"][
+                            tmd_parameters[region][mtype]["context_constraints"]["apical_dendrite"][
                                 "extent_to_target"
                             ]["slope"],
-                            tmd_parameters[mtype]["context_constraints"]["apical_dendrite"][
+                            tmd_parameters[region][mtype]["context_constraints"]["apical_dendrite"][
                                 "extent_to_target"
                             ]["intercept"],
                             i,
@@ -1100,6 +1101,7 @@ def trunk_validation(
     comp_label,
     tmd_parameters_path,
     tmd_distributions_path,
+    region,
 ):
     """Create plots to validate trunk angles."""
     with open(tmd_parameters_path, "r", encoding="utf-8") as f:
@@ -1120,24 +1122,27 @@ def trunk_validation(
                 fit = None
                 if (
                     "params"
-                    in tmd_parameters[mtype].get(t2, {}).get("orientation", {}).get("values", {})
-                    and tmd_parameters[mtype][t2]["orientation"]["mode"].split("_")[0]
+                    in tmd_parameters[region][mtype]
+                    .get(t2, {})
+                    .get("orientation", {})
+                    .get("values", {})
+                    and tmd_parameters[region][mtype][t2]["orientation"]["mode"].split("_")[0]
                     == t1.split("_")[0]
                 ):
                     fit = get_probability_function(
-                        form=tmd_parameters[mtype][t2]["orientation"]["values"]["form"],
+                        form=tmd_parameters[region][mtype][t2]["orientation"]["values"]["form"],
                         with_density=True,
                     )(
                         angles,
-                        *tmd_parameters[mtype][t2]["orientation"]["values"]["params"],
+                        *tmd_parameters[region][mtype][t2]["orientation"]["values"]["params"],
                     )
                 plt.figure(figsize=(6, 4))
                 plt.axvline(0, c="k")
                 plt.axvline(np.pi, c="k")
                 plt.plot(*_get_hist(data_bio[data_type]), label=base_label)
                 key = t1.split("_")[0] + "_3d_angles"
-                if key in tmd_distributions["mtypes"][mtype].get(t2, {}).get("trunk", {}):
-                    bio_data = tmd_distributions["mtypes"][mtype][t2]["trunk"][key]["data"]
+                if key in tmd_distributions[region][mtype].get(t2, {}).get("trunk", {}):
+                    bio_data = tmd_distributions[region][mtype][t2]["trunk"][key]["data"]
                     plt.plot(
                         bio_data["bins"],
                         np.array(bio_data["weights"]) / max(bio_data["weights"]),

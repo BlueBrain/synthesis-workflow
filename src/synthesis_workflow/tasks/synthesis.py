@@ -155,13 +155,13 @@ class GetDefaultParameters(WorkflowTask):
         if SynthesisConfig().axon_method != "no_axon":
             for neurite_type in neurite_types.values():
                 neurite_type.append("axon")
-
-        tmd_parameters = {}
+        region = CircuitConfig().region
+        tmd_parameters = {region: {}}
         for mtype in tqdm(mtypes):
             config = DiametrizerConfig().config_diametrizer
             config["neurite_types"] = neurite_types[mtype]
             kwargs = {"neurite_types": neurite_types[mtype], "diameter_parameters": config}
-            tmd_parameters[mtype] = extract_input.parameters(**kwargs)
+            tmd_parameters[region][mtype] = extract_input.parameters(**kwargs)
 
         with self.output().open("w") as f:
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
@@ -183,8 +183,8 @@ class BuildSynthesisParameters(WorkflowTask):
         """Actual process of the task."""
         # possibly other fine tuning here or validate intermediate steps
         tmd_parameters = json.load(self.input()["tmd_parameters"].open("r"))
-        for mtype in tmd_parameters:
-            validate_neuron_params(tmd_parameters[mtype])
+        for mtype in tmd_parameters[CircuitConfig().region]:
+            validate_neuron_params(tmd_parameters[CircuitConfig().region][mtype])
 
         with self.output().open("w") as f:
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)
@@ -230,11 +230,11 @@ class BuildSynthesisDistributions(WorkflowTask):
             build_diameter_models,
             DiametrizerConfig().config_model,
             self.morphology_path,
-            self.input()["synthesis"].pathlib_path / CircuitConfig().region_structure_path,
+            region=CircuitConfig().region,
             nb_jobs=self.nb_jobs,
         )
 
-        for distr in tmd_distributions["mtypes"].values():
+        for distr in tmd_distributions[CircuitConfig().region].values():
             validate_neuron_distribs(distr)
 
         with self.output().open("w") as f:
@@ -621,7 +621,7 @@ class AddScalingRulesToParameters(WorkflowTask):
                     scaling_rules = yaml.full_load(f)
 
         add_scaling_rules_to_parameters(
-            tmd_parameters,
+            tmd_parameters[CircuitConfig().region],
             self.input()["morphologies"].path,
             self.morphology_path,
             scaling_rules,
@@ -672,10 +672,10 @@ class AddTrunkFitToParameters(WorkflowTask):
             tmd_parameters = json.load(f)
         with self.input()["tmd_distributions"].open("r") as f:
             tmd_distributions = json.load(f)
-
-        for mtype in tmd_parameters:
-            tmd_parameters[mtype] = fit_3d_angles(
-                tmd_parameters[mtype], tmd_distributions["mtypes"][mtype]
+        region = CircuitConfig().region
+        for mtype in tmd_parameters[region]:
+            tmd_parameters[region][mtype] = fit_3d_angles(
+                tmd_parameters[region][mtype], tmd_distributions[region][mtype]
             )
 
         with self.output().open("w") as f:
@@ -715,12 +715,12 @@ class OverwriteCustomParameters(WorkflowTask):
         custom_path = self.input()["synthesis_input"].pathlib_path / self.custom_parameters_path
         if custom_path.exists():
             custom_parameters = pd.read_csv(custom_path)
-            apply_parameter_diff(tmd_parameters, custom_parameters)
+            apply_parameter_diff(tmd_parameters[CircuitConfig().region], custom_parameters)
 
         # if we are no_axon, ensure tmd_parameters has no axon data, or json schema may crash
         if SynthesisConfig().axon_method == "no_axon":
-            for mtype in tmd_parameters:
-                tmd_parameters[mtype]["axon"] = {}
+            for mtype in tmd_parameters[CircuitConfig().region]:
+                tmd_parameters[CircuitConfig().region][mtype]["axon"] = {}
 
         with self.output().open("w") as f:
             json.dump(tmd_parameters, f, cls=NumpyEncoder, indent=4, sort_keys=True)

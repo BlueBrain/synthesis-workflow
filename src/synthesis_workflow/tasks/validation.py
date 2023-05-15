@@ -441,6 +441,7 @@ class PlotScales(WorkflowTask):
 
 @copy_params(
     mtypes=ParamRef(SynthesisConfig),
+    region=ParamRef(CircuitConfig),
     morphology_path=ParamRef(PathConfig),
     nb_jobs=ParamRef(RunnerConfig),
 )
@@ -482,6 +483,7 @@ class PlotPathDistanceFits(WorkflowTask):
             self.morphology_path,
             self.output().path,
             self.mtypes,
+            self.region,
             self.outlier_percentage,
             self.nb_jobs,
         )
@@ -713,6 +715,7 @@ class TrunkValidation(WorkflowTask):
             self.comp_label,
             self.input()["parameters"].path,
             self.input()["distributions"].path,
+            CircuitConfig().region,
         )
 
     def output(self):

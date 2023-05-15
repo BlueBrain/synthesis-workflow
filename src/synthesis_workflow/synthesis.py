@@ -8,7 +8,6 @@ from pathlib import Path
 import matplotlib
 import numpy as np
 import pandas as pd
-import yaml
 from joblib import Parallel
 from joblib import delayed
 from morphio.mut import Morphology
@@ -111,7 +110,7 @@ def build_distributions(
     diameter_model_function,
     config,
     morphology_path,
-    region_structure_path,
+    region,
     nb_jobs=-1,
     joblib_verbose=10,
 ):
@@ -122,7 +121,7 @@ def build_distributions(
         morphs_df (DataFrame): morphology dataframe with reconstruction to use
         diameter_model_function (function): diametrizer function (from diameter-synthesis)
         morphology_path (str): name of the column in morphs_df to use for paths to morphologies
-        region_structure_path (str): path to region_structure yaml file with thicknesses
+        region (str): region we are building
         nb_jobs (int): number of jobs to run in parallal with joblib
         joblib_verbose (int): verbose level of joblib
 
@@ -137,19 +136,11 @@ def build_distributions(
         config=config,
         morphology_path=morphology_path,
     )
-    thicknesses = []
-    if Path(region_structure_path).exists():
-        with open(region_structure_path, "r", encoding="utf-8") as r_p:
-            region_structure = yaml.safe_load(r_p)
-        thicknesses = [
-            region_structure["thicknesses"][layer] for layer in region_structure["layers"]
-        ]
-
-    tmd_distributions = {"mtypes": {}, "metadata": {"cortical_thickness": thicknesses}}
+    tmd_distributions = {region: {}}
     for mtype, distribution in Parallel(nb_jobs, verbose=joblib_verbose)(
         delayed(build_distributions_single_mtype)(mtype) for mtype in mtypes
     ):
-        tmd_distributions["mtypes"][mtype] = distribution
+        tmd_distributions[region][mtype] = distribution
     return tmd_distributions
 
 

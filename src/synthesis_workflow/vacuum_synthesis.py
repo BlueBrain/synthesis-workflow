@@ -56,6 +56,7 @@ def grow_vacuum_morphologies(
     tmd_parameters,
     tmd_distributions,
     morphology_base_path,
+    region,
     vacuum_morphology_path=VACUUM_SYNTH_MORPHOLOGY_PATH,
     diametrizer="external",
     joblib_verbose=0,
@@ -69,8 +70,8 @@ def grow_vacuum_morphologies(
     global_gid = 0
     rows = []
     for mtype in tqdm(mtypes):
-        tmd_parameters[mtype]["diameter_params"]["method"] = diametrizer
-        tmd_distributions["mtypes"][mtype]["diameter"]["method"] = diametrizer
+        tmd_parameters[region][mtype]["diameter_params"]["method"] = diametrizer
+        tmd_distributions[region][mtype]["diameter"]["method"] = diametrizer
 
         if diametrizer == "external":
             external_diametrizer = build_diameters.build
@@ -88,8 +89,8 @@ def grow_vacuum_morphologies(
             delayed(_grow_morphology)(
                 gid,
                 mtype,
-                tmd_parameters[mtype],
-                tmd_distributions["mtypes"][mtype],
+                tmd_parameters[region][mtype],
+                tmd_distributions[region][mtype],
                 morphology_base_path,
                 vacuum_morphology_path=vacuum_morphology_path,
                 external_diametrizer=external_diametrizer,

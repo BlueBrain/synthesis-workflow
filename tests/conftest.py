@@ -66,7 +66,8 @@ def small_O1(tmp_path):
         {
             "atlas": str(atlas_dir),
             "structure": str(DATA / "synthesis_input" / "region_structure.yaml"),
-        }
+        },
+        "O0",
     )["annotation"]
 
     layer_tags = br.raw.copy()

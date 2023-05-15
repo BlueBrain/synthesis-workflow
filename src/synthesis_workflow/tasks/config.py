@@ -197,7 +197,7 @@ class CircuitConfig(luigi.Config):
         default="region_structure.yaml",
         description=":str: Path to the file containing the layer structure data.",
     )
-    region = luigi.OptionalParameter(default=None)
+    region = luigi.OptionalParameter(default="default")
     hemisphere = OptionalChoiceParameter(
         default=None,
         choices=["left", "right"],

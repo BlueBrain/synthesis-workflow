@@ -86,6 +86,7 @@ def build_circuit(
     """
     if seed is not None:
         np.random.seed(seed)
+
     return place(
         composition_path=cell_composition_path,
         mtype_taxonomy_path=mtype_taxonomy_path,

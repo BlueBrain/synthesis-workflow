@@ -1,15 +1,5 @@
 {
-    "metadata": {
-        "cortical_thickness": [
-            200,
-            100,
-            100,
-            100,
-            100,
-            200
-        ]
-    },
-    "mtypes": {
+    "O0": {
         "L1_DAC": {
             "basal_dendrite": {
                 "filtration_metric": "path_distances",

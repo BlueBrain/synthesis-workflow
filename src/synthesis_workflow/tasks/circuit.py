@@ -217,6 +217,9 @@ class BuildCircuit(WorkflowTask):
             seed=self.seed,
             region=CircuitConfig().region,
         )
+        # new version of brainbuilder only assigns subregion, not sure why, to investigate
+        if "region" not in cells.properties:
+            cells.properties["region"] = cells.properties["subregion"]
         cells.save(self.output().path)
 
     def output(self):

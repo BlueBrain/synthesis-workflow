@@ -10,6 +10,7 @@ from luigi_tools.task import ParamRef
 from luigi_tools.task import WorkflowTask
 from luigi_tools.task import copy_params
 
+from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import MorphsDfLocalTarget
 from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
@@ -68,7 +69,7 @@ class VacuumSynthesize(WorkflowTask):
         tmd_distributions = json.load(self.input()["tmd_distributions"].open())
 
         if self.mtypes is None:
-            mtypes = list(tmd_parameters.keys())
+            mtypes = list(tmd_parameters[CircuitConfig().region].keys())
         else:
             mtypes = self.mtypes
 
@@ -80,6 +81,7 @@ class VacuumSynthesize(WorkflowTask):
             tmd_parameters,
             tmd_distributions,
             morphology_base_path.absolute(),
+            CircuitConfig().region,
             vacuum_morphology_path=self.vacuum_synth_morphology_path,
             diametrizer=self.diametrizer,
             joblib_verbose=self.joblib_verbose,
