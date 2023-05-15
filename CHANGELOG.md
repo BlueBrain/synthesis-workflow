@@ -1,5 +1,21 @@
 # Changelog
 
+## [synthesis-workflow-v0.1.3](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.1.2...synthesis-workflow-v0.1.3)
+
+> 15 May 2023
+
+### Build
+
+- Set max version for region-grower (Adrien Berchet - [b11e682](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/b11e682b2e672d9a2463899aa9baaa57bf987f71))
+
+### Fixes
+
+- Axon fixing (Alexis Arnaudon - [fd5b184](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/fd5b18438de931dffa8cc98cb6c98bd4afda7891))
+
+### General Changes
+
+- Fix circuit place seed (Alexis Arnaudon - [be61217](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/be61217cb90b533c4103ac197afa941607a2412d))
+
 ## [synthesis-workflow-v0.1.2](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.1.1...synthesis-workflow-v0.1.2)
 
 > 14 March 2023
