@@ -1113,6 +1113,7 @@ def _get_hist(data, bins=50):
 def trunk_validation(
     morphs_df,
     synth_morphs_df,
+    mtypes,
     output_dir,
     base_key,
     comp_key,
@@ -1130,7 +1131,9 @@ def trunk_validation(
         tmd_distributions = json.load(f)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    for mtype in morphs_df.mtype.unique():
+    if mtypes is None:
+        mtypes = morphs_df.mtype.unique()
+    for mtype in mtypes:
         data_bio = extract_angle_data(morphs_df[morphs_df.mtype == mtype], base_key)
         data_synth = extract_angle_data(synth_morphs_df[synth_morphs_df.mtype == mtype], comp_key)
         with PdfPages(output_dir / f"trunk_validation_{mtype}.pdf") as pdf:

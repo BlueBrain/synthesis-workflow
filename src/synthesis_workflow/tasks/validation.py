@@ -308,6 +308,7 @@ class PlotSingleCollage(WorkflowTask):
     """
 
     mtype = luigi.Parameter(description=":str: The mtype to plot.")
+    n_pixels_y = luigi.IntParameter(default=20, description=":str: Number of orientations arrows")
 
     def requires(self):
         """Required input tasks."""
@@ -355,6 +356,7 @@ class PlotSingleCollage(WorkflowTask):
             nb_jobs=self.nb_jobs,
             joblib_verbose=self.joblib_verbose,
             dpi=self.dpi,
+            n_pixels_y=self.n_pixels_y,
             plot_neuron_kwargs={
                 "realistic_diameters": self.realistic_diameters,
                 "linewidth": self.linewidth,
@@ -706,9 +708,14 @@ class TrunkValidation(WorkflowTask):
             synth_morphs_df = pd.read_csv(self.input()["vacuum"]["out_morphs_df"].path)
             comp_key = self.requires()["vacuum"].vacuum_synth_morphology_path
 
+        mtypes = None
+        if self.in_atlas:
+            mtypes = SynthesisConfig().mtypes
+
         trunk_validation(
             morphs_df,
             synth_morphs_df,
+            mtypes,
             self.output().pathlib_path,
             self.base_key,
             comp_key,
