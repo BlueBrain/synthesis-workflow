@@ -156,7 +156,7 @@ class BuildCircuit(WorkflowTask):
     """Generate cell positions and me-types from atlas, compositions and taxonomy."""
 
     density_factor = RatioParameter(
-        default=0.01,
+        default=0.5,
         left_op=luigi.parameter.operator.lt,
         description=":float: The density of positions generated from the atlas.",
     )
@@ -204,7 +204,7 @@ class BuildCircuit(WorkflowTask):
                 layer = mtype[1]
                 keys = [k + 1 for k, d in annotation["mapping"].items() if d.endswith(layer)]
                 density_annotation = deepcopy(annotation["annotation"])
-                density_annotation.raw[annotation["annotation"].raw == keys[0]] = 1000
+                density_annotation.raw[annotation["annotation"].raw == keys[0]] = 100000
                 density_annotation.raw[annotation["annotation"].raw != keys[0]] = 0
                 density_annotation.save_nrrd(str(nrrd_path))
 

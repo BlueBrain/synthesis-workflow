@@ -60,18 +60,19 @@ class CreateCircuitConfig(WorkflowTask):
             "structure_path": self.input()["synthesis_input"].pathlib_path
             / CircuitConfig().region_structure_path,
         }
-        config["circuit"] = {
-            "path": self.output().path,
-            "region": CircuitConfig().region if CircuitConfig().region is not None else "",
-            "hemisphere": CircuitConfig().hemisphere
-            if CircuitConfig().hemisphere is not None
-            else "",
-        }
+        config["circuit"] = {"path": self.output().path}
+        if CircuitConfig().region is not None:
+            config["circuit"]["region"] = CircuitConfig().region
+        if CircuitConfig().hemisphere is not None:
+            config["circuit"]["hemisphere"] = CircuitConfig().hemisphere
+
         sample = PlotCollage().sample
         if sample is None:
             sample = SliceCircuit().n_cells
         config["cells"] = {
-            "mtype": SynthesisConfig().mtypes[0] if SynthesisConfig().mtypes is not None else "",
+            "mtypes": json.dumps(list(SynthesisConfig().mtypes))
+            if SynthesisConfig().mtypes is not None
+            else "",
             "sample": str(sample),
         }
         config["planes"] = {
