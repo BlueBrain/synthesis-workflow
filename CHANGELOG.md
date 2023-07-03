@@ -1,5 +1,13 @@
 # Changelog
 
+## [synthesis-workflow-v1.0.1](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v1.0.0...synthesis-workflow-v1.0.1)
+
+> 3 July 2023
+
+### New Features
+
+- Update examples for tutorial (Alexis Arnaudon - [37f7dc0](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/37f7dc032cfdfac27159b52e2d5c7f37a5dfae01))
+
 ## [synthesis-workflow-v1.0.0](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v0.1.3...synthesis-workflow-v1.0.0)
 
 > 15 May 2023
