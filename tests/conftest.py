@@ -3,7 +3,7 @@
 import json
 import os
 import shutil
-from configparser import ConfigParser
+from copy import deepcopy
 from pathlib import Path
 from subprocess import check_call
 
@@ -12,9 +12,13 @@ import dir_content_diff_plugins.voxcell
 import luigi
 import numpy as np
 import pytest
+from luigi_tools.task import WorkflowTask
 from neurocollage.planes import get_layer_annotation
 
 from synthesis_workflow.tasks import config
+
+from . import export_config
+from . import get_config_parser
 
 dir_content_diff.pandas.register()
 dir_content_diff_plugins.voxcell.register()
@@ -22,12 +26,6 @@ dir_content_diff_plugins.voxcell.register()
 
 TEST_ROOT = Path(__file__).parent
 DATA = TEST_ROOT / "data"
-
-
-def export_config(params, filepath):
-    """Export params to a file."""
-    with open(filepath, "w", encoding="utf-8") as configfile:
-        params.write(configfile)
 
 
 @pytest.fixture
@@ -88,13 +86,6 @@ def tmp_working_dir(tmp_path):
     os.chdir(tmp_path)
     yield tmp_path
     os.chdir(cwd)
-
-
-def get_config_parser(cfg_path):
-    """Return a config parser filed with values from the given file."""
-    params = ConfigParser()
-    params.read(cfg_path)
-    return params
 
 
 @pytest.fixture
@@ -176,3 +167,25 @@ def small_O1_working_directory(tmp_working_dir, small_O1_params, small_O1):
 
     # Reset luigi config
     luigi_config.clear()
+
+
+@pytest.fixture
+def WorkflowTask_exception_event():
+    """Fixture to catch exception from tasks deriving from WorkflowTask.
+
+    The events of the tasks are reset afterwards.
+    """
+    # pylint: disable=protected-access
+    current_callbacks = deepcopy(luigi.Task._event_callbacks)
+
+    failed_task = []
+    exceptions = []
+
+    @WorkflowTask.event_handler(luigi.Event.FAILURE)
+    def check_exception(task, exception):
+        failed_task.append(str(task))
+        exceptions.append(str(exception))
+
+    yield failed_task, exceptions
+
+    luigi.Task._event_callbacks = current_callbacks

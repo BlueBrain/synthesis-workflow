@@ -81,6 +81,13 @@ class BuildMorphsDF(WorkflowTask):
         # Remove possibly duplicated morphologies
         morphs_df = morphs_df.drop_duplicates(subset=["name"])
 
+        missing_files = morphs_df.loc[morphs_df["path"].isnull()]
+        if not missing_files.empty:
+            raise RuntimeError(
+                "The following morphologies extracted from the MorphDB file do not exist: "
+                f"{missing_files['name'].tolist()}"
+            )
+
         morphs_df.to_csv(self.output().path)
 
     def output(self):
@@ -129,11 +136,7 @@ class ApplySubstitutionRules(WorkflowTask):
 
 
 class GetDefaultParameters(WorkflowTask):
-    """Build the tmd_parameter.json for synthesis.
-
-    Attributes:
-        tmd_parameters_path (str): The path to the TMD parameters.
-    """
+    """Build the tmd_parameter.json for synthesis."""
 
     default_tmd_parameters_path = luigi.PathParameter(
         default="neurots_input/tmd_parameters_default.json",
@@ -173,7 +176,11 @@ class GetDefaultParameters(WorkflowTask):
 
 @copy_params(tmd_parameters_path=ParamRef(SynthesisConfig))
 class BuildSynthesisParameters(WorkflowTask):
-    """Build the tmd_parameters.json for synthesis."""
+    """Build the tmd_parameters.json for synthesis.
+
+    Attributes:
+        tmd_parameters_path (str): The path to the TMD parameters.
+    """
 
     def requires(self):
         """Required input tasks."""
@@ -687,11 +694,7 @@ class AddTrunkFitToParameters(WorkflowTask):
 
 
 class OverwriteCustomParameters(WorkflowTask):
-    """Overwrite parameters with custom parameters.
-
-    Attributes:
-        tmd_parameters_path (str): The path to the TMD parameters.
-    """
+    """Overwrite parameters with custom parameters."""
 
     custom_tmd_parameters_path = luigi.PathParameter(
         default="neurots_input/tmd_parameters_overwriten.json",

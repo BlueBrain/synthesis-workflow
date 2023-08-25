@@ -51,10 +51,8 @@ class GitClone(WorkflowTask):
 class GetSynthesisInputs(WorkflowTask):
     """Task to get synthesis input files from a folder on git repository.
 
-    If no url is provided, this task will copy an existing folder to the target location.
-
-    Attributes:
-        local_synthesis_input_path (str): Path to local folder to copy these files.
+    If no url is provided, this task will copy an existing folder to the target location
+    given in the 'local_synthesis_input_path' parameter of the 'PathConfig' task.
     """
 
     url = luigi.OptionalParameter(
