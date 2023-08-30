@@ -1,13 +1,22 @@
 """Utils functions."""
 import json
 import logging
+from pathlib import Path
 
 import dictdiffer
 import numpy as np
 import pandas as pd
 from jsonpath_ng import parse
+from pkg_resources import resource_filename
 
 # pylint:disable=too-many-nested-blocks
+
+_TEMPLATES = Path(
+    resource_filename(
+        "synthesis_workflow",
+        "_templates",
+    )
+)
 
 
 class DisableLogger:
@@ -38,8 +47,8 @@ def setup_logging(
 ):
     """Setup logging."""
     if logger is None:
-        root = logging.getLogger()
-        root.setLevel(logging.DEBUG)
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
 
     # Setup logging formatter
     if log_format is None:
@@ -52,7 +61,7 @@ def setup_logging(
     console = logging.StreamHandler()
     console.setFormatter(formatter)
     console.setLevel(log_level)
-    root.addHandler(console)
+    logger.addHandler(console)
 
     # Setup file logging handler
     if log_file is not None:
@@ -61,7 +70,7 @@ def setup_logging(
         fh = logging.FileHandler(log_file, mode="w")
         fh.setLevel(log_file_level)
         fh.setFormatter(formatter)
-        root.addHandler(fh)
+        logger.addHandler(fh)
 
 
 def create_parameter_diff(param, param_spec):

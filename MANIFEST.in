@@ -4,3 +4,5 @@ include src/version.py
 include src/morphval/templates/*
 include src/synthesis_workflow/defaults/*
 include requirements/*.pip
+
+recursive-include src/synthesis_workflow/_templates/ *.cfg *.conf *.json *.py

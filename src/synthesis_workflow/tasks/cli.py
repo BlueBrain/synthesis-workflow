@@ -14,7 +14,7 @@ from luigi_tools.util import render_dependency_graph
 
 import synthesis_workflow
 from synthesis_workflow.tasks import workflows
-from synthesis_workflow.utils import setup_logging
+from synthesis_workflow.utils import _TEMPLATES
 
 L = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ WORKFLOW_TASKS = {
 
 LOGGING_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
-LUIGI_PARAMETERS = ["workers", "local_scheduler", "log_level"]
+LUIGI_PARAMETERS = ["workers", "log_level"]
 
 
 _PARAM_NO_VALUE = [luigi.parameter._no_value, None]  # pylint: disable=protected-access
@@ -97,17 +97,22 @@ class ArgParser:
     def _get_parsers(self):
         """Return the main argument parser."""
         parser = argparse.ArgumentParser(
-            description="Run the synthesis workflow",
+            description="Run the workflow",
+        )
+        parser.add_argument(
+            "--version",
+            action="version",
+            version=f"%(prog)s, version {synthesis_workflow.__version__}",
         )
 
-        parser.add_argument("-c", "--config-path", help="Path to the Luigi config file")
+        parser.add_argument("-c", "--config-path", help="Path to the Luigi config file.")
 
         parser.add_argument(
-            "-l",
-            "--local-scheduler",
+            "-m",
+            "--master-scheduler",
             default=False,
             action="store_true",
-            help="Use Luigi's local scheduler instead of master scheduler.",
+            help="Use Luigi's master scheduler instead of local scheduler.",
         )
 
         parser.add_argument(
@@ -136,6 +141,12 @@ class ArgParser:
                 "Pass a path to render it as an image (depending on the extension of the given "
                 "path)."
             ),
+        )
+
+        parser.add_argument(
+            "-dgdpi",
+            "--dependency-graph-dpi",
+            help="The DPI used for the dependency graph export.",
         )
 
         return self._get_workflow_parsers(parser)
@@ -171,7 +182,7 @@ class ArgParser:
                         doc,
                         flags=re.DOTALL,
                     ).strip()
-                subparser = workflow_parser.add_parser(workflow_name, help=doc)
+                subparser = workflow_parser.add_parser(workflow_name, help=doc, description=doc)
                 for param, param_obj in task.get_params():
                     param_name = "--" + param.replace("_", "-")
                     subparser.add_argument(
@@ -193,23 +204,57 @@ class ArgParser:
         return args
 
 
-def _setup_logging(log_level, log_file=None, log_file_level=None):
-    """Setup logging."""
-    setup_logging(log_level, log_file, log_file_level)
-
-
 def _build_parser():
     """Build the parser."""
     tmp = ArgParser().parser
     return tmp
 
 
+def export_dependency_graph(task, output_file, dpi=None):
+    """Export the dependency graph of the given task."""
+    g = get_dependency_graph(task, allow_orphans=True)
+
+    # Create URLs
+    base_f = Path(inspect.getfile(synthesis_workflow)).parent
+    node_kwargs = {}
+    for _, child in g:
+        if child is None:
+            continue
+        url = (
+            Path(inspect.getfile(child.__class__)).relative_to(base_f).with_suffix("")
+            / "index.html"
+        )
+        anchor = "#" + ".".join(child.__module__.split(".")[1:] + [child.__class__.__name__])
+        node_kwargs[child] = {"URL": "../../" + url.as_posix() + anchor}
+
+    graph_attrs = {}
+    if dpi is not None:
+        graph_attrs["dpi"] = dpi
+    dot = graphviz_dependency_graph(g, node_kwargs=node_kwargs, graph_attrs=graph_attrs)
+    render_dependency_graph(dot, output_file)
+
+
 def main(arguments=None):
     """Main function."""
-    if arguments is None:
-        arguments = sys.argv[1:]
+    # Setup logging
+    logging.getLogger("luigi").propagate = False
+    logging.getLogger("luigi-interface").propagate = False
+    luigi_config = luigi.configuration.get_config()
+    logging_conf = luigi_config.get("core", "logging_conf_file", None)
+    if logging_conf is not None and not Path(logging_conf).exists():
+        L.warning(
+            "The core->logging_conf_file entry is not a valid path so the default logging "
+            "configuration is taken."
+        )
+        logging_conf = None
+    if logging_conf is None:
+        logging_conf = str(_TEMPLATES / "logging.conf")
+        luigi_config.set("core", "logging_conf_file", logging_conf)
+    logging.config.fileConfig(str(logging_conf), disable_existing_loggers=False)
 
     # Parse arguments
+    if arguments is None:
+        arguments = sys.argv[1:]
     parser = ArgParser()
     args = parser.parse_args(arguments)
 
@@ -219,7 +264,7 @@ def main(arguments=None):
     if args is None or args.workflow is None:
         L.critical("Arguments must contain one workflow. Check help with -h/--help argument.")
         parser.parser.print_help()
-        sys.exit()
+        return
 
     # Set luigi.cfg path
     if args.config_path is not None:
@@ -227,34 +272,18 @@ def main(arguments=None):
 
     # Get arguments to configure luigi
     luigi_config = {k: v for k, v in vars(args).items() if k in LUIGI_PARAMETERS}
+    luigi_config["local_scheduler"] = not args.master_scheduler
 
     # Prepare workflow task and arguments
     task_cls = WORKFLOW_TASKS[args.workflow]
     args_dict = {k.split(task_cls.get_task_family() + "_")[-1]: v for k, v in vars(args).items()}
-    args_dict = {
-        k: v for k, v in args_dict.items() if v is not None and k in task_cls.get_param_names()
-    }
+    task_params = [i for i, j in task_cls.get_params()]
+    args_dict = {k: v for k, v in args_dict.items() if v is not None and k in task_params}
     task = WORKFLOW_TASKS[args.workflow](**args_dict)
 
     # Export the dependency graph of the workflow instead of running it
     if args.create_dependency_graph is not None:
-        g = get_dependency_graph(task, allow_orphans=True)
-
-        # Create URLs
-        base_f = Path(inspect.getfile(synthesis_workflow)).parent
-        node_kwargs = {}
-        for _, child in g:
-            if child is None:
-                continue
-            url = (
-                Path(inspect.getfile(child.__class__)).relative_to(base_f).with_suffix("")
-                / "index.html"
-            )
-            anchor = "#" + ".".join(child.__module__.split(".")[1:] + [child.__class__.__name__])
-            node_kwargs[child] = {"URL": "../../" + url.as_posix() + anchor}
-
-        dot = graphviz_dependency_graph(g, node_kwargs=node_kwargs)
-        render_dependency_graph(dot, args.create_dependency_graph)
+        export_dependency_graph(task, args.create_dependency_graph, dpi=args.dependency_graph_dpi)
         return
 
     # Run the luigi task

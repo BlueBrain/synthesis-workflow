@@ -49,8 +49,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "synthesis_workflow=synthesis_workflow.tasks.cli:main",
-            "morph_validation=morphval.cli:main",
+            "synthesis-workflow=synthesis_workflow.tasks.cli:main",
+            "morph-validation=morphval.cli:main",
         ],
     },
     include_package_data=True,
