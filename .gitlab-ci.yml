@@ -15,7 +15,10 @@ include:
         - /ci/jobs/auto-release.yml
         - /ci/jobs/check-merge-request-title.yml
         - /ci/lib/pytest-template.yml
+        - /ci/jobs/py38.yml
         - /ci/jobs/py39.yml
+        - /ci/jobs/py310.yml
+        - /ci/jobs/min_versions.yml
         - /ci/jobs/coverage.yml
 
 .tox-template:
@@ -28,11 +31,6 @@ include:
     KUBERNETES_CPU_REQUEST: 4
     KUBERNETES_MEMORY_LIMIT: 4Gi
     KUBERNETES_MEMORY_REQUEST: 4Gi
-
-py38:
-  extends: .pytest-template
-  variables:
-    TOXENV: ${CI_JOB_NAME},${CI_JOB_NAME}-min_versions
 
 lint:
   variables:

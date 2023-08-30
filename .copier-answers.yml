@@ -1,6 +1,6 @@
 # Changes here will be overwritten by Copier
 
-_commit: 0.1.36
+_commit: 0.1.47
 _src_path: git@bbpgitlab.epfl.ch:neuromath/python-template.git
 author_email: bbp-ou-cells@groupes.epfl.ch
 author_name: bbp-ou-cells
@@ -17,10 +17,11 @@ project_url: https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow
 repository_name: synthesis-workflow
 repository_namespace: neuromath
 repository_provider: gitlab
+setup_codeql: false
 ssh_url: git@bbpgitlab.epfl.ch:neuromath/synthesis-workflow.git
-support_py37: false
 team_name: neuromath
 tracker_url: https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues
+use_pyproject_toml: false
 version: 0.1.2.dev1
 
 # End of Copier answers
