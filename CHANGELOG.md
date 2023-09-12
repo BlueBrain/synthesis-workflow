@@ -1,5 +1,29 @@
 # Changelog
 
+## [synthesis-workflow-v1.0.2](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v1.0.1...synthesis-workflow-v1.0.2)
+
+> 12 September 2023
+
+### Build
+
+- \(deps\)Constrain NeuroTS and region-grower versions (Adrien Berchet - [31e9f97](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/31e9f976789dfe4c3f0443fcc8d779079839f08f))
+
+### New Features
+
+- Add -dgdpi for workflow diagram and --version and fix logger (Adrien Berchet - [b96264c](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/b96264cc55a134c862c7d0c60f011b5aca3f890c))
+
+### Fixes
+
+- Raise an exception when the morphologies extracted from the NeuronDB file can not be found (Adrien Berchet - [570c0eb](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/570c0eb4be4a4898634e98f502b270f7d4cedd56))
+
+### Chores And Housekeeping
+
+- Apply Copier template (Adrien Berchet - [3c493f5](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/3c493f5e9935cad9f44487df9ada83f64c8d3b18))
+
+### Documentation Changes
+
+- Fix doc for optional parameters (Adrien Berchet - [2177b44](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/2177b44209ca3199ccb7a16a010b76ae4ba9ff1a))
+
 ## [synthesis-workflow-v1.0.1](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v1.0.0...synthesis-workflow-v1.0.1)
 
 > 3 July 2023
