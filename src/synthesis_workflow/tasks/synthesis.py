@@ -161,9 +161,13 @@ class GetDefaultParameters(WorkflowTask):
         region = CircuitConfig().region
         tmd_parameters = {region: {}}
         for mtype in tqdm(mtypes):
+            kwargs = {"neurite_types": neurite_types[mtype]}
             config = DiametrizerConfig().config_diametrizer
-            config["neurite_types"] = neurite_types[mtype]
-            kwargs = {"neurite_types": neurite_types[mtype], "diameter_parameters": config}
+            if config["models"][0] == "simpler":
+                config = {"neurite_types": neurite_types[mtype]}
+            else:
+                config["neurite_types"] = neurite_types[mtype]
+            kwargs["diameter_parameters"] = config
             tmd_parameters[region][mtype] = extract_input.parameters(**kwargs)
 
         with self.output().open("w") as f:

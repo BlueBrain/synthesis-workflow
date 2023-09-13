@@ -754,7 +754,7 @@
                     0.3332319198972079,
                     1.1231483371242033
                 ],
-                "method": "external"
+                "method": "default"
             },
             "soma": {
                 "size": {
@@ -1588,7 +1588,7 @@
                     -0.4374150008928607,
                     1.7210711839782311
                 ],
-                "method": "external"
+                "method": "default"
             },
             "soma": {
                 "size": {

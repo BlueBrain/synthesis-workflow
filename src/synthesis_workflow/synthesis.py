@@ -94,9 +94,11 @@ def _build_distributions_single_mtype(
         kwargs = {
             "neurite_types": neurite_types[mtype],
             "diameter_input_morph": morphology_paths,
-            "diameter_model": partial(diameter_model_function, config=config),
         }
+        if config["models"][0] != "simpler":
+            config["diameter_model"] = partial(diameter_model_function, config=config)
         _data = extract_input.distributions(morphology_paths, **kwargs)
+
         data[neurite_type] = _data[neurite_type]
         data["diameter"] = _data["diameter"]
         data["soma"] = _data["soma"]
