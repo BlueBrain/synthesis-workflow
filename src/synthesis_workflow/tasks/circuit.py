@@ -188,9 +188,15 @@ class BuildCircuit(WorkflowTask):
         mtypes = SynthesisConfig().mtypes
         if not mtypes:
             mtypes = pd.read_csv(mtype_taxonomy_path, sep="\t")["mtype"].to_list()
+        composition = yaml.safe_load(self.input()["composition"].open())["neurons"]
 
         for mtype in mtypes:
-            nrrd_path = Path(CircuitConfig().atlas_path) / f"[cell_density]{mtype.upper()}.nrrd"
+            nrrd_path = Path("")
+            for data in composition:
+                if data["traits"]["mtype"] == mtype:
+                    name = "".join(list(data["density"])[1:-1])
+                    nrrd_path = Path(CircuitConfig().atlas_path) / f"{name}.nrrd"
+
             if not nrrd_path.exists():
                 annotation = get_layer_annotation(
                     {
