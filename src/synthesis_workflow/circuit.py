@@ -1,55 +1,47 @@
 """Functions for slicing mvd3 circuit files to place specific cells only."""
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import yaml
 from brainbuilder.app.cells import _place as place
+from neurocollage.mesh_helper import MeshHelper
 from neurocollage.planes import get_cells_between_planes
 from neurocollage.planes import slice_n_cells
 from neurocollage.planes import slice_per_mtype
 from region_grower.atlas_helper import AtlasHelper
+from trimesh.voxel import VoxelGrid
 from voxcell import CellCollection
 from voxcell.nexus.voxelbrain import LocalAtlas
 
 L = logging.getLogger(__name__)
 
 
-def create_atlas_thickness_mask(atlas_dir):
-    """Create a mask on an atlas to to select voxels with small enough thicknesses values.
+def create_boundary_mask(atlas_dir, region, boundary_thickness=10):
+    """Create a mask on an atlas to to select voxels away from boundary with some voxel distance."""
+    atlas = LocalAtlas(atlas_dir["atlas"])
+    mesh = MeshHelper(atlas_dir, region)
 
-    WARNING: this function can only be used for Isocortex atlas for now.
-    """
-    atlas = LocalAtlas(atlas_dir)
-    brain_regions = atlas.load_data("brain_regions", memcache=True)
-    tolerance = 2.0 * brain_regions.voxel_dimensions[0]
+    region_mask = atlas.get_region_mask(region, memcache=True)
 
-    # Layer thicknesses from J. Defilipe 2017 (unpublished), see Section 5.1.1.4
-    # of the release report "Neocortex Tissue Reconstruction",
-    # https://github.com/BlueBrain/ncx_release_report.git
-    max_thicknesses = [210.639, 190.2134, 450.6398, 242.554, 670.2, 893.62]
+    boundary_mesh = mesh.get_boundary_mesh()
+    data = np.zeros_like(region_mask.raw, dtype=int)
+    data_vg = VoxelGrid(data)
+    # pylint: disable=no-member
+    data[tuple(data_vg.points_to_indices(boundary_mesh.triangles_center).T)] = 1
+    for _ in range(boundary_thickness):
+        data[:, :, :-1] += data[:, :, 1:]
+        data[:, :, 1:] += data[:, :, :-1]
+        data[:, :-1] += data[:, 1:]
+        data[:, 1:] += data[:, :-1]
+        data[:-1] += data[1:]
+        data[1:] += data[:-1]
 
-    isocortex_mask = atlas.get_region_mask("Isocortex", memcache=True).raw
-
-    too_thick = np.full(isocortex_mask.shape, False, dtype=np.bool)
-    for i, max_thickness in enumerate(max_thicknesses, 1):
-        ph = atlas.load_data(f"[PH]{i}", memcache=True)
-        with np.errstate(invalid="ignore"):
-            invalid_thickness = (ph.raw[..., 1] - ph.raw[..., 0]) > (max_thickness + tolerance)
-        too_thick = np.logical_or(too_thick, invalid_thickness)
-
-        L.info(
-            "Layer %s with %s percentage of bad voxels",
-            i,
-            np.round(100 * invalid_thickness[isocortex_mask].mean(), 3),
-        )
-
-    L.info(
-        "%s percentage of bad voxels in total",
-        np.round(100 * too_thick[isocortex_mask].mean(), 3),
-    )
-
-    return brain_regions.with_data(np.logical_and(~too_thick, isocortex_mask).astype(np.uint8))
+    mask = 1 - np.clip(data, 0, 1)
+    region_mask = atlas.get_region_mask(region, memcache=True)
+    mask[~region_mask.raw] = 0
+    return region_mask.with_data(mask.astype(np.uint8))
 
 
 def get_regions_from_composition(cell_composition_path):
@@ -86,7 +78,6 @@ def build_circuit(
     """
     if seed is not None:
         np.random.seed(seed)
-
     return place(
         composition_path=cell_composition_path,
         mtype_taxonomy_path=mtype_taxonomy_path,
@@ -94,7 +85,7 @@ def build_circuit(
         mini_frequencies_path=None,
         atlas_cache=None,
         region=region or get_regions_from_composition(cell_composition_path),
-        mask_dset=mask,
+        mask_dset=Path(mask).resolve().with_suffix("") if mask else None,
         density_factor=density_factor,
         soma_placement="basic",
         atlas_properties=None,

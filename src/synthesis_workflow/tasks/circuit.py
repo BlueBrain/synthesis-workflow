@@ -7,7 +7,6 @@ from pathlib import Path
 import luigi
 import pandas as pd
 import yaml
-from luigi.parameter import OptionalPathParameter
 from luigi.parameter import PathParameter
 from luigi_tools.parameter import RatioParameter
 from luigi_tools.task import ParamRef
@@ -19,7 +18,7 @@ from voxcell import VoxelData
 
 from synthesis_workflow.circuit import build_circuit
 from synthesis_workflow.circuit import circuit_slicer
-from synthesis_workflow.circuit import create_atlas_thickness_mask
+from synthesis_workflow.circuit import create_boundary_mask
 from synthesis_workflow.circuit import slice_circuit
 from synthesis_workflow.tasks.config import AtlasLocalTarget
 from synthesis_workflow.tasks.config import CircuitConfig
@@ -152,6 +151,37 @@ class CreateAtlasPlanes(WorkflowTask):
         return AtlasLocalTarget(f"{self.atlas_planes_path}{suffix}.npz")
 
 
+class CreateBoundaryMask(WorkflowTask):
+    """Create mask at the boundary of the region to prevent placing somata too close to boundary."""
+
+    boundary_thickness = luigi.IntParameter(
+        default=0,
+        description=":int: Thickness to create a mask to prevent placing cells near boundary"
+        ", in units of voxel size.",
+    )
+    mask_path = luigi.Parameter(default="boundary_mask.nrrd")
+
+    def requires(self):
+        """Required input tasks."""
+        return GetSynthesisInputs()
+
+    def run(self):
+        """Actual process of the task."""
+        thickness_mask = create_boundary_mask(
+            {
+                "atlas": CircuitConfig().atlas_path,
+                "structure": self.input().pathlib_path / CircuitConfig().region_structure_path,
+            },
+            CircuitConfig().region,
+            self.boundary_thickness,
+        )
+        thickness_mask.save_nrrd(self.output().path)
+
+    def output(self):
+        """Outputs of the task."""
+        return CircuitLocalTarget(self.mask_path)
+
+
 class BuildCircuit(WorkflowTask):
     """Generate cell positions and me-types from atlas, compositions and taxonomy."""
 
@@ -159,9 +189,6 @@ class BuildCircuit(WorkflowTask):
         default=0.5,
         left_op=luigi.parameter.operator.lt,
         description=":float: The density of positions generated from the atlas.",
-    )
-    mask_path = OptionalPathParameter(
-        default=None, description=":str: Path to save thickness mask (NCx only)."
     )
     seed = luigi.OptionalIntParameter(default=42, description=":int: Pseudo-random generator seed.")
     mtype_taxonomy_file = luigi.Parameter(
@@ -171,18 +198,16 @@ class BuildCircuit(WorkflowTask):
 
     def requires(self):
         """Required input tasks."""
-        return {"synthesis": GetSynthesisInputs(), "composition": GetCellComposition()}
+        tasks = {"synthesis": GetSynthesisInputs(), "composition": GetCellComposition()}
+        if CreateBoundaryMask().boundary_thickness > 0:
+            tasks["boundary"] = CreateBoundaryMask()
+
+        return tasks
 
     def run(self):
         """Actual process of the task."""
         # pylint: disable=no-member
         mtype_taxonomy_path = self.input()["synthesis"].pathlib_path / self.mtype_taxonomy_file
-
-        thickness_mask_path = None
-        if self.mask_path is not None:
-            thickness_mask = create_atlas_thickness_mask(CircuitConfig().atlas_path)
-            thickness_mask.save_nrrd(self.mask_path)
-            thickness_mask_path = self.mask_path.stem
 
         # create uniform densities if they don't exist
         mtypes = SynthesisConfig().mtypes
@@ -196,7 +221,6 @@ class BuildCircuit(WorkflowTask):
                 if data["traits"]["mtype"] == mtype:
                     name = "".join(list(data["density"])[1:-1])
                     nrrd_path = Path(CircuitConfig().atlas_path) / f"{name}.nrrd"
-
             if not nrrd_path.exists():
                 annotation = get_layer_annotation(
                     {
@@ -219,7 +243,9 @@ class BuildCircuit(WorkflowTask):
             mtype_taxonomy_path,
             CircuitConfig().atlas_path,
             self.density_factor,
-            mask=thickness_mask_path,
+            mask=self.input()["boundary"].path
+            if CreateBoundaryMask().boundary_thickness > 0
+            else None,
             seed=self.seed,
             region=CircuitConfig().region,
         )
