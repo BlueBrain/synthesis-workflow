@@ -34,7 +34,6 @@ from synthesis_workflow.tasks.config import RunnerConfig
 from synthesis_workflow.tasks.config import SynthesisConfig
 from synthesis_workflow.tasks.config import ValidationLocalTarget
 from synthesis_workflow.tasks.synthesis import ApplySubstitutionRules
-from synthesis_workflow.tasks.synthesis import BuildMorphsDF
 from synthesis_workflow.tasks.synthesis import BuildSynthesisDistributions
 from synthesis_workflow.tasks.synthesis import BuildSynthesisParameters
 from synthesis_workflow.tasks.synthesis import Synthesize
@@ -120,7 +119,7 @@ class PlotMorphometrics(WorkflowTask):
     def requires(self):
         """Required input tasks."""
         if self.in_atlas:
-            return {"morphs": BuildMorphsDF(), "circuit": ConvertCircuit()}
+            return {"morphs": ApplySubstitutionRules(), "circuit": ConvertCircuit()}
         else:
             return {"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()}
 
@@ -693,7 +692,7 @@ class TrunkValidation(WorkflowTask):
             "parameters": BuildSynthesisParameters(),
         }
         if self.in_atlas:
-            tasks.update({"morphs": BuildMorphsDF(), "circuit": ConvertCircuit()})
+            tasks.update({"morphs": ApplySubstitutionRules(), "circuit": ConvertCircuit()})
         else:
             tasks.update({"vacuum": VacuumSynthesize(), "morphs": ApplySubstitutionRules()})
         return tasks
