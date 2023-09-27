@@ -4,6 +4,7 @@ import pickle
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
+import numpy as np
 
 import luigi
 import pandas as pd
@@ -232,11 +233,15 @@ class BuildCircuit(WorkflowTask):
                     CircuitConfig().region,
                     CircuitConfig().hemisphere,
                 )
-                layer = mtype[1]
-                keys = [k + 1 for k, d in annotation["mapping"].items() if d.endswith(layer)]
                 density_annotation = deepcopy(annotation["annotation"])
-                density_annotation.raw[annotation["annotation"].raw == keys[0]] = 100000
-                density_annotation.raw[annotation["annotation"].raw != keys[0]] = 0
+                density_annotation.raw = np.zeros_like(density_annotation.raw, dtype=float)
+                for data in composition:
+                    if data["traits"]["mtype"] == mtype:
+                        layer = str(data["traits"]["layer"])
+                        keys = [
+                            k + 1 for k, d in annotation["mapping"].items() if d.endswith(layer)
+                        ]
+                        density_annotation.raw[annotation["annotation"].raw == keys[0]] = 100000
                 density_annotation.save_nrrd(str(nrrd_path))
 
         cells = build_circuit(
