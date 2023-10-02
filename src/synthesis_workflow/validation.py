@@ -598,7 +598,14 @@ def _generate_synthetic_random_population(
     return files, y_synth
 
 
-def _get_fit_population(mtype, files, outlier_percentage, tmd_parameters, tmd_distributions):
+def _get_fit_population(
+    mtype,
+    files,
+    outlier_percentage,
+    tmd_parameters,
+    tmd_distributions,
+    neurite_type="apical_dendrite",
+):
     """Get projections and path lengths of a given and a synthetic population."""
     # Load biological neurons
     return_error = (mtype, None, None, None, None, None, None)
@@ -615,8 +622,8 @@ def _get_fit_population(mtype, files, outlier_percentage, tmd_parameters, tmd_di
         return return_error + (f"No fit for mtype='{mtype}'",)
 
     # Get X and Y from biological population
-    x = get_path_distances(input_population)
-    y = get_projections(input_population)
+    x = get_path_distances(input_population, neurite_type)
+    y = get_projections(input_population, neurite_type)
     x_clean, y_clean = clean_outliers(x, y, outlier_percentage)
 
     # Create synthetic neuron population
@@ -645,6 +652,7 @@ def plot_path_distance_fits(
     region=None,
     outlier_percentage=90,
     nb_jobs=-1,
+    neurite_type="apical_dendrite",
 ):
     """Plot path-distance fits."""
     # Read TMD parameters
@@ -688,6 +696,7 @@ def plot_path_distance_fits(
                 outlier_percentage,
                 tmd_parameters[region][mtype],
                 tmd_distributions[region][mtype],
+                neurite_type=neurite_type,
             )
             for mtype, files in file_lists
         ):

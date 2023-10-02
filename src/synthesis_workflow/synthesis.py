@@ -2,6 +2,7 @@
 import logging
 import os
 import re
+from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
@@ -410,17 +411,20 @@ def rescale_morphologies(
     return morphs_df
 
 
-def _fit_population(mtype, file_names):
+def _fit_population(mtype, neurite_type, file_names):
     # Load neurons
     if len(file_names) > 0:
         input_population = load_population(file_names, use_morphio=True)
     else:
-        return (mtype, None, None)
+        return (mtype, neurite_type, None, None)
 
     # Compute slope and intercept
-    slope, intercept = fit_path_distance_to_extent(input_population)
+    try:
+        slope, intercept = fit_path_distance_to_extent(input_population, neurite_type=neurite_type)
+    except IndexError:
+        return (mtype, neurite_type, None, None)
 
-    return mtype, slope, intercept
+    return mtype, neurite_type, slope, intercept
 
 
 def add_scaling_rules_to_parameters(
@@ -469,13 +473,17 @@ def add_scaling_rules_to_parameters(
 
     # Add scaling rules to TMD parameters
     default_rules = scaling_rules.get("default") or {}
-
+    neurite_types_map = defaultdict(list)
     for mtype in tmd_parameters.keys():
         mtype_rules = scaling_rules.get(mtype) or {}
         neurite_types = set(list(default_rules.keys()) + list(mtype_rules.keys()))
         for neurite_type in neurite_types:
             default_limits = default_rules.get(neurite_type) or {}
             limits = mtype_rules.get(neurite_type) or {}
+
+            if "extent_to_target" in limits:
+                neurite_types_map[mtype].append(neurite_type)
+
             _process_scaling_rule(
                 tmd_parameters,
                 mtype,
@@ -508,32 +516,36 @@ def add_scaling_rules_to_parameters(
     morphs_df = pd.read_csv(morphs_df_path)
 
     file_lists = [
-        (mtype, morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
+        (mtype, neurite_type, morphs_df.loc[morphs_df.mtype == mtype, morphology_path].to_list())
         for mtype in scaling_rules.keys()
+        for neurite_type in neurite_types_map[mtype]
         if mtype != "default"
     ]
 
-    L.debug("Number of files: %s", [(t, len(f)) for t, f in file_lists])
+    L.debug("Number of files: %s", [(t, len(f)) for t, _, f in file_lists])
 
     # Fit data and update TMD parameters
-    for mtype, slope, intercept in Parallel(nb_jobs)(
-        delayed(_fit_population)(mtype, file_names) for mtype, file_names in file_lists
+    for mtype, neurite_type, slope, intercept in Parallel(nb_jobs)(
+        delayed(_fit_population)(mtype, neurite_type, file_names)
+        for mtype, neurite_type, file_names in file_lists
     ):
         if slope is None or intercept is None:
             L.debug(
-                "Fitting parameters not found for %s (slope=%s ; intercept=%s)",
+                "Fitting parameters not found for neurite_type %s and %s (slope=%s ; intercept=%s)",
+                neurite_type,
                 mtype,
                 slope,
                 intercept,
             )
             continue
         context = tmd_parameters[mtype].get("context_constraints", {})
-        neurite_type_params = context.get("apical_dendrite", {}).get("extent_to_target", {})
+        neurite_type_params = context.get(neurite_type, {}).get("extent_to_target", {})
         neurite_type_params.update({"slope": slope, "intercept": intercept})
-        context["apical_dendrite"]["extent_to_target"] = neurite_type_params
+        context[neurite_type]["extent_to_target"] = neurite_type_params
         tmd_parameters[mtype]["context_constraints"] = context
         L.debug(
-            "Fitting parameters for %s: slope=%s ; intercept=%s",
+            "Fitting parameters for neurite_type %s and %s: slope=%s ; intercept=%s",
+            neurite_type,
             mtype,
             slope,
             intercept,

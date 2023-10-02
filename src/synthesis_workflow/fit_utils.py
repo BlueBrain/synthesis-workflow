@@ -8,17 +8,21 @@ from scipy.optimize import curve_fit
 from tmd.Population.Population import Population
 
 
-def _get_tmd_feature(input_population: Population, feature: str) -> np.array:
+def _get_tmd_feature(
+    input_population: Population, feature: str, neurite_type: str = "apical_dendrite"
+) -> np.array:
     """Returns a list of features using tmd."""
     f = [
-        tmd.methods.get_persistence_diagram(n.apical_dendrite[0], feature=feature)
+        tmd.methods.get_persistence_diagram(getattr(n, neurite_type)[0], feature=feature)
         for n in input_population.neurons
     ]
 
     return np.array([np.max(p) for p in f])
 
 
-def get_path_distances(input_population: Population) -> np.array:
+def get_path_distances(
+    input_population: Population, neurite_type: str = "apical_dendrite"
+) -> np.array:
     """Returns path distances using tmd.
 
     Args:
@@ -27,10 +31,12 @@ def get_path_distances(input_population: Population) -> np.array:
     Returns:
         list of path distances
     """
-    return _get_tmd_feature(input_population, "path_distances")
+    return _get_tmd_feature(input_population, "path_distances", neurite_type)
 
 
-def get_projections(input_population: Population) -> np.array:
+def get_projections(
+    input_population: Population, neurite_type: str = "apical_dendrite"
+) -> np.array:
     """Returns projections using tmd.
 
     Args:
@@ -39,7 +45,7 @@ def get_projections(input_population: Population) -> np.array:
     Returns:
         list of projections
     """
-    return _get_tmd_feature(input_population, "projection")
+    return _get_tmd_feature(input_population, "projection", neurite_type)
 
 
 def fit_function(x: float, slope: float) -> float:
@@ -74,7 +80,9 @@ def clean_outliers(
 
 
 def fit_path_distance_to_extent(
-    input_population: Population, outlier_percentage: int = 90
+    input_population: Population,
+    outlier_percentage: int = 90,
+    neurite_type: str = "apical_dendrite",
 ) -> Tuple[float, float]:
     """Returns slope and intercept of a linear fit.
 
@@ -85,12 +93,13 @@ def fit_path_distance_to_extent(
     Args:
         input_population: the population of neurons
         outlier_percentage: the percentage used to find and remove outliers
+        neurite_type: neurite_type to make the fit
 
     Returns: slope and intercept of the fit
     """
     # Compute path distances, projections using tmd
-    x = get_projections(input_population)
-    y = get_path_distances(input_population)
+    x = get_projections(input_population, neurite_type=neurite_type)
+    y = get_path_distances(input_population, neurite_type=neurite_type)
 
     # Clean data
     x_clean, y_clean = clean_outliers(x, y, outlier_percentage)
