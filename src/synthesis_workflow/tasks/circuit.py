@@ -4,9 +4,9 @@ import pickle
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
-import numpy as np
 
 import luigi
+import numpy as np
 import pandas as pd
 import yaml
 from luigi.parameter import PathParameter

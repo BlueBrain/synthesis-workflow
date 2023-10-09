@@ -1,2 +1,2 @@
 """Package version."""
-VERSION = "1.2.1.dev1"
+VERSION = "1.2.2.dev0"

@@ -1,26 +1,26 @@
 Synthesis methodology
 =====================
 
-This page presents the scientific procedure used to synthesize the cells.
+This page presents the scientific procedure to follow in order to synthesize morphologies.
 
 Overview
 --------
 
 Production workflow
 ~~~~~~~~~~~~~~~~~~~
+For specific mtypes and brain regions, the standard procedure to synthesize morphologiesis the following:
 
-Basically, the workflow used in BBP to generate the cell morphologies is the following:
+* collect biological data via an at least curated morphology release with the code
+  available at https://github.com/BlueBrain/morphology-workflows.
+* run this workflow and change default parameters via files in the git repository SynthDB
+  available at https://bbpgitlab.epfl.ch/neuromath/synthdb.
+* once the parametrisation is satisfactory, save the parameter and distributions json
+  files on the SynthDB database.
+* these files are then available in SynthDB to run production workflows, such as circuit-build
 
-* collect biological data,
-* calibrate the models on these data,
-* synthesized the cells according to the calibration parameters.
 
-This package aims at running the calibration process, then calling each part of the
-production workflow on a small use case and computing some validation metrics. Once the
-calibration parameters are correct, the actual production workflow can be run using them.
-
-Internal workflow
-~~~~~~~~~~~~~~~~~
+Internal workflows
+~~~~~~~~~~~~~~~~~~
 
 The main workflow that should be used is: :py:class:`tasks.workflows.ValidateSynthesis`.
 This workflow runs all the required tasks to calibrate and validate the synthesis models.
@@ -29,8 +29,18 @@ It is divided in several subtasks (more details on these tasks are given in
 
 .. graphviz:: autoapi/tasks/workflows/ValidateSynthesis.dot
 
+
+If no information on the atlas is available, one can instead run the simpler vacuum
+synthesis workflow: :py:class:`tasks.workflows.ValidateVaccumSynthesis`. It is also
+divided in several subtasks (more details on these tasks are given in
+:doc:`autoapi/tasks/index`):
+
+.. graphviz:: autoapi/tasks/workflows/ValidateSynthesis.dot
+
 Calibration parameters
 ----------------------
+
+!!! Discuss custom_parameters.csv file here.
 
 The calibration step should create the two parameter files used by
 :py:class:`placement_algorithm.app.synthesize_morphologies.Master`:

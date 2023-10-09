@@ -4,8 +4,8 @@ Synthesis Workflow
 This project contains several workflows used for neuron synthesis and the validation of this process.
 It is divided into two packages:
 
-* **synthesis-workflow**, which contains the workflow tasks and tools.
-* **MorphVal**, which is a library used for morphology validation and can be used as a standalone.
+* **synthesis-workflow**, the main package, which contains the workflow tasks and tools.
+* **MorphVal**, which is a legacy library used for morphology validation.
 
 The complete documentation of this project is available here: `<https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow/latest/index.html>`_
 
