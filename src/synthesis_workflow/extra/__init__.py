@@ -1,1 +1,1 @@
-"""Extra functions for valiation, etc..."""
+"""Extra functions for validation, etc..."""

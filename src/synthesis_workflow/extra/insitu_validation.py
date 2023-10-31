@@ -234,6 +234,7 @@ def plot_layer_collage(
     morph_path = Path(morphology_path)
     layer_annotation, _ = get_layer_tags(atlas_path, region_structure_path)
     atlas = AtlasHelper(Atlas().open(atlas_path), region_structure_path=region_structure_path)
+    region_depths = atlas.compute_region_depth(region)
 
     cmap = matplotlib.colors.ListedColormap(["C0", "C1", "C2", "C3", "C4", "C5", "C6"])
     with PdfPages(pdf_name) as pdf:
@@ -256,8 +257,7 @@ def plot_layer_collage(
                 points = np.array(points)
                 _points = points + pos[np.newaxis]
                 layers = layer_annotation.lookup(_points, outer_value=0)
-
-                depth = atlas.depths[region].lookup(pos)
+                depth = region_depths.lookup(pos)
 
                 rotation = atlas.orientations.lookup(pos)[0]
 
