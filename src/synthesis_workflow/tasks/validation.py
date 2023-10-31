@@ -151,7 +151,7 @@ class PlotMorphometrics(WorkflowTask):
         return ValidationLocalTarget(self.morphometrics_path)
 
 
-@copy_params(nb_jobs=ParamRef(RunnerConfig))
+@copy_params(nb_jobs=ParamRef(RunnerConfig), region=ParamRef(CircuitConfig))
 class PlotDensityProfiles(WorkflowTask):
     """Plot density profiles of neurites in an atlas.
 
@@ -200,7 +200,7 @@ class PlotDensityProfiles(WorkflowTask):
         plot_density_profiles(
             circuit,
             self.n_cells,
-            self.in_atlas,
+            self.region,
             self.sample_distance,
             self.output().path,
             self.nb_jobs,

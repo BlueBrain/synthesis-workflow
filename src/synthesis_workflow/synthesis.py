@@ -13,6 +13,7 @@ import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 from morphio.mut import Morphology
+from morphio import SectionType
 from neuroc.scale import ScaleParameters
 from neuroc.scale import scale_section
 from neurom import load_morphology
@@ -33,7 +34,12 @@ matplotlib.use("Agg")
 
 
 def _get_morph_class(path):
-    return "PC" if has_apical_dendrite(load_morphology(path)) else "IN"
+    m = load_morphology(path)
+
+    if len(["" for neurite in m.root_sections if neurite.type == SectionType.basal_dendrite]) == 1:
+        raise ValueError(f"{path} bas a single basal, it will break synthesis, we stop here")
+
+    return "PC" if has_apical_dendrite(m) else "IN"
 
 
 def get_neurite_types(morphs_df):
@@ -44,7 +50,7 @@ def get_neurite_types(morphs_df):
         morph_class = list(set(_df["morph_class"]))
 
         if len(morph_class) > 1:
-            raise ValueError("f{mtype} has not consistent morph_class, we stop here")
+            raise ValueError(f"{mtype} has not consistent morph_class, we stop here, see {_df}")
 
         if morph_class[0] == "IN":
             neurite_types[mtype] = ["basal_dendrite"]
