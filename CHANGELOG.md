@@ -1,12 +1,32 @@
 # Changelog
 
+## [synthesis-workflow-v1.1.0](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v1.0.2...synthesis-workflow-v1.1.0)
+
+> 3 November 2023
+
+### Build
+
+- (deps) Relax NeuroTS and region-grower versions (Adrien Berchet - [a40edb4](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/a40edb4d05321925b7ca98f14f6f87d5bb5c9aca))
+- Bump region-grower (Adrien Berchet - [4c0914a](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/4c0914a41204540d027c6c6b71ddfc7bb9d78dbe))
+- Relax matplotlib version (Adrien Berchet - [113fc62](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/113fc62531c33f64fc6fe4bef934e489fcef3a54))
+
+### New Features
+
+- Add boundary thickness mask (Alexis Arnaudon - [967cdcb](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/967cdcb0ff628cacb556a466af5753002b1bb0b1))
+- Extent scaling for basals (Alexis Arnaudon - [e1def8a](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/e1def8a057721cf350715353743786ad39e1c153))
+- Use default diametrizer (Alexis Arnaudon - [a854099](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/a8540997c8e74dd089bb49632a4a8f08b9d0d699))
+
+### Fixes
+
+- Use cell_composition for nrrd density filenames (Alexis Arnaudon - [33fac21](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/33fac21eeeb270c4a4cbe14542f88cd15ad5d603))
+
 ## [synthesis-workflow-v1.0.2](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/synthesis-workflow-v1.0.1...synthesis-workflow-v1.0.2)
 
 > 12 September 2023
 
 ### Build
 
-- \(deps\)Constrain NeuroTS and region-grower versions (Adrien Berchet - [31e9f97](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/31e9f976789dfe4c3f0443fcc8d779079839f08f))
+- (deps) Constrain NeuroTS and region-grower versions (Adrien Berchet - [31e9f97](https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/31e9f976789dfe4c3f0443fcc8d779079839f08f))
 
 ### New Features
 
