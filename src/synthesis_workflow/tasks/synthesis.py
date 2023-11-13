@@ -64,6 +64,10 @@ class BuildMorphsDF(WorkflowTask):
     apical_points_path = luigi.OptionalParameter(
         default=None, description=":str: Path to the apical points file (JSON)."
     )
+    neurite_selection_path = luigi.OptionalPathParameter(
+        default=None,
+        description=":path: Path to a .csv file with use_* and (morph_name) columns to select only subsect of neurites.",
+    )
 
     def requires(self):
         """Required input tasks."""
@@ -78,6 +82,11 @@ class BuildMorphsDF(WorkflowTask):
         morphs_df = load_neurondb_to_dataframe(
             neurondb_path, self.morphology_dirs, self.apical_points_path
         )
+        if self.neurite_selection_path is not None:
+            neurite_selection_df = pd.read_csv(self.neurite_selection_path).set_index("morph_name")
+            for col in neurite_selection_df.columns:
+                if col.startswith("use_"):
+                    morphs_df[col] = neurite_selection_df.loc[morphs_df["name"], col].to_list()
 
         # Remove possibly duplicated morphologies
         morphs_df = morphs_df.drop_duplicates(subset=["name"])

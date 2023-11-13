@@ -28,6 +28,7 @@ from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from morphio.mut import Morphology
 from neurom import load_morphologies
+from neurom import load_morphology
 from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.check.morphology_checks import has_apical_dendrite
@@ -403,7 +404,7 @@ def _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance):
 
     point_depths = defaultdict(list)
     for gid in gids:
-        morphology = circuit.morph.get(gid, transform=True, source="ascii")
+        morphology = load_morphology(circuit.morph.get(gid, transform=True, source="ascii"))
         point_depth_tmp = sample_morph_voxel_values(
             morphology, sample_distance, voxeldata, out_of_bounds_value
         )
