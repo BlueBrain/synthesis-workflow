@@ -34,12 +34,7 @@ matplotlib.use("Agg")
 
 
 def _get_morph_class(path):
-    m = load_morphology(path)
-
-    if len(["" for neurite in m.root_sections if neurite.type == SectionType.basal_dendrite]) == 1:
-        raise ValueError(f"{path} bas a single basal, it will break synthesis, we stop here")
-
-    return "PC" if has_apical_dendrite(m) else "IN"
+    return "PC" if has_apical_dendrite(load_morphology(path)) else "IN"
 
 
 def get_neurite_types(morphs_df):
@@ -98,7 +93,6 @@ def _build_distributions_single_mtype(
             _morphs_df = _morphs_df.loc[morphs_df.use_apical]
         if neurite_type == "basal_dendrite" and "use_basal" in morphs_df.columns:
             _morphs_df = _morphs_df.loc[morphs_df.use_basal]
-
         morphology_paths = _morphs_df[morphology_path].to_list()
 
         config["neurite_types"] = neurite_types[mtype]
