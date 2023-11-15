@@ -143,6 +143,7 @@ class ValidateSynthesis(WorkflowWrapperTask):
         if self.with_path_distance_fits:
             tasks.append(PlotPathDistanceFits())
         if self.with_scale_statistics:
+            Synthesize().debug_region_grower_scales = True
             tasks.append(PlotScales())
         if self.with_morphology_validation_reports:
             tasks.append(MorphologyValidationReports())

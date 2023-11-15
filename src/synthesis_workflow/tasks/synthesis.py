@@ -168,6 +168,7 @@ class GetDefaultParameters(WorkflowTask):
         if SynthesisConfig().axon_method != "no_axon":
             for neurite_type in neurite_types.values():
                 neurite_type.append("axon")
+
         region = CircuitConfig().region
         tmd_parameters = {region: {}}
         for mtype in tqdm(mtypes):
@@ -571,6 +572,7 @@ class Synthesize(WorkflowTask):
             "nb_processes": self.nb_jobs,
             "region_structure": self.input()["synthesis_input"].pathlib_path
             / CircuitConfig().region_structure_path,
+            "synthesize_axons": SynthesisConfig().axon_method == "synthesis",
         }
         if SynthesisConfig().axon_method == "reconstructed" and self.apply_jitter:
             kwargs["scaling_jitter_std"] = self.scaling_jitter_std

@@ -33,11 +33,11 @@ from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.check.morphology_checks import has_apical_dendrite
 from neurom.core.dataformat import COLS
+from morph_tool.resampling import resample_linear_density
 from neurots import NeuronGrower
 from neurots.extract_input.from_neurom import trunk_vectors
 from neurots.generate.orientations import get_probability_function
 from region_grower.modify import scale_target_barcode
-from scipy.ndimage import correlate
 from tmd.io.io import load_population
 from voxcell import CellCollection
 
@@ -313,46 +313,6 @@ def plot_morphometrics(
         )
 
 
-def iter_positions(morph, sample_distance, neurite_filter=None):
-    """Iterator for positions in space of points every <sample_distance> um.
-
-    Assumption about segment linearity is that curvature between the start and end of segments
-    is negligible.
-
-    Args:
-        morph (neurom.FstNeuron): morphology
-        sample_distance (int): points sampling distance (in um)
-        neurite_filter: filter neurites, see ``neurite_filter`` of ``neurom.iter_sections()``
-
-    Yields:
-        sampled points for the neurites (each point is a (3,) numpy array).
-    """
-    section_offsets = {}
-
-    for section in neurom.iter_sections(morph, neurite_filter=neurite_filter):
-        if section.parent is None:
-            parent_section_offset = 0
-        else:
-            parent_section_offset = section_offsets[section.parent.id]
-        segment_offset = parent_section_offset
-        for segment in neurom.iter_segments(section):
-            segment_len = neurom.morphmath.segment_length(segment)
-            if segment_offset + segment_len < sample_distance:
-                segment_offset += segment_len
-            elif segment_offset + segment_len == sample_distance:
-                yield segment[1][COLS.XYZ]
-                segment_offset = 0
-            else:
-                offsets = np.arange(sample_distance - segment_offset, segment_len, sample_distance)
-                for offset in offsets:
-                    yield neurom.morphmath.linear_interpolate(*segment, offset / segment_len)
-                segment_offset = segment_len - offsets[-1]
-                if segment_offset == sample_distance:
-                    segment_offset = 0
-                    yield segment[1][COLS.XYZ]
-        section_offsets[section.id] = segment_offset
-
-
 def sample_morph_voxel_values(
     morphology,
     sample_distance,
@@ -380,15 +340,15 @@ def sample_morph_voxel_values(
 
     output = {}
     for neurite_type in neurite_types:
-        points = list(
-            iter_positions(
-                morphology,
-                sample_distance=sample_distance,
-                neurite_filter=lambda n, nt=neurite_type: n.type == nt,
-            )
-        )
+        morph = resample_linear_density(morphology, 1 / sample_distance)
+        points = []
+        for section in morph.iter():
+            if section.type == neurite_type:
+                points += section.points.tolist()
+
         indices = voxel_data.positions_to_indices(points, False)
-        out_of_bounds = np.any(indices == -1, axis=1)
+        points = np.array(points)
+        out_of_bounds = np.any(indices == voxel_data.OUT_OF_BOUNDS, axis=1)
         within_bounds = ~out_of_bounds
         values = np.zeros(len(points), dtype=voxel_data.raw.dtype)
         values[within_bounds] = voxel_data.raw[tuple(indices[within_bounds].transpose())]
@@ -463,101 +423,25 @@ def _plot_density_profile(
     """Plot density profile of an mtype."""
     fig = plt.figure()
     ax = plt.gca()
-    try:
-        if isinstance(circuit, Circuit):
-            _plot_layers(x_pos, circuit.atlas, ax)
-            plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
-            ax.legend(loc="best")
-        elif isinstance(circuit, VacuumCircuit):
-            plot_df = _get_vacuum_depths_df(circuit, mtype)
-        else:
-            plot_df = None
+    if isinstance(circuit, Circuit):
+        _plot_layers(x_pos, circuit.atlas, ax)
+        plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
+        ax.legend(loc="best")
+    elif isinstance(circuit, VacuumCircuit):
+        plot_df = _get_vacuum_depths_df(circuit, mtype)
 
-        with DisableLogger():
-            sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
-    except Exception:  # pylint: disable=broad-except
-        ax.text(
-            0.5,
-            0.5,
-            "ERROR WHEN GETTING POINT DEPTHS",
-            horizontalalignment="center",
-            verticalalignment="center",
-            transform=ax.transAxes,
-        )
+    with DisableLogger():
+        sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
     fig.suptitle(mtype)
     return fig
 
 
-def _spherical_filter(radius):
-    filt_size = radius * 2 + 1
-    sphere = np.zeros((filt_size, filt_size, filt_size))
-    center = np.array([radius, radius, radius])
-    posns = np.transpose(np.nonzero(sphere == 0))
-    in_sphere = posns[np.linalg.norm(posns - center, axis=-1) <= radius]
-    sphere[tuple(in_sphere.transpose())] = 1
-    return sphere
-
-
-def relative_depth_volume(
-    atlas,
-    top_layer="1",
-    bottom_layer="6",  # pylint: disable=too-many-locals
-    in_region="Isocortex",
-    relative=True,
-):
-    """Return volumetric data of relative cortical depth at voxel centers.
-
-    The relative cortical depth is equal to <distance from pia> / <total_cortex_thickness>.
-    Outside of the region `in_region` relative depth will be estimated, i.e. extrapolated from the
-    internal relative depth.
-    The `in_region` is the region within which to use the relative depth-values outside this
-    region are estimated.
-    """
-    y = atlas.load_data("[PH]y")
-    top = atlas.load_data(f"[PH]{top_layer}").raw[..., 1]
-    bottom = atlas.load_data(f"[PH]{bottom_layer}").raw[..., 0]
-    thickness = top - bottom
-    if relative:
-        reldepth = (top - y.raw) / thickness
-    else:
-        reldepth = y.raw
-    voxel_size = y.voxel_dimensions[0]
-    if in_region is None:
-        raise ValueError("in_region should not be None")
-
-    region = atlas.get_region_mask(in_region).raw
-    to_filter = np.zeros(region.shape)
-    to_filter[np.logical_and(region, reldepth < 0.5)] = -1
-    to_filter[np.logical_and(region, reldepth >= 0.5)] = 1
-    max_dist = 5  # voxels
-    for voxels_distance in range(max_dist, 0, -1):
-        filt = _spherical_filter(voxels_distance)
-
-        num_voxels_in_range = correlate(to_filter, filt)
-        # we get the estimated thickness by normalizing the filtered thickness
-        # by the number of voxels that contributed
-        filtered_thickness = correlate(region * np.nan_to_num(thickness), filt) / np.abs(
-            num_voxels_in_range
-        )
-        in_range_below = np.logical_and(num_voxels_in_range > 0.5, ~region)
-        in_range_above = np.logical_and(num_voxels_in_range < -0.5, ~region)
-        max_distance_from_region = voxels_distance * voxel_size
-        reldepth[in_range_below] = 1 + (
-            max_distance_from_region / filtered_thickness[in_range_below]
-        )
-        reldepth[in_range_above] = -(max_distance_from_region / filtered_thickness[in_range_above])
-    return y.with_data(reldepth)
-
-
 def plot_density_profiles(circuit, sample, region, sample_distance, output_path, nb_jobs=-1):
-    """Plot density profiles for all mtypes.
-
-    WIP function, waiting on complete atlas to update.
-    """
+    """Plot density profiles for all mtypes."""
     if not region or region == "in_vacuum":
         voxeldata = None
     else:
-        voxeldata = relative_depth_volume(circuit.atlas, in_region=region, relative=False)
+        voxeldata = circuit.atlas.load_data("[PH]y")
     x_pos = 0
 
     ensure_dir(output_path)
@@ -622,7 +506,7 @@ def _get_fit_population(
     # Load biological neurons
     return_error = (mtype, None, None, None, None, None, None)
     if len(files) > 0:
-        input_population = load_population(files)
+        input_population = load_population(files, use_morphio=True)
     else:
         return return_error + (f"No file to load for mtype='{mtype}'",)
     if (
@@ -833,17 +717,17 @@ def plot_scale_statistics(mtypes, scale_data, cols, output_dir="scales", dpi=100
             mtypes = sorted(scale_data["mtype"].unique())
 
         for col in cols:
-            fig = plt.figure()
-            ax = plt.gca()
-            scale_data.loc[scale_data["mtype"].isin(mtypes), ["mtype", col]].boxplot(
-                by="mtype", vert=False, ax=ax
-            )
+            data = scale_data.loc[scale_data["mtype"].isin(mtypes), ["mtype", col]]
+            if all(data[col]):
+                fig = plt.figure()
+                ax = plt.gca()
+                data.boxplot(by="mtype", vert=False, ax=ax)
 
-            ax.grid(True)
-            fig.suptitle("")
-            with DisableLogger():
-                pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
-            plt.close(fig)
+                ax.grid(True)
+                fig.suptitle("")
+                with DisableLogger():
+                    pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
+                plt.close(fig)
 
 
 def mvs_score(data1, data2, percentile=10):

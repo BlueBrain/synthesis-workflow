@@ -94,7 +94,7 @@ def _build_distributions_single_mtype(
             _morphs_df = _morphs_df.loc[morphs_df.use_apical]
         if neurite_type == "basal_dendrite" and "use_basal" in morphs_df.columns:
             _morphs_df = _morphs_df.loc[morphs_df.use_basal]
-        print(_morphs_df)
+
         morphology_paths = _morphs_df[morphology_path].to_list()
 
         config["neurite_types"] = neurite_types[mtype]
