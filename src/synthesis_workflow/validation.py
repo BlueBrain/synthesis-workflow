@@ -34,6 +34,7 @@ from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.check.morphology_checks import has_apical_dendrite
 from neurom.core.dataformat import COLS
+from morph_tool.resampling import resample_linear_density
 from neurots import NeuronGrower
 from neurots.extract_input.from_neurom import trunk_vectors
 from neurots.generate.orientations import get_probability_function
