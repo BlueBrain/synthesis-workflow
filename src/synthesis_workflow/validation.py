@@ -26,6 +26,7 @@ from joblib import Parallel
 from joblib import delayed
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
+from morph_tool.resampling import resample_linear_density
 from morphio.mut import Morphology
 from neurom import load_morphologies
 from neurom import load_morphology
@@ -33,7 +34,6 @@ from neurom.apps import morph_stats
 from neurom.apps.morph_stats import extract_dataframe
 from neurom.check.morphology_checks import has_apical_dendrite
 from neurom.core.dataformat import COLS
-from morph_tool.resampling import resample_linear_density
 from neurots import NeuronGrower
 from neurots.extract_input.from_neurom import trunk_vectors
 from neurots.generate.orientations import get_probability_function

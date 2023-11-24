@@ -66,7 +66,8 @@ class BuildMorphsDF(WorkflowTask):
     )
     neurite_selection_path = luigi.OptionalPathParameter(
         default=None,
-        description=":path: Path to a .csv file with use_* and (morph_name) columns to select only subsect of neurites.",
+        description=""":path: Path to a .csv file with use_* and (morph_name) columns to select
+        only subsect of neurites.""",
     )
 
     def requires(self):
