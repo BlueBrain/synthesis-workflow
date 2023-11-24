@@ -13,7 +13,6 @@ import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 from morphio.mut import Morphology
-from morphio import SectionType
 from neuroc.scale import ScaleParameters
 from neuroc.scale import scale_section
 from neurom import load_morphology
