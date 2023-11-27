@@ -110,7 +110,7 @@ def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_folder, morphology_path
             for gid in ids:
                 morphology = load_morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
                 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-                for ax, plane in zip(axes, ["xy", "xz", "zy"]):
+                for ax, plane in zip(axes, ["xy", "xz", "yz"]):
                     matplotlib_impl.plot_morph(
                         morphology, ax, plane=plane, realistic_diameters=True, soma_outline=False
                     )
