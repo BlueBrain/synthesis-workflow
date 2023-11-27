@@ -108,8 +108,8 @@ class PlotVacuumMorphologies(WorkflowTask):
         vacuum_synth_morphology_path (str): Column name to use from the morphology DataFrame.
     """
 
-    pdf_filename = PathParameter(
-        default="vacuum_morphologies.pdf", description=":str: Path to the output file."
+    pdf_folder = PathParameter(
+        default="vacuum_morphologies", description=":str: Path to the output file."
     )
 
     def requires(self):
@@ -121,10 +121,10 @@ class PlotVacuumMorphologies(WorkflowTask):
         vacuum_synth_morphs_df = pd.read_csv(self.input()["out_morphs_df"].path)
         plot_vacuum_morphologies(
             vacuum_synth_morphs_df,
-            self.output().path,
+            self.output().pathlib_path,
             self.vacuum_synth_morphology_path,
         )
 
     def output(self):
         """Outputs of the task."""
-        return ValidationLocalTarget(self.pdf_filename)
+        return ValidationLocalTarget(self.pdf_folder)

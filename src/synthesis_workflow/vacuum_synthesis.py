@@ -1,7 +1,4 @@
 """Functions for synthesis in vacuum to be used by luigi tasks."""
-
-import itertools
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -103,31 +100,23 @@ def grow_vacuum_morphologies(
     return vacuum_synth_morphs_df
 
 
-def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_filename, morphology_path):
-    """Plot synthesized morphologies on top of each others."""
+def plot_vacuum_morphologies(vacuum_synth_morphs_df, pdf_folder, morphology_path):
+    """Plot synthesized morphologies."""
     # pylint: disable=cell-var-from-loop
-    with PdfPages(pdf_filename) as pdf:
-        for mtype in tqdm(sorted(vacuum_synth_morphs_df.mtype.unique())):
+    pdf_folder.mkdir(exist_ok=True, parents=True)
+    for mtype in tqdm(sorted(vacuum_synth_morphs_df.mtype.unique())):
+        with PdfPages(pdf_folder / f"morphologies_{mtype}.pdf") as pdf:
             ids = vacuum_synth_morphs_df[vacuum_synth_morphs_df.mtype == mtype].index
-            if len(ids) <= 5:
-                sqrt_n = len(ids)
-                sqrt_m = 1
-            else:
-                sqrt_n = int(np.sqrt(len(ids)) + 1)
-                sqrt_m = sqrt_n
-            plt.figure()
-            ax = plt.gca()
-            for gid, (n, m) in zip(ids, itertools.product(range(sqrt_n), range(sqrt_m))):
+            for gid in ids:
                 morphology = load_morphology(vacuum_synth_morphs_df.loc[gid, morphology_path])
-                matplotlib_impl.plot_morph(
-                    morphology.transform(lambda p: p + np.array([500 * n, 500 * m, 0])),
-                    ax,
-                    realistic_diameters=True,
-                    soma_outline=False,
-                )
-            ax.set_title(mtype)
-            plt.axis("equal")
-            plt.tight_layout()
-            with DisableLogger():
-                pdf.savefig()
-            plt.close()
+                fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+                for ax, plane in zip(axes, ["xy", "xz", "yz"]):
+                    matplotlib_impl.plot_morph(
+                        morphology, ax, plane=plane, realistic_diameters=True, soma_outline=False
+                    )
+                    ax.set_title(plane)
+                    ax.axis("equal")
+                plt.tight_layout()
+                with DisableLogger():
+                    pdf.savefig()
+                plt.close()
