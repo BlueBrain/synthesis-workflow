@@ -44,12 +44,11 @@ def get_neurite_types(morphs_df):
         morph_class = list(set(_df["morph_class"]))
 
         if len(morph_class) > 1:
-            raise ValueError(f"{mtype} has not consistent morph_class, we stop here, see {_df}")
+            L.warning(f"{mtype} has not consistent morph_class, we take PC if apical, see {_df}")
 
-        if morph_class[0] == "IN":
-            neurite_types[mtype] = ["basal_dendrite"]
-        if morph_class[0] == "PC":
-            neurite_types[mtype] = ["basal_dendrite", "apical_dendrite"]
+        neurite_types[mtype] = ["basal_dendrite"]
+        if "PC" in morph_class:
+            neurite_types[mtype] += ["apical_dendrite"]
     return neurite_types
 
 
