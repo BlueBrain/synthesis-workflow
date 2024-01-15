@@ -1,61 +1,61 @@
 etype,layer,morph_class,mtype,region,subregion,synapse_class,x,y,z,orientation,synth_morphology_path,name
-cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-163.2438129952103,743.5864925265627,-10.807664498432814,"[[1. 0. 0.]
+cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-673.6677623262849,702.0650999465729,475.8378653836141,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/e3e70682c2094cac629f6fbed82c07cd.asc,e3e70682c2094cac629f6fbed82c07cd
-cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,772.9990562424057,617.1629677261441,-247.89633937958703,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/cd613e30d8f16adf91b7584a2265b1f5.asc,cd613e30d8f16adf91b7584a2265b1f5
-bNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,9.394051075844118,657.5946495556179,692.9296197576214,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/d95bafc8f2a4d27bdcf4bb99f4bea973.asc,d95bafc8f2a4d27bdcf4bb99f4bea973
-cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,106.9166995455139,769.7428773144563,45.3542682678069,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/216363698b529b4a97b750923ceb3ffd.asc,216363698b529b4a97b750923ceb3ffd
-cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,115.89695836455212,711.0375141164304,-734.3670410534726,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/b8a1abcd1a6916c74da4f9fc3c6da5d7.asc,b8a1abcd1a6916c74da4f9fc3c6da5d7
-bNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,491.9482613744674,671.4241299549111,-600.1152993432133,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/5bc8fbbcbde5c0994164d8399f767c45.asc,5bc8fbbcbde5c0994164d8399f767c45
-cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-7.191870653440901,670.4414401923533,-696.8161070468692,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/14a03569d26b949692e5dfe8cb1855fe.asc,14a03569d26b949692e5dfe8cb1855fe
 cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,161.55595642838443,612.3819982849442,-815.1991770677765,"[[1. 0. 0.]
  [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/cd613e30d8f16adf91b7584a2265b1f5.asc,cd613e30d8f16adf91b7584a2265b1f5
+cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-294.19708396761234,643.4416625558121,31.17958819941032,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/d95bafc8f2a4d27bdcf4bb99f4bea973.asc,d95bafc8f2a4d27bdcf4bb99f4bea973
+cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-586.452593577755,729.828232595603,-343.00350892987353,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/216363698b529b4a97b750923ceb3ffd.asc,216363698b529b4a97b750923ceb3ffd
+bNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,9.394051075844118,657.5946495556179,692.9296197576214,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/b8a1abcd1a6916c74da4f9fc3c6da5d7.asc,b8a1abcd1a6916c74da4f9fc3c6da5d7
+cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,115.89695836455212,711.0375141164304,-734.3670410534726,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/5bc8fbbcbde5c0994164d8399f767c45.asc,5bc8fbbcbde5c0994164d8399f767c45
+bNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-85.05516953420056,686.8126057368214,316.2492934676375,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/14a03569d26b949692e5dfe8cb1855fe.asc,14a03569d26b949692e5dfe8cb1855fe
+cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,216.46941564979124,762.1478401499763,657.7228588604169,"[[1. 0. 0.]
+ [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/6513270e269e0d37f2a74de452e6b438.asc,6513270e269e0d37f2a74de452e6b438
-bNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,759.0872761248174,657.432524884958,-134.6799180142866,"[[1. 0. 0.]
+bNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,231.19449954796005,739.8221062216091,-779.0156251024878,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/6018366cf658f7a75ed34fe53a096533.asc,6018366cf658f7a75ed34fe53a096533
-cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-117.90067701520638,709.7101275793061,483.7944907498804,"[[1. 0. 0.]
+cNAC,1,INT,L1_DAC,mc0;1,mc0;1,INH,-319.3806010953915,670.3888583540366,810.0226887312303,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/4462ebfc5f915ef09cfbac6e7687a66e.asc,4462ebfc5f915ef09cfbac6e7687a66e
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,724.5367209852843,442.0539466680098,-344.26312086760834,"[[1. 0. 0.]
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-291.8898610012004,440.7241171413807,123.2234142170944,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/7b89296c6dcbac5008577eb1924770d3.asc,7b89296c6dcbac5008577eb1924770d3
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,713.2487634757983,405.3427181786825,172.55943642105785,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/db5b5fab8f4d3e27dda1494c73cf256d.asc,db5b5fab8f4d3e27dda1494c73cf256d
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-581.2869108249156,490.3983954928237,54.38059500773261,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/87751d4ca8501e2c44dcda6a797d76de.asc,87751d4ca8501e2c44dcda6a797d76de
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-96.46375642445082,443.0402439508061,851.0016852318251,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/e8d79f49af6d114c4a6f188a424e617b.asc,e8d79f49af6d114c4a6f188a424e617b
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,169.69972417249892,477.8695395941103,477.7407561848752,"[[1. 0. 0.]
- [0. 1. 0.]
- [0. 0. 1.]]",synthesis/synthesized_morphologies/c15521b1b3dca50a9daa37e51b591d75.asc,c15521b1b3dca50a9daa37e51b591d75
 cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,69.00250201912263,469.9622054250517,-567.2279598442881,"[[1. 0. 0.]
  [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/db5b5fab8f4d3e27dda1494c73cf256d.asc,db5b5fab8f4d3e27dda1494c73cf256d
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-272.71780975755337,437.0852799217888,419.7054280185639,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/87751d4ca8501e2c44dcda6a797d76de.asc,87751d4ca8501e2c44dcda6a797d76de
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-42.24570511686238,495.9433340833425,364.5570244456003,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/e8d79f49af6d114c4a6f188a424e617b.asc,e8d79f49af6d114c4a6f188a424e617b
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,707.9522082586757,408.9603034238605,-132.7952192646086,"[[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]]",synthesis/synthesized_morphologies/c15521b1b3dca50a9daa37e51b591d75.asc,c15521b1b3dca50a9daa37e51b591d75
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,518.1150961736903,478.8545512306519,-494.315192356676,"[[1. 0. 0.]
+ [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/8575062102fbcd4f357fbc5af71a1bfc.asc,8575062102fbcd4f357fbc5af71a1bfc
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,253.6177494703452,468.1392510603838,-772.2403902268234,"[[1. 0. 0.]
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-427.5832363388456,439.9025321703102,-209.59556070990425,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/48f165d57b00c7f4781ef86f5c8cc1ab.asc,48f165d57b00c7f4781ef86f5c8cc1ab
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-683.9461177514743,479.6391474517332,495.9166603035224,"[[1. 0. 0.]
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-874.0577435654645,437.38131379325614,-141.24003648036114,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/4dad2986ce8349606a06e9ab85a0bcc1.asc,4dad2986ce8349606a06e9ab85a0bcc1
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-424.3221357263111,463.6061055447142,724.002027337971,"[[1. 0. 0.]
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,253.6177494703452,468.1392510603838,-772.2403902268234,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/72e63ac7a95383221f70d5dc2e675fc7.asc,72e63ac7a95383221f70d5dc2e675fc7
-cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-554.0144116243993,404.4612301254114,379.9795884570617,"[[1. 0. 0.]
+cADpyr,3,PYR,L3_TPC:A,mc0;3,mc0;3,EXC,-187.11394345336797,439.2675676547094,-804.3594277204052,"[[1. 0. 0.]
  [0. 1. 0.]
  [0. 0. 1.]]",synthesis/synthesized_morphologies/e539a78bc8eff3460b12ae6ead581e57.asc,e539a78bc8eff3460b12ae6ead581e57
