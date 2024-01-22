@@ -211,7 +211,14 @@ def plot_violin_features(
     output_dir.mkdir(parents=True, exist_ok=True)
     if "property" in features.columns:
         features = features.drop(columns="property")
-    features = features.melt(var_name=["neurite_type", "feature"], id_vars=["mtype", "label"])
+    features = features.melt(id_vars=[("mtype", ""), ("label", "")]).rename(
+        columns={
+            ("mtype", ""): "mtype",
+            ("label", ""): "label",
+            "variable_0": "neurite_type",
+            "variable_1": "feature",
+        }
+    )
     for neurite_type in neurite_types:
         with PdfPages(output_dir / f"morphometrics_{neurite_type}.pdf") as pdf:
             for mtype in features.mtype.unique():
