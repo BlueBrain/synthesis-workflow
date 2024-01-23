@@ -240,7 +240,7 @@ def plot_violin_features(
                         hue="label",
                         data=data,
                         split=True,
-                        bw=bw,
+                        bw_method=bw,
                         ax=ax,
                         inner="quartile",
                     )
@@ -431,7 +431,7 @@ def _plot_density_profile(
         plot_df = _get_vacuum_depths_df(circuit, mtype)
 
     with DisableLogger():
-        sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)
+        sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw_method=0.1)
     fig.suptitle(mtype)
     return fig
 

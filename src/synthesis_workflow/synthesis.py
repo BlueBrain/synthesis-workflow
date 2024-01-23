@@ -102,11 +102,15 @@ def _build_distributions_single_mtype(
         }
         if config["models"][0] != "simpler":
             config["diameter_model"] = partial(diameter_model_function, config=config)
-        _data = extract_input.distributions(morphology_paths, **kwargs)
+        try:
+            _data = extract_input.distributions(morphology_paths, **kwargs)
 
-        data[neurite_type] = _data[neurite_type]
-        data["diameter"] = _data["diameter"]
-        data["soma"] = _data["soma"]
+            data[neurite_type] = _data[neurite_type]
+            data["diameter"] = _data["diameter"]
+            data["soma"] = _data["soma"]
+        except Exception as exc:
+            print(mtype, exc)
+
     return mtype, data
 
 
