@@ -99,6 +99,7 @@ def _build_distributions_single_mtype(
         kwargs = {
             "neurite_types": neurite_types[mtype],
             "diameter_input_morph": morphology_paths,
+            "threshold_sec": 0,
         }
         if config["models"][0] != "simpler":
             config["diameter_model"] = partial(diameter_model_function, config=config)
@@ -109,7 +110,7 @@ def _build_distributions_single_mtype(
             data["diameter"] = _data["diameter"]
             data["soma"] = _data["soma"]
         except Exception as exc:
-            print(mtype, exc)
+            print(mtype, neurite_type, exc)
 
     return mtype, data
 
