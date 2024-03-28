@@ -176,7 +176,7 @@ class GetDefaultParameters(WorkflowTask):
             kwargs = {"neurite_types": neurite_types[mtype]}
             config = DiametrizerConfig().config_diametrizer
             if config["models"][0] == "simpler":
-                config = {"neurite_types": neurite_types[mtype]}
+                config = {"neurite_types": neurite_types[mtype], "models": ["simpler"]}
             else:
                 config["neurite_types"] = neurite_types[mtype]
             kwargs["diameter_parameters"] = config

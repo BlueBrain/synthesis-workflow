@@ -108,11 +108,16 @@ class DiametrizerConfig(luigi.Config):
 
     trunk_max_tries = luigi.IntParameter(default=100)
     n_samples = luigi.IntParameter(default=2)
+    fit_orders = luigi.DictParameter(default={"apical_dendrite": 2, "basal_dendrite": 1, "axon": 1})
 
     def __init__(self, *args, **kwargs):
         """Init."""
         super().__init__(*args, **kwargs)
         self.config_model = {"models": [self.model], "neurite_types": self.neurite_types}
+
+        if self.model == "simpler":
+            self.config_model.update({"fit_orders": self.fit_orders})
+
         if self.model == "generic":
             self.config_model.update(
                 {
