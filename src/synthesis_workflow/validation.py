@@ -468,6 +468,8 @@ def _plot_density_profile(
             ax.legend(loc="best")
         elif isinstance(circuit, VacuumCircuit):
             plot_df = _get_vacuum_depths_df(circuit, mtype)
+        else:
+            plot_df = None
 
         with DisableLogger():
             sns.violinplot(x="neurite_type", y="y", data=plot_df, ax=ax, bw=0.1)

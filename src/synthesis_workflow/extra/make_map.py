@@ -21,8 +21,11 @@ def get_annotations(cells, column, input_annotation, mode="mean"):
     tmp = pd.DataFrame(_voxels.astype(int), columns=v_inds)
     if mode == "mean":
         _values = cells[[column]].join(tmp).groupby(v_inds).mean().reset_index()
-    if mode == "sum":
+    elif mode == "sum":
         _values = cells[[column]].join(tmp).groupby(v_inds).sum().reset_index()
+    else:
+        msg = f"Unknown mode '{mode}' (should be either 'mean' or 'sum')"
+        raise ValueError(msg)
     _ids = tuple(_values[v_inds].to_numpy().transpose())
     annotation.raw[_ids] = _values[column].to_list()
     return annotation
