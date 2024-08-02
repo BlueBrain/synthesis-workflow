@@ -581,7 +581,6 @@ class Synthesize(WorkflowTask):
 
         if debug_scales_path is not None:
             kwargs["out_debug_data"] = debug_scales_path
-
         synthesizer = SynthesizeMorphologies(**kwargs)
         synthesizer.synthesize()
 
