@@ -1,5 +1,4 @@
-dir-content-diff>=1
-dir-content-diff-plugins>=0.0.3
+dir-content-diff>=1.9.1
 graphviz>=0.14
 pandas>=1.5
 pytest>=6.2

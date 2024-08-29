@@ -7,8 +7,8 @@ from copy import deepcopy
 from pathlib import Path
 from subprocess import check_call
 
-import dir_content_diff.pandas
-import dir_content_diff_plugins.voxcell
+import dir_content_diff.comparators.pandas
+import dir_content_diff.comparators.voxcell
 import luigi
 import numpy as np
 import pytest
@@ -20,8 +20,8 @@ from synthesis_workflow.tasks import config
 from . import export_config
 from . import get_config_parser
 
-dir_content_diff.pandas.register()
-dir_content_diff_plugins.voxcell.register()
+dir_content_diff.comparators.pandas.register()
+dir_content_diff.comparators.voxcell.register()
 
 
 TEST_ROOT = Path(__file__).parent
