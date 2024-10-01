@@ -1,4 +1,5 @@
 """Tests for workflows module."""
+
 import luigi
 import numpy as np
 import pytest

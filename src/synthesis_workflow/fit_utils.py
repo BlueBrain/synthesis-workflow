@@ -1,4 +1,5 @@
 """Some functions used to fit path distances with depth."""
+
 from typing import Sequence
 from typing import Tuple
 

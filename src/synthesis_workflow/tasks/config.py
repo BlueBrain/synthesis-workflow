@@ -1,4 +1,5 @@
 """Configurations for luigi tasks."""
+
 import logging
 import shutil
 import warnings

@@ -1,4 +1,5 @@
 """Functions for synthesis in vacuum to be used by luigi tasks."""
+
 import itertools
 
 import matplotlib.pyplot as plt

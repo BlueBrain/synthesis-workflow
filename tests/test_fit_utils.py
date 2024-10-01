@@ -1,4 +1,5 @@
 """Tests for the synthesis_workflow.fit_utils module."""
+
 # pylint: disable=redefined-outer-name
 import numpy as np
 import pytest

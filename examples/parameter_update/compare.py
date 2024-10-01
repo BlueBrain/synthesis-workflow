@@ -1,4 +1,5 @@
 """Example of comparison."""
+
 import json
 
 import pandas as pd

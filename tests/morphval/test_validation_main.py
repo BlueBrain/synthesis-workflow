@@ -1,4 +1,5 @@
 """Tests for the morphval package."""
+
 from pathlib import Path
 
 import pkg_resources

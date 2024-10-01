@@ -1,4 +1,5 @@
 """Make a atlas map from scatter data."""
+
 from copy import copy
 
 import matplotlib

@@ -1,4 +1,5 @@
 """Luigi tasks for morphology synthesis in vacuum."""
+
 import json
 import logging
 
@@ -104,7 +105,7 @@ class PlotVacuumMorphologies(WorkflowTask):
     """Plot morphologies to obtain annotations.
 
     Attributes:
-        vacuum_synth_morphology_path (str): Column name to use from the morphlogy DataFrame.
+        vacuum_synth_morphology_path (str): Column name to use from the morphology DataFrame.
     """
 
     pdf_filename = PathParameter(

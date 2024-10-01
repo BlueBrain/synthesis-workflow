@@ -1,4 +1,5 @@
 """Workflow for neuronal synthesis validation."""
+
 import pkg_resources
 from morphio import SectionType  # noqa
 

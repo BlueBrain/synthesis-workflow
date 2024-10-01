@@ -1,4 +1,5 @@
 """Luigi tasks for circuit and atlas processings."""
+
 import pickle
 from copy import deepcopy
 from functools import partial
@@ -243,9 +244,11 @@ class BuildCircuit(WorkflowTask):
             mtype_taxonomy_path,
             CircuitConfig().atlas_path,
             self.density_factor,
-            mask=self.input()["boundary"].path
-            if CreateBoundaryMask().boundary_thickness > 0
-            else None,
+            mask=(
+                self.input()["boundary"].path
+                if CreateBoundaryMask().boundary_thickness > 0
+                else None
+            ),
             seed=self.seed,
             region=CircuitConfig().region,
         )

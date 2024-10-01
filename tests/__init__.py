@@ -1,4 +1,5 @@
 """Tests suite for the synthesis-workflow package."""
+
 from configparser import ConfigParser
 
 

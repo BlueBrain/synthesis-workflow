@@ -1,4 +1,5 @@
 """Luigi tasks for validation workflows."""
+
 import configparser
 import json
 import pickle
@@ -70,9 +71,11 @@ class CreateCircuitConfig(WorkflowTask):
         if sample is None:
             sample = SliceCircuit().n_cells
         config["cells"] = {
-            "mtypes": json.dumps(list(SynthesisConfig().mtypes))
-            if SynthesisConfig().mtypes is not None
-            else "",
+            "mtypes": (
+                json.dumps(list(SynthesisConfig().mtypes))
+                if SynthesisConfig().mtypes is not None
+                else ""
+            ),
             "sample": str(sample),
         }
         config["planes"] = {

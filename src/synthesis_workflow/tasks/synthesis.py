@@ -1,4 +1,5 @@
 """Luigi tasks for morphology synthesis."""
+
 import json
 import logging
 from pathlib import Path

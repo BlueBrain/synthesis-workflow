@@ -1,4 +1,5 @@
 """Test the `morphval.validation` module."""
+
 from copy import deepcopy
 
 import pytest

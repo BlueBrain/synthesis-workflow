@@ -1,4 +1,5 @@
 """Private helper functions of the validation module."""
+
 import contextlib
 import json
 import os

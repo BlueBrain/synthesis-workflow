@@ -1,4 +1,5 @@
 """Setup for the synthesis-workflow package."""
+
 import importlib
 from pathlib import Path
 

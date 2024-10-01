@@ -1,4 +1,5 @@
 """Statistical validation tools."""
+
 import copy
 from collections import namedtuple
 from decimal import Decimal

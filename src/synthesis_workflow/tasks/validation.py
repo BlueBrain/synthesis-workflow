@@ -1,4 +1,5 @@
 """Luigi tasks for validation of synthesis."""
+
 import json
 import logging
 import pickle

@@ -1,4 +1,5 @@
 """Tests for the synthesis_workflow.cli module."""
+
 import re
 
 from synthesis_workflow.tasks import cli

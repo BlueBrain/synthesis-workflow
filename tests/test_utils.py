@@ -1,4 +1,5 @@
 """Tests for utils module."""
+
 import json
 
 import pandas as pd

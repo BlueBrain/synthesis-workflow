@@ -1,4 +1,5 @@
 """Functions for synthesis to be used by luigi tasks."""
+
 import logging
 import os
 import re

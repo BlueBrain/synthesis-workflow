@@ -1,4 +1,5 @@
 """Functions for validation of synthesis to be used by luigi tasks."""
+
 # pylint: disable=too-many-lines
 import itertools
 import json
@@ -451,7 +452,7 @@ def _plot_layers(x_pos, atlas, ax):
             layer_bounds[:, 0],
             layer_bounds[:, 1],
             alpha=0.5,
-            label=f"layer {layer+1}",
+            label=f"layer {layer + 1}",
         )
 
 

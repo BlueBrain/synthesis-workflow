@@ -1,4 +1,5 @@
 """In-situ validation functions for synthesis in atlas."""
+
 from pathlib import Path
 
 import matplotlib

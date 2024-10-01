@@ -1,4 +1,5 @@
 """Tests for workflows module."""
+
 import shutil
 
 import luigi
