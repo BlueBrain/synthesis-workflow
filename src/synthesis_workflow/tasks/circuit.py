@@ -281,8 +281,9 @@ class SliceCircuit(WorkflowTask):
         default="sliced_circuit_somata.h5",
         description=":str: Path to save sliced circuit.",
     )
-    n_cells = luigi.IntParameter(
-        default=10, description=":int: Number of cells per mtype to consider."
+    n_cells = luigi.FloatParameter(
+        default=10,
+        description=":float: Number of cells per mtype to consider if >1, else fraction.",
     )
 
     def requires(self):
