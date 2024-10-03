@@ -236,5 +236,4 @@ def add_mclass(cells_path, inh_probmap):
         )
 
     cells.add_properties({"mclass": cells_df.mclass.values})
-    print(cells_df)
     return cells

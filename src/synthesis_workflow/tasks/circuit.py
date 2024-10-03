@@ -337,7 +337,6 @@ class AddMClass(WorkflowTask):
 
     def run(self):
         """Actual process of the task."""
-        print(self.inh_probability_map_path.exists())
         if self.inh_probability_map_path is not None and self.inh_probability_map_path.exists():
             inh_probmap = pd.read_parquet(self.inh_probability_map_path).T
             cells = add_mclass(self.input().path, inh_probmap)
