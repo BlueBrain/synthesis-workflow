@@ -4,12 +4,14 @@ import pickle
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
+import shutil
 
 import luigi
 import numpy as np
 import pandas as pd
 import yaml
 from luigi.parameter import PathParameter
+from luigi.parameter import OptionalPathParameter
 from luigi_tools.parameter import RatioParameter
 from luigi_tools.task import ParamRef
 from luigi_tools.task import WorkflowTask
@@ -22,6 +24,7 @@ from synthesis_workflow.circuit import build_circuit
 from synthesis_workflow.circuit import circuit_slicer
 from synthesis_workflow.circuit import create_boundary_mask
 from synthesis_workflow.circuit import slice_circuit
+from synthesis_workflow.circuit import add_mclass
 from synthesis_workflow.tasks.config import AtlasLocalTarget
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import CircuitLocalTarget
@@ -300,7 +303,7 @@ class SliceCircuit(WorkflowTask):
 
         _slicer = partial(
             circuit_slicer,
-            n_cells=self.n_cells,
+            n_cells=int(self.n_cells) if self.n_cells > 1 else self.n_cells,
             mtypes=self.mtypes,
             planes=planes,
             hemisphere=CircuitConfig().hemisphere,
@@ -314,3 +317,34 @@ class SliceCircuit(WorkflowTask):
     def output(self):
         """Outputs of the task."""
         return CircuitLocalTarget(self.sliced_circuit_path)
+
+
+class AddMClass(WorkflowTask):
+    """Add mclass column if needed (for Barrel Cortex)."""
+
+    mclass_circuit_path = PathParameter(
+        default="mclass_circuit_somata.h5",
+        description=":str: Path to save sliced circuit.",
+    )
+    inh_probability_map_path = OptionalPathParameter(
+        default=None,
+        description=":str: Path to parquet file with probability map of inh.",
+    )
+
+    def requires(self):
+        """Required input tasks."""
+        return SliceCircuit()
+
+    def run(self):
+        """Actual process of the task."""
+        print(self.inh_probability_map_path.exists())
+        if self.inh_probability_map_path is not None and self.inh_probability_map_path.exists():
+            inh_probmap = pd.read_parquet(self.inh_probability_map_path).T
+            cells = add_mclass(self.input().path, inh_probmap)
+            cells.save(self.output().path)
+        else:
+            shutil.copy(self.input().path, self.output().path)
+
+    def output(self):
+        """Outputs of the task."""
+        return CircuitLocalTarget(self.mclass_circuit_path)

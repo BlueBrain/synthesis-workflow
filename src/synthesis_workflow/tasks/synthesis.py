@@ -34,6 +34,7 @@ from synthesis_workflow.synthesis import get_axon_base_dir
 from synthesis_workflow.synthesis import get_neurite_types
 from synthesis_workflow.synthesis import rescale_morphologies
 from synthesis_workflow.tasks.circuit import SliceCircuit
+from synthesis_workflow.tasks.circuit import AddMClass
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import DiametrizerConfig
 from synthesis_workflow.tasks.config import GetCellComposition
@@ -519,7 +520,7 @@ class Synthesize(WorkflowTask):
             "substituted_cells": ApplySubstitutionRules(),
             "tmd_parameters": BuildSynthesisParameters(),
             "tmd_distributions": BuildSynthesisDistributions(),
-            "circuit": SliceCircuit(),
+            "circuit": AddMClass(),
             "composition": GetCellComposition(),
         }
         if SynthesisConfig().axon_method == "reconstructed":

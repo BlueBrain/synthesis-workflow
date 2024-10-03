@@ -197,3 +197,44 @@ def get_layer_tags(atlas_dir, region_structure_path, region=None):
             L.warning("No voxel found for layer %s.", layer)
     brain_regions.raw = layers_data
     return brain_regions, layer_mapping
+
+
+def add_mclass(cells_path, inh_probmap):
+    """Add mclass column to circuit for barrel cortex."""
+    cells = CellCollection.load(cells_path)
+    cells_df = cells.as_dataframe()
+    cells_df["metype"] = [
+        f"{mtype}_{etype}" for mtype, etype in cells_df[["mtype", "etype"]].values
+    ]
+
+    exc_df = cells_df[cells_df["synapse_class"] == "EXC"]
+
+    def generate_exc_marker_labels(mtype):
+        layer = mtype.split("_")[0]
+        if layer == "L2" or layer == "L3":
+            layer = "L23"
+        return f"{layer}_EXC"
+
+    exc_df["marker"] = exc_df.apply(lambda x: generate_exc_marker_labels(x["mtype"]), axis=1)
+
+    group_by_marker = exc_df.groupby("metype")
+    metype_to_mclass = group_by_marker["marker"].value_counts() / group_by_marker["metype"].count()
+    metype_to_mclass.name = "probability"
+
+    exc_probmap = (
+        metype_to_mclass.reset_index()
+        .pivot_table(index="marker", columns="metype", values="probability")
+        .T
+    )
+    prob_map = pd.concat([inh_probmap, exc_probmap]).fillna(0)
+
+    for metype, mapping in prob_map.iterrows():
+        cells_metype = cells_df[cells_df["metype"] == metype]
+        subtype_mapping = mapping[mapping > 0]
+        cells_df.loc[cells_metype.index, "mclass"] = np.random.choice(
+            subtype_mapping.index.values, size=len(cells_metype), p=subtype_mapping.values
+        )
+
+    cells.add_properties({"mclass": cells_df.mclass.values})
+    print(cells_df)
+    return cells
