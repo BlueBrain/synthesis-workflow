@@ -1,26 +1,26 @@
 # Changes here will be overwritten by Copier
 
-_commit: 0.1.63
+_commit: 0.1.65
 _src_path: git@bbpgitlab.epfl.ch:neuromath/python-template.git
-author_email: bbp-ou-cells@groupes.epfl.ch
-author_name: bbp-ou-cells
-copyright_license: BBP-internal-confidential
+author_email: ''
+author_name: Blue Brain Project, EPFL
+copyright_license: Apache License 2.0
 copyright_year: '2022'
 distribution_name: synthesis-workflow
-download_url: https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow
+download_url: https://github.com/BlueBrain/synthesis-workflow
 init_git: false
-maintainer: ''
+maintainer: Adrien Berchet
 package_name: synthesis_workflow
 project_description: Workflow used for synthesis and its validation.
 project_name: Synthesis Workflow
-project_url: https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow
+project_url: https://synthesis_workflow.readthedocs.io
 repository_name: synthesis-workflow
-repository_namespace: neuromath
-repository_provider: gitlab
+repository_namespace: BlueBrain
+repository_provider: github
 setup_codeql: false
-ssh_url: git@bbpgitlab.epfl.ch:neuromath/synthesis-workflow.git
-team_name: neuromath
-tracker_url: https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues
+ssh_url: git@github.com:BlueBrain/synthesis-workflow.git
+team_name: ''
+tracker_url: https://github.com/BlueBrain/synthesis-workflow/issues
 use_pyproject_toml: false
 version: 0.1.2.dev1
 

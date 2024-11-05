@@ -1,11 +1,6 @@
 [paths]
 source_paths =
-	src/synthesis_workflow
+	synthesis_workflow
 	*/site-packages/synthesis_workflow
-	*/synthesis_workflow/src/synthesis_workflow
-	*/synthesis-workflow/src/synthesis_workflow
-
-source_morphval =
-	src/morphval
-	*/site-packages/morphval
-	*/synthesis-workflow/src/morphval
+	*/synthesis_workflow/synthesis_workflow
+	*/synthesis-workflow/synthesis_workflow

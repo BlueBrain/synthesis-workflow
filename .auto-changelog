@@ -1,13 +1,11 @@
 {
     "output": "CHANGELOG.md",
     "template": ".auto-changelog-template.hbs",
-    "tagPrefix": "synthesis-workflow-v",
     "commitLimit": false,
     "backfillLimit": false,
     "ignoreCommitPattern": "^Release:? [0-9]+\\.[0-9]+\\.[0-9]+( ?\\(#[0-9]+\\))?$|^Update CHANGELOG.*|.*\\[skip-changelog\\].*|^\\[pre-commit.ci\\]|^\\(dependabot\\) .*",
-    "commitUrl": "https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/commit/{id}",
-    "issueUrl": "https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/issues/{id}",
-    "mergeUrl": "https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/merge_requests/{id}",
-    "compareUrl": "https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow/compare/{from}...{to}",
-    "startingVersion": "0.1.1"
+    "commitUrl": "https://github.com/BlueBrain/synthesis-workflow/commit/{id}",
+    "issueUrl": "https://github.com/BlueBrain/synthesis-workflow/issues/{id}",
+    "mergeUrl": "https://github.com/BlueBrain/synthesis-workflow/pull/{id}",
+    "compareUrl": "https://github.com/BlueBrain/synthesis-workflow/compare/{from}..{to}"
 }
