@@ -10,9 +10,7 @@ It is divided into two packages:
 
 Installation
 ------------
-
-This package rely on several internal requirements which can be found in the BBP devpi index.
-This index must be specified to pip:
+To install:
 
 .. code::
 
@@ -51,7 +49,6 @@ You can also run a complete ``luigi`` command in order to fine-control task para
 	The ``synthesis_workflow`` command (or the complete ``luigi`` command) must be
 	executed from a directory containing a ``luigi.cfg`` file.
 	A simple example of such file is given in the ``examples`` directory.
-	Complete examples for BBP usecases are provided here: `<https://bbpcode.epfl.ch/browse/code/project/proj82/tree/entities/synthesis_workflow?h=refs/heads/master>`_
 
 Morphology validation
 ~~~~~~~~~~~~~~~~~~~~~
@@ -73,7 +70,6 @@ Funding & Acknowledgment
 
 The development of this software was supported by funding to the Blue Brain Project,
 a research center of the École polytechnique fédérale de Lausanne (EPFL),
-from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology
-and from the Human Brain Project's Specific Grant Agreement 3.
+from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology.
 
 Copyright (c) 2022-2024 Blue Brain Project/EPFL
