@@ -7,8 +7,6 @@ It is divided into two packages:
 * **synthesis-workflow**, which contains the workflow tasks and tools.
 * **MorphVal**, which is a library used for morphology validation and can be used as a standalone.
 
-The complete documentation of this project is available here: `<https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow/latest/index.html>`_
-
 
 Installation
 ------------
@@ -18,7 +16,7 @@ This index must be specified to pip:
 
 .. code::
 
-    pip install --index-url https://bbpteam.epfl.ch/repository/devpi/simple synthesis-workflow
+    pip install synthesis-workflow
 
 
 Usage
@@ -69,3 +67,13 @@ You can get help and complete parameter description with the following command:
 .. code::
 
     morph_validation --help
+
+Funding & Acknowledgment
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The development of this software was supported by funding to the Blue Brain Project,
+a research center of the École polytechnique fédérale de Lausanne (EPFL),
+from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology
+and from the Human Brain Project's Specific Grant Agreement 3.
+
+Copyright (c) 2022-2024 Blue Brain Project/EPFL
