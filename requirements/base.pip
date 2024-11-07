@@ -1,4 +1,3 @@
-atlas_analysis>=0.0.5
 bluepymm>=0.8.5
 bluepyparallel>=0.0.8
 brainbuilder>=0.20
@@ -19,7 +18,6 @@ neurom>=3.2.2,<4
 neurots>=3.6,<4
 numpy>=1.26.4
 pandas>=1.5.3
-placement_algorithm>=2.3.1
 PyYAML>=6
 region_grower>=1.3,<2
 scipy>=1.10

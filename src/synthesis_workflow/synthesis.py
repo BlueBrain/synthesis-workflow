@@ -19,8 +19,13 @@ from neurom import load_morphology
 from neurom.check.morphology_checks import has_apical_dendrite
 from neurom.core.dataformat import COLS
 from neurots import extract_input
-from placement_algorithm.app import utils
-from placement_algorithm.app.choose_morphologies import Master as ChooseMorphologyMaster
+
+try:
+    from placement_algorithm.app.choose_morphologies import Master as ChooseMorphologyMaster
+
+    with_placement_algo = True
+except ImportError:
+    with_placement_algo = False
 from tmd.io.io import load_population
 from tqdm import tqdm
 from voxcell import CellCollection
@@ -279,7 +284,7 @@ def create_axon_morphologies_tsv(
             f"Either 'morphs_df_path' or all the following parameter should be None: {_params}"
         )
 
-    if all(check_placement_params.values()):
+    if all(check_placement_params.values()) and with_placement_algo:
         L.info("Use placement algorithm for axons")
 
         kwargs = {
@@ -320,7 +325,7 @@ def create_axon_morphologies_tsv(
                 random_state=42,
             )["name"].to_list()
 
-        utils.dump_morphology_list(axon_morphs, axon_morphs_path)
+        axon_morphs.to_csv(axon_morphs_path, sep="\t", na_rep="N/A")
 
 
 def get_target_length(soma_layer, target_layer, cortical_thicknesses):

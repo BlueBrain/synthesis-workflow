@@ -3,6 +3,8 @@
 import json
 import logging
 from pathlib import Path
+from tqdm import tqdm
+import lxml.etree
 
 import dictdiffer
 import numpy as np
@@ -192,3 +194,40 @@ def create_circuit_config(nodes_file, morphology_path):
             "edges": [],
         }
     }
+
+
+def parse_annotations(filepath):
+    """Parse XML with morphology annotations."""
+    etree = lxml.etree.parse(filepath)
+    result = {}
+    for elem in etree.findall("placement"):
+        attr = dict(elem.attrib)
+        rule_id = attr.pop("rule")
+        if rule_id in result:
+            raise KeyError(f"Duplicate annotation for rule '{rule_id}'")
+        result[rule_id] = attr
+    return result
+
+
+def parse_morphdb(filepath):
+    """Parse (ext)neuronDB.dat file."""
+    columns = ["morphology", "layer", "mtype"]
+    first_row = pd.read_csv(filepath, sep=r"\s+", header=None, nrows=1)
+    if first_row.shape[1] > 3:
+        columns.append("etype")
+    return pd.read_csv(
+        filepath, sep=r"\s+", names=columns, usecols=columns, na_filter=False, dtype={"layer": str}
+    )
+
+
+def collect_annotations(annotation_dir, morphdb_path):
+    result = {}
+    if morphdb_path is None:
+        for filepath in tqdm(Path(annotation_dir).glob("*.xml")):
+            result[Path(filepath).stem] = parse_annotations(filepath)
+    else:
+        morphdb = parse_morphdb(morphdb_path)
+        for morph in tqdm(morphdb["morphology"].unique()):
+            filepath = Path(annotation_dir) / (morph + ".xml")
+            result[morph] = parse_annotations(filepath)
+    return result
