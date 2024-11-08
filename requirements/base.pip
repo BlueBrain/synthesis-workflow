@@ -1,7 +1,3 @@
-atlas_analysis>=0.0.5
-bluepy>=2.5,<3
-bluepy-configfile>=0.1.19
-bluepymm>=0.8.5
 bluepyparallel>=0.0.8
 brainbuilder>=0.20
 diameter_synthesis>=0.5.4
