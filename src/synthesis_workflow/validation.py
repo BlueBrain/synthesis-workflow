@@ -18,10 +18,10 @@ from typing import List
 import matplotlib
 import matplotlib.pyplot as plt
 import neurom
+from morph_tool.transform import transform
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from bluepy import Circuit
 from joblib import Parallel
 from joblib import delayed
 from matplotlib import cm
@@ -52,6 +52,7 @@ matplotlib.use("Agg")
 
 
 VacuumCircuit = namedtuple("VacuumCircuit", ["cells", "morphs_df", "morphology_path"])
+AtlasCircuit = namedtuple("AtlasCircuit", ["atlas", "cells", "morphology_path"])
 
 SYNTH_MORPHOLOGY_PATH = "synth_morphology_path"
 
@@ -399,11 +400,18 @@ def sample_morph_voxel_values(
 def _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance):
     """Create dataframe with depths data for violin plots."""
     out_of_bounds_value = np.nan
-    gids = circuit.cells.ids(group={"mtype": mtype}, sample=sample)
+    morphs_df = circuit.morphs_df
+    path = Path(circuit.morphology_path)
+    cells = morphs_df.loc[morphs_df["mtype"] == mtype, path]
+    gids = cells.sample(sample, random_state=42).index
 
     point_depths = defaultdict(list)
     for gid in gids:
-        morphology = circuit.morph.get(gid, transform=True, source="ascii")
+        morphology = Morphology(path / (cells.loc[gid, "morph"] + ".asc"))
+        T = np.eye(4)
+        T[:3, :3] = cells.loc[gid, "orientation"]
+        T[:3, 3] = cells.loc[gid, ["x", "y", "z"]]
+        transform(morphology, T)
         point_depth_tmp = sample_morph_voxel_values(
             morphology, sample_distance, voxeldata, out_of_bounds_value
         )
@@ -463,7 +471,7 @@ def _plot_density_profile(
     fig = plt.figure()
     ax = plt.gca()
     try:
-        if isinstance(circuit, Circuit):
+        if isinstance(circuit, AtlasCircuit):
             _plot_layers(x_pos, circuit.atlas, ax)
             plot_df = _get_depths_df(circuit, mtype, sample, voxeldata, sample_distance)
             ax.legend(loc="best")
