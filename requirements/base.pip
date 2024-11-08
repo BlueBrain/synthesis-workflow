@@ -1,5 +1,5 @@
 bluepyparallel>=0.0.8
-brainbuilder>=0.20
+brainbuilder>=0.20.1
 diameter_synthesis>=0.5.4
 dictdiffer>=0.9
 gitpython>=3.1.30
