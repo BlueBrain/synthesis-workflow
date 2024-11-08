@@ -23,4 +23,4 @@ scipy>=1.13
 seaborn>=0.12.2
 tmd>=2.3
 tqdm>=4.64.1
-voxcell>=3.1.3,<4
+voxcell>=3.1.5,<4
