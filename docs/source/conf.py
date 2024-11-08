@@ -25,10 +25,11 @@ from synthesis_workflow.tasks import cli
 
 # -- Project information -----------------------------------------------------
 
-project = "Synthesis Workflow"
+project_name = "Synthesis Workflow"
+package_name = "synthesis-workflow"
 
 # The short X.Y version
-version = metadata.version("synthesis-workflow")
+version = metadata.version(package_name)
 
 # The full version, including alpha/beta/rc tags
 release = version
@@ -94,10 +95,10 @@ html_theme = "sphinx-bluebrain-theme"
 # html_static_path = ['_static']
 
 html_theme_options = {
-    "metadata_distribution": "synthesis-workflow",
+    "metadata_distribution": package_name,
 }
 
-html_title = project
+html_title = project_name
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False

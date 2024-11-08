@@ -50,3 +50,4 @@ The :doc:`./api_ref` page contains detailed documentation of:
    cli
    api_ref
    changelog
+   contributing

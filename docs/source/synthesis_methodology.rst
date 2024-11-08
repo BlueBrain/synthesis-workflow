@@ -100,6 +100,6 @@ Here is an example of such ``context_constraints`` entry:
 
 More details on the models can be found here:
 
-* `TNS <https://bbpteam.epfl.ch/documentation/projects/TNS/latest/index.html>`_
-* <region-grower doc URL> (does not exist yet)
-* <placement-algorithm.app.synthesis doc URL> (does not exist yet)
+* `NeuroTS <https://neurots.readthedocs.io/en/stable>`_
+* `region-grower <https://region-grower.readthedocs.io/en/stable/>`_
+* `placement-algorithm <https://github.com/BlueBrain/placement-algorithm>`_
