@@ -9,7 +9,6 @@ import luigi
 import pandas as pd
 import pkg_resources
 import yaml
-from bluepy import Circuit
 from luigi.parameter import OptionalNumericalParameter
 from luigi.parameter import PathParameter
 from luigi_tools.parameter import BoolParameter
