@@ -32,7 +32,6 @@ from synthesis_workflow.synthesis import create_axon_morphologies_tsv
 from synthesis_workflow.synthesis import get_axon_base_dir
 from synthesis_workflow.synthesis import get_neurite_types
 from synthesis_workflow.synthesis import rescale_morphologies
-from synthesis_workflow.utils import collect_annotations
 from synthesis_workflow.tasks.circuit import SliceCircuit
 from synthesis_workflow.tasks.config import CircuitConfig
 from synthesis_workflow.tasks.config import DiametrizerConfig
@@ -46,6 +45,7 @@ from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
 from synthesis_workflow.utils import apply_parameter_diff
+from synthesis_workflow.utils import collect_annotations
 
 morphio.set_maximum_warnings(0)
 

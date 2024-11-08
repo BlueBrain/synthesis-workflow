@@ -3,14 +3,14 @@
 import json
 import logging
 from pathlib import Path
-from tqdm import tqdm
-import lxml.etree
 
 import dictdiffer
+import lxml.etree
 import numpy as np
 import pandas as pd
 from jsonpath_ng import parse
 from pkg_resources import resource_filename
+from tqdm import tqdm
 
 # pylint:disable=too-many-nested-blocks
 
@@ -221,6 +221,7 @@ def parse_morphdb(filepath):
 
 
 def collect_annotations(annotation_dir, morphdb_path):
+    """Collect annotations from given directory."""
     result = {}
     if morphdb_path is None:
         for filepath in tqdm(Path(annotation_dir).glob("*.xml")):
