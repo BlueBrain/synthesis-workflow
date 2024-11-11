@@ -1051,15 +1051,13 @@ def plot_score_matrix(
         g.xaxis.set_tick_params(rotation=45)
         g.set_facecolor("xkcd:maroon")
 
-        # Remove upper right subplo
+        # Remove upper right subplot
         a2.remove()
 
         # Export the figure
-        # with DisableLogger():
-        pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
+        with DisableLogger():
+            pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
         plt.close(fig)
-    if not Path(output_path).exists():
-        raise Exception("failed to write")
 
 
 def extract_angle_data(df, morph_key, pia=None):
