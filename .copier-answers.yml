@@ -1,6 +1,6 @@
 # Changes here will be overwritten by Copier
 
-_commit: 0.1.65
+_commit: 0.1.67
 _src_path: git@bbpgitlab.epfl.ch:neuromath/python-template.git
 author_email: ''
 author_name: Blue Brain Project, EPFL
@@ -9,11 +9,11 @@ copyright_year: '2022'
 distribution_name: synthesis-workflow
 download_url: https://github.com/BlueBrain/synthesis-workflow
 init_git: false
-maintainer: Adrien Berchet
+maintainer: Adrien Berchet (@adrien-berchet)
 package_name: synthesis_workflow
 project_description: Workflow used for synthesis and its validation.
 project_name: Synthesis Workflow
-project_url: https://synthesis_workflow.readthedocs.io
+project_url: https://synthesis-workflow.readthedocs.io
 repository_name: synthesis-workflow
 repository_namespace: BlueBrain
 repository_provider: github

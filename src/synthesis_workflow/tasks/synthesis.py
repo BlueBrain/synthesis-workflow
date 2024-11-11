@@ -21,7 +21,6 @@ from neurots import extract_input
 from neurots.generate.orientations import fit_3d_angles
 from neurots.validator import validate_neuron_distribs
 from neurots.validator import validate_neuron_params
-from placement_algorithm.app.compact_annotations import _collect_annotations
 from region_grower.synthesize_morphologies import SynthesizeMorphologies
 from region_grower.utils import NumpyEncoder
 from tqdm import tqdm
@@ -46,6 +45,7 @@ from synthesis_workflow.tasks.config import SynthesisLocalTarget
 from synthesis_workflow.tools import find_case_insensitive_file
 from synthesis_workflow.tools import load_neurondb_to_dataframe
 from synthesis_workflow.utils import apply_parameter_diff
+from synthesis_workflow.utils import collect_annotations
 
 morphio.set_maximum_warnings(0)
 
@@ -280,7 +280,7 @@ class CreateAnnotationsFile(WorkflowTask):
     def run(self):
         """Actual process of the task."""
         # pylint: disable=protected-access
-        annotations = _collect_annotations(self.annotation_dir, self.morph_db)
+        annotations = collect_annotations(self.annotation_dir, self.morph_db)
 
         with open(self.destination, "w", encoding="utf-8") as f:
             json.dump(annotations, f, indent=4, sort_keys=True)

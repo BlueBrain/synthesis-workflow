@@ -34,7 +34,7 @@ jobs:
       # This action should only be used when you need extra system packages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: graphviz
+        packages: graphviz poppler-utils
         version: 1.0
         execute_install_scripts: true
     - name: Cache tox and precommit environments

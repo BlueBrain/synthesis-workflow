@@ -9,7 +9,6 @@ import luigi
 import pandas as pd
 import pkg_resources
 import yaml
-from bluepy import Circuit
 from luigi.parameter import OptionalNumericalParameter
 from luigi.parameter import PathParameter
 from luigi_tools.parameter import BoolParameter
@@ -21,6 +20,7 @@ from neurocollage import plot_2d_collage
 from neurom.view import matplotlib_impl
 from voxcell import VoxelData
 from voxcell.cell_collection import CellCollection
+from voxcell.nexus.voxelbrain import Atlas
 
 from morphval import validation_main as morphval_validation
 from synthesis_workflow.tasks.circuit import CreateAtlasLayerAnnotations
@@ -41,6 +41,7 @@ from synthesis_workflow.tasks.synthesis import Synthesize
 from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
 from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
+from synthesis_workflow.validation import AtlasCircuit
 from synthesis_workflow.validation import VacuumCircuit
 from synthesis_workflow.validation import convert_circuit_to_morphs_df
 from synthesis_workflow.validation import get_debug_data
@@ -182,12 +183,10 @@ class PlotDensityProfiles(WorkflowTask):
     def run(self):
         """Actual process of the task."""
         if self.in_atlas:
-            circuit = Circuit(
-                {
-                    "cells": self.input()["circuit"].path,
-                    "morphologies": self.input()["out_morphologies"].path,
-                    "atlas": CircuitConfig().atlas_path,
-                }
+            circuit = AtlasCircuit(
+                atlas=Atlas.open(CircuitConfig().atlas_path),
+                cells=CellCollection.load(self.input()["circuit"].path).as_dataframe(),
+                morphology_path=self.input()["out_morphologies"].path,
             )
 
         else:

@@ -1,18 +1,9 @@
 """Setup for the synthesis-workflow package."""
 
-import importlib
 from pathlib import Path
 
 from setuptools import find_namespace_packages
 from setuptools import setup
-
-spec = importlib.util.spec_from_file_location(
-    "src.version",
-    "src/version.py",
-)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-VERSION = module.VERSION
 
 # Read the requirements
 with open("requirements/base.pip", "r", encoding="utf-8") as f:
@@ -28,21 +19,23 @@ with open("requirements/test.pip", "r", encoding="utf-8") as f:
 
 setup(
     name="synthesis-workflow",
-    author="bbp-ou-cells",
-    author_email="bbp-ou-cells@groupes.epfl.ch",
+    author="Blue Brain Project, EPFL",
     description="Workflow used for synthesis and its validation.",
     long_description=Path("README.rst").read_text(encoding="utf-8"),
     long_description_content_type="text/x-rst",
-    url="https://bbpteam.epfl.ch/documentation/projects/synthesis-workflow",
+    url="https://synthesis-workflow.readthedocs.io",
     project_urls={
-        "Tracker": "https://bbpteam.epfl.ch/project/issues/projects/CELLS/issues",
-        "Source": "https://bbpgitlab.epfl.ch/neuromath/synthesis-workflow",
+        "Tracker": "https://github.com/BlueBrain/synthesis-workflow/issues",
+        "Source": "https://github.com/BlueBrain/synthesis-workflow",
     },
-    license="BBP-internal-confidential",
+    license="Apache License 2.0",
     packages=find_namespace_packages("src"),
     package_dir={"": "src"},
     python_requires=">=3.9",
-    version=VERSION,
+    use_scm_version=True,
+    setup_requires=[
+        "setuptools_scm",
+    ],
     install_requires=reqs,
     extras_require={
         "docs": doc_reqs,
@@ -56,6 +49,7 @@ setup(
     },
     include_package_data=True,
     classifiers=[
+        # TODO: Update to relevant classifiers
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Education",
         "Intended Audience :: Science/Research",
