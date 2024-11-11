@@ -1058,8 +1058,6 @@ def plot_score_matrix(
         with DisableLogger():
             pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
         plt.close(fig)
-    if Path(output_path).exists():
-        raise Exception(output_path)
 
 
 def extract_angle_data(df, morph_key, pia=None):
