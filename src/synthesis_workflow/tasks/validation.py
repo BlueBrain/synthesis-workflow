@@ -41,8 +41,8 @@ from synthesis_workflow.tasks.synthesis import Synthesize
 from synthesis_workflow.tasks.vacuum_synthesis import VacuumSynthesize
 from synthesis_workflow.vacuum_synthesis import VACUUM_SYNTH_MORPHOLOGY_PATH
 from synthesis_workflow.validation import SYNTH_MORPHOLOGY_PATH
-from synthesis_workflow.validation import VacuumCircuit
 from synthesis_workflow.validation import AtlasCircuit
+from synthesis_workflow.validation import VacuumCircuit
 from synthesis_workflow.validation import convert_circuit_to_morphs_df
 from synthesis_workflow.validation import get_debug_data
 from synthesis_workflow.validation import plot_density_profiles

@@ -18,7 +18,6 @@ from typing import List
 import matplotlib
 import matplotlib.pyplot as plt
 import neurom
-from morph_tool.transform import transform
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -26,6 +25,7 @@ from joblib import Parallel
 from joblib import delayed
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
+from morph_tool.transform import transform
 from morphio.mut import Morphology
 from neurom import load_morphologies
 from neurom.apps import morph_stats
