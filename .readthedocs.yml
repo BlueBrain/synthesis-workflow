@@ -12,6 +12,7 @@ build:
   jobs:
     pre_install:
       - git update-index --assume-unchanged docs/environment.yml docs/source/conf.py
+      - git status
 
 sphinx:
   configuration: docs/source/conf.py
