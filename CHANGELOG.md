@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.2](https://github.com/BlueBrain/synthesis-workflow/compare/1.2.1..1.2.2)
+
+> 11 November 2024
+
+### Documentation Changes
+
+- Fix RTD config (Adrien Berchet - [#6](https://github.com/BlueBrain/synthesis-workflow/pull/6))
+
 ## [1.2.1](https://github.com/BlueBrain/synthesis-workflow/compare/1.2.0..1.2.1)
 
 > 11 November 2024
