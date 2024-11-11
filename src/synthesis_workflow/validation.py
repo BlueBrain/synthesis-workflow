@@ -1058,7 +1058,7 @@ def plot_score_matrix(
         with DisableLogger():
             pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
         plt.close(fig)
-    if not Path(output_path).exists():
+    if Path(output_path).exists():
         raise Exception(output_path)
 
 
