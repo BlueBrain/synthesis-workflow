@@ -1058,6 +1058,11 @@ def plot_score_matrix(
         with DisableLogger():
             pdf.savefig(fig, bbox_inches="tight", dpi=dpi)
         plt.close(fig)
+        import tempfile
+
+        path_context = tempfile.TemporaryDirectory(prefix="diffpdf")
+        with path_context as p:
+            raise Exception(f"lkjlkjlkj {p}, {Path(p).exists()}")
 
 
 def extract_angle_data(df, morph_key, pia=None):
