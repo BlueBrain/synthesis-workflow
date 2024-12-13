@@ -40,9 +40,17 @@ class TestCLI:
         assert (root_dir / "dependency_graph.png").exists()
 
 
-def test_entry_point(script_runner):
-    """Test the entry point."""
+def test_entry_point_synthesis_workflow(script_runner):
+    """Test the entry point of synthesis-workflow."""
     ret = script_runner.run("synthesis-workflow", "--version")
     assert ret.success
     assert ret.stdout.startswith("synthesis-workflow, version ")
+    assert ret.stderr == ""
+
+
+def test_entry_point_morph_validation(script_runner):
+    """Test the entry point of MorphVal."""
+    ret = script_runner.run("morph-validation", "--version")
+    assert ret.success
+    assert ret.stdout.startswith("morph-validation, version ")
     assert ret.stderr == ""
