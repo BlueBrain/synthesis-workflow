@@ -9,4 +9,5 @@ pytest-xdist>=3.0.2
 
 # Pin versions for tests
 matplotlib==3.6.*
+pynrrd==1.0.0
 seaborn==0.12.*
