@@ -4,6 +4,7 @@ import argparse
 
 import pkg_resources
 
+import morphval
 from morphval import config
 from morphval.validation_main import Validation
 
@@ -11,6 +12,11 @@ from morphval.validation_main import Validation
 def get_parser():
     """Return the argument parser."""
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s, version {morphval.__version__}",
+    )
     parser.add_argument(
         "-t", "--test-dir", required=True, help="full path to directory with test data"
     )

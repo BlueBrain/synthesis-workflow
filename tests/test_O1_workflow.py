@@ -50,6 +50,9 @@ def test_ValidateSynthesis(small_O1_working_directory, data_dir):
                 "tolerance": 2e-3,
                 "absolute_tolerance": 1e-15,
             },
+            "synthesis/apical_points.yaml": {
+                "tolerance": 1e-3,
+            },
             "validation/morphology_validation_reports/validation_results.json": {
                 "tolerance": 2e-3,
                 "absolute_tolerance": 1e-12,

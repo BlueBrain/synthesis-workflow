@@ -27,14 +27,14 @@ The usual command is the following:
 
 .. code::
 
-    synthesis_workflow <workflow>
+    synthesis-workflow <workflow>
 
 You can get help and complete parameter description with the following commands:
 
 .. code::
 
-    synthesis_workflow --help
-    synthesis_workflow <workflow> --help
+    synthesis-workflow --help
+    synthesis-workflow <workflow> --help
 
 You can also run a complete ``luigi`` command in order to fine-control task parameters:
 
@@ -46,7 +46,7 @@ You can also run a complete ``luigi`` command in order to fine-control task para
 
 .. note::
 
-	The ``synthesis_workflow`` command (or the complete ``luigi`` command) must be
+	The ``synthesis-workflow`` command (or the complete ``luigi`` command) must be
 	executed from a directory containing a ``luigi.cfg`` file.
 	A simple example of such file is given in the ``examples`` directory.
 
@@ -57,13 +57,13 @@ The usual command is the following:
 
 .. code::
 
-    morph_validation -t <path to reference data> -r <path to test data> -o <output path> -c <YAML config file> --bio-compare
+    morph-validation -t <path to reference data> -r <path to test data> -o <output path> -c <YAML config file> --bio-compare
 
 You can get help and complete parameter description with the following command:
 
 .. code::
 
-    morph_validation --help
+    morph-validation --help
 
 Funding & Acknowledgment
 ~~~~~~~~~~~~~~~~~~~~~~~~
