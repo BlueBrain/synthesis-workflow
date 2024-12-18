@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3](https://github.com/BlueBrain/synthesis-workflow/compare/1.2.2..1.2.3)
+
+> 18 December 2024
+
+### Documentation Changes
+
+- Fix commands given in the examples (Adrien Berchet - [#11](https://github.com/BlueBrain/synthesis-workflow/pull/11))
+
 ## [1.2.2](https://github.com/BlueBrain/synthesis-workflow/compare/1.2.1..1.2.2)
 
 > 11 November 2024
